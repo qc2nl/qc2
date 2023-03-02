@@ -1,3 +1,37 @@
+# Final product
+A user friendly and both open ended workflow manager to orchestrate quantum chemistry calculations on quantum computing hardware
+
+```python
+from qc2 import DataFile
+from qc2.ase import pyscf, rose
+from qc2.qiskit import vqe
+
+# init the hdf5 file
+qc2data = DataFile()
+
+# define the mol
+qc2data.mol('CO2')
+
+# specify the qchem calculator and run
+qc2data.mol.calculator = pyscf()
+qc2data.mol.calculator.basis = 'dzp'
+qc2data.mol.calculator.xc = 'PBE'
+qc2data.mol.run() # => run calc and store required data in the hdf5 file
+
+# localize orbitals usin rose
+qc2data.mol.calculator = rose()
+qc2data.mol.run()  #=> run calc and replace/add required data in the hdf5 file
+
+# create circuits
+qc2data.circuits(vqe).create()
+qc2data.circuits.run(shots=1024, backend='...', ...) # run the circuits and store results ...
+...
+```
+
+
+
+
+
 # Architecture of the package 
 
 The overall structure of the package is illustrated in this picture
@@ -9,8 +43,18 @@ The overall structure of the package is illustrated in this picture
 The hdf5 file should contain:
 ```
 .
-+-- geometrix.xyz
-
++-- Molecule
+|   +-- geometry
++-- QuantumChemistry
+|   +-- atomic orbitals
+|   +-- molecular orbitals / energies
+|   +-- integrals 
+|   +-- ...
++-- QuantumComputing
+|   +-- circuits
+|   +-- outputs
+|   +-- ...
++-- ...
 ```
 
 ## Quantum chemistry 
