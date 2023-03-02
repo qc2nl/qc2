@@ -3,7 +3,7 @@ A user friendly and both open ended workflow manager to orchestrate quantum chem
 
 ```python
 from qc2 import DataFile
-from qc2 import pyscf, rose
+from qc2.ase import pyscf, rose
 from qc2.qiskit import vqe
 
 # init the hdf5 file
