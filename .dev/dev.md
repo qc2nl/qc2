@@ -9,8 +9,17 @@ The overall structure of the package is illustrated in this picture
 The hdf5 file should contain:
 ```
 .
-+-- geometrix.xyz
-
++-- geometry.xyz
++-- QuantumChemistry
+|   +-- atomic orbitals
+|   +-- molecular orbitals / energies
+|   +-- integrals 
+|   +-- ...
++-- QuantumComputing
+|   +-- circuits
+|   +-- outputs
+|   +-- ...
++-- ...
 ```
 
 ## Quantum chemistry 
