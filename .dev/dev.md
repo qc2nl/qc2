@@ -1,6 +1,7 @@
 # Architecture of the package 
 
 The overall structure of the package is illustrated in this picture
+![architecture](qc2nl.drawio.svg)
 
 
 ## Data structure of the HDF5 file
