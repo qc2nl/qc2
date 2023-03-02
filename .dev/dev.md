@@ -6,6 +6,13 @@ The overall structure of the package is illustrated in this picture
 
 ## Data structure of the HDF5 file
 
+The hdf5 file should contain:
+```
+.
++-- geometrix.xyz
+
+```
+
 ## Quantum chemistry 
 The package is organized around a HDF5 file that can be populated by different quanutm chemistry codes. 
 
