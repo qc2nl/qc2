@@ -1,5 +1,5 @@
-from ase.calculators import GenericFileIOCalculator
+# from ase.calculators import GenericFileIOCalculator
 
-class ROSE(GenericFileIOCaclulator):
+# class ROSE():
 
-    def __init__(self):
+#     def __init__(self):
