@@ -37,7 +37,7 @@ qc2data.circuits.run(shots=1024, backend='...', ...) # run the circuits and stor
 # Architecture of the package 
 
 The overall structure of the package is illustrated in this picture
-![architecture](qc2nl.drawio.svg)
+![architecture](qc2nl.drawio (1).svg)
 
 
 ## Data structure of the HDF5 file
