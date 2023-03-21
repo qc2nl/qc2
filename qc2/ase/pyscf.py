@@ -14,7 +14,7 @@ from ase.calculators.calculator import CalculatorSetupError
 import warnings
 
 def ase_atoms_to_pyscf(ase_atoms):
-    """Convert ASE atoms to PySCF atom"""
+    """Convert ASE atoms to PySCF atom."""
     return [ [ase_atoms.get_chemical_symbols()[i], ase_atoms.get_positions()[i]] for i in range(len(ase_atoms.get_positions()))]
 
 
@@ -26,7 +26,11 @@ class PySCF(Calculator):
     
     Example input ASE calculation:
 
-    >>> molecule = Atoms(...)
+    >>> from ase import Atoms
+    >>> from ase.build import molecule
+    >>> from qc2.ase.pyscf import PySCF
+    >>>
+    >>> molecule = Atoms(...) or  molecule = molecule('...')
     >>> molecule.calc = PySCF(method='dft.RKS', xc='b3lyp', basis='6-31g*', charge=0, multiplicity=1, verbose=0)
     >>> energy = molecule.get_potential_energy()
     >>> gradient = molecule.get_forces()
@@ -71,11 +75,15 @@ class PySCF(Calculator):
         self.set_pyscf()
 
     def set_pyscf(self):
-        """This function sets up PySCF intrinsic attributes.
+        """This method sets up PySCF intrinsic attributes.
 
         Note: it can also be used to set specific environment variables. 
         """
 
+        recognized_attributes = ['ignore_bad_restart', 'command', 'method', 
+                                 'xc', 'basis', 'multiplicity', 'charge', 
+                                 'verbose', 'kpts', 'nbands', 'smearing']
+        
         # setting PySCF attributes
         # these are => self.method
         #           => self.xc
@@ -83,20 +91,23 @@ class PySCF(Calculator):
         #           => self.multiplicity 
         #           => self.charge
         #           => self.verbose
-        #           => self....
         for key, value in self.parameters.items():
-            #print(key, value)
-            setattr(self, key, value)
+            # check attribute name
+            if key in recognized_attributes:
+                setattr(self, key, value)
+            else:
+                raise InputError('Attribute', key, 'not recognized. Please check input.')
 
         # dealing with lack of multiplicity and charge info
         if 'multiplicity' not in self.parameters.keys():
             self.multiplicity = 1
-            warnings.warn('Multiplicity not provided. Assuming default singlet')
+            warnings.warn('Multiplicity not provided. Assuming default singlet.')
 
         if 'charge' not in self.parameters.keys():
             self.charge = 0
-            warnings.warn('Charge not provided. Assuming default zero')
+            warnings.warn('Charge not provided. Assuming default zero.')
 
+        # verbose sets the amount of pyscf printing => verbose = 0 prints no info
         if 'verbose' not in self.parameters.keys():
             self.verbose = 0  
 
@@ -116,22 +127,35 @@ class PySCF(Calculator):
                              'argument.')    
 
     def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):
+        """This is the core method responsible for the actual calculation."""
 
+        implemented_methods = ['scf.RHF', 'scf.UHF', 'scf.ROHF',
+                               'dft.RKS', 'dft.UKS', 'dft.ROKS']
+        
         from pyscf import gto, scf, dft
 
         Calculator.calculate(self, atoms=atoms)
 
         if self.atoms is None:
             raise CalculatorSetupError('An Atoms object must be provided to '
-                                       'perform a calculation')
+                                       'perform a calculation.')
         atoms = self.atoms
 
         # the spin variable corresponds to 2S instead of 2S+1
         spin = self.multiplicity - 1
 
-        # passing geometry and wave function definitions
+        # passing geometry and other definitions
         molecule = gto.M(atom=ase_atoms_to_pyscf(atoms), basis=self.basis, charge=self.charge, spin=spin)
-        wf = eval(self.method)(molecule)
+
+        # checking wf input name => this is case sensitive
+        if self.method in implemented_methods:
+            wf = eval(self.method)(molecule)
+        else:
+            raise CalculatorSetupError('Method not yet implemented. '
+                                       'Current PySCF-ASE calculator only allows for', 
+                                       implemented_methods, 
+                                       'wave functions. Please check input method.')
+        
         wf.verbose = self.verbose
 
         if 'dft' in self.method:
@@ -141,12 +165,13 @@ class PySCF(Calculator):
         energy = wf.kernel() * Ha
         self.results['energy'] = energy
 
+        # calculating forces
         if 'forces' in properties:
             gf = wf.nuc_grad_method()
             gf.verbose = self.verbose
             if 'dft' in self.method:
                 gf.grid_response = True
-            # calculating analytic gradient in eV/Angstrom
+            # analytic gradienta in eV/Angstrom
             forces = -1.0 * gf.kernel() * (Ha / Bohr)
             totalforces = []
             totalforces.extend(forces)
