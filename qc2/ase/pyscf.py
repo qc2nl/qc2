@@ -1,7 +1,7 @@
 """This module defines an ASE interface to PySCF
 
 https://pyscf.org/ => Official documentation             
-https://github.com/pyscf/pyscf => GitHub page
+https://github.com/pyscf/pyscf => GitHub page 
 
 Note: Adapted from https://github.com/pyscf/pyscf/blob/master/pyscf/pbc/tools/pyscf_ase.py
                and https://github.com/pyscf/pyscf/issues/624
