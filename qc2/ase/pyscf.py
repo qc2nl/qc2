@@ -7,11 +7,13 @@ Note: Adapted from https://github.com/pyscf/pyscf/blob/master/pyscf/pbc/tools/py
                and https://github.com/pyscf/pyscf/issues/624
 """
 import numpy as np
+from ase import Atoms
 from ase.calculators.calculator import Calculator, all_changes
 from ase.units import Ha, Bohr
 from ase.calculators.calculator import InputError
 from ase.calculators.calculator import CalculatorSetupError
 import warnings
+from typing import Union, Optional, Type, List
 
 def ase_atoms_to_pyscf(ase_atoms):
     """Convert ASE atoms to PySCF atom."""
@@ -21,16 +23,22 @@ def ase_atoms_to_pyscf(ase_atoms):
 class PySCF(Calculator):
     """An ASE calculator for the open source (python-based) PySCF quantum chemistry package.
 
-    Units:  ase   => units [eV, Angstrom, eV/Angstrom]
-            pyscf => units [Hartree, Bohr, Hartree/Bohr]
-    
-    Example input ASE calculation:
+    Args:
+        Calculator (Type[Calculator]): Base-class for all ASE calculators. 
+
+    Raises:
+        InputError: If attributes other than 
+            'method', 'xc', 'basis', 'multiplicity', 'charge', and 'verbose' are input. 
+        CalculatorSetupError: If abinitio methods other than 
+            'scf.RHF', 'scf.UHF', 'scf.ROHF', 'dft.RKS', 'dft.UKS', and 'dft.ROKS' are selected.
+
+    Example of a typical ASE-PySCF input:
 
     >>> from ase import Atoms
     >>> from ase.build import molecule
     >>> from qc2.ase.pyscf import PySCF
     >>>
-    >>> molecule = Atoms(...) or  molecule = molecule('...')
+    >>> molecule = Atoms(...) or molecule = molecule('...')
     >>> molecule.calc = PySCF(method='dft.RKS', xc='b3lyp', basis='6-31g*', charge=0, multiplicity=1, verbose=0)
     >>> energy = molecule.get_potential_energy()
     >>> gradient = molecule.get_forces()
@@ -52,8 +60,9 @@ class PySCF(Calculator):
            = 'scf.ROHF'
            = 'dft.RKS'
            = 'dft.UKS'
-           = 'dft.ROKS'              
-    """
+           = 'dft.ROKS'
+    """    
+    
     implemented_properties = ['energy', 'forces']
 
     default_parameters = {'method': 'dft.RKS',
@@ -62,10 +71,27 @@ class PySCF(Calculator):
                           'multiplicity': 1,
                           'charge': 0,
                           'verbose': 0}
+    
+    def __init__(self, 
+                 restart : Optional[bool] = None,
+                 ignore_bad_restart: Optional[bool] = False, 
+                 label : Optional[str] = 'PySCF', 
+                 atoms : Optional[Atoms] = None, 
+                 command : Optional[str] = None, 
+                 directory : str = '.', 
+                 **kwargs) -> None:
+        
+        """Basic implementation as in the class Calculator.
 
-    def __init__(self, restart=None, ignore_bad_restart=False,
-                 label='PySCF', atoms=None, command=None, directory='.', 
-                 **kwargs):
+        Args:
+            restart (bool, optional): Prefix for restart file.  May contain a directory. Defaults to None: don't restart.
+            ignore_bad_restart (bool, optional): Deprecated and will stop working in the future. Defaults to False.
+            label (str, optional): _description_. Defaults to 'PySCF'.
+            atoms (Type[Atoms], optional): Atoms object to which the calculator will be attached. 
+                When restarting, atoms will get its positions and unit-cell updated from file. Defaults to None.
+            command (str, optional): Command used to start calculation. Defaults to None.
+            directory (str, optional): Working directory in which perform calculations. Defaults to '.'.
+        """    
         
         Calculator.__init__(self, restart=restart,
                             ignore_bad_restart=ignore_bad_restart, label=label,
@@ -77,23 +103,28 @@ class PySCF(Calculator):
     def set_pyscf(self):
         """This method sets up PySCF intrinsic attributes.
 
+        1). It converts self.parameters.name set by (sub)class Calculator into self.name, e.g., 
+        self.parameter.method => self.method
+        self.parameter.xc     => self.xc
+        self.parameter.basis  => self.basis
+                          ... => self.multiplicity 
+                          ... => self.charge
+                          ... => self.verbose
+
+        2) It also checks for any missing/mispelling input attributes. 
+
         Note: it can also be used to set specific environment variables. 
         """
 
         recognized_attributes = ['ignore_bad_restart', 'command', 'method', 
                                  'xc', 'basis', 'multiplicity', 'charge', 
                                  'verbose', 'kpts', 'nbands', 'smearing']
-        
-        # setting PySCF attributes
-        # these are => self.method
-        #           => self.xc
-        #           => self.basis
-        #           => self.multiplicity 
-        #           => self.charge
-        #           => self.verbose
+                
+        # self.parameters gathers all input options in a dictionary. It is defined in class Calculator(BaseCalculator); see ase/ase/calculators/calculator.py
         for key, value in self.parameters.items():
             # check attribute name
             if key in recognized_attributes:
+                # setting PySCF attributes => creating self.name from self.parameters.name 
                 setattr(self, key, value)
             else:
                 raise InputError('Attribute', key, 'not recognized. Please check input.')
@@ -126,26 +157,40 @@ class PySCF(Calculator):
                              'cannot be utilized. Please remove this '
                              'argument.')    
 
-    def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):
-        """This is the core method responsible for the actual calculation."""
+    def calculate(self, atoms: Optional[Atoms]=None, properties: List[str]=['energy'], system_changes: List[str]=all_changes) -> None:
+        """This is the core method responsible for the actual calculation.
+
+        Args:
+            atoms (Type[Atoms], optional): Atoms object to which the calculator is attached. Defaults to None.
+            properties (list[str], optional): List of what is needed to be calculated. Defaults to ['energy'].
+            system_changes (list[str], optional): List of what has changed since last calculation. 
+                Can be any combination of these six: 'positions', 'numbers', 'cell', 'pbc', 
+                'initial_charges' and 'initial_magmoms'. Defaults to all_changes.
+
+        Raises:
+            CalculatorSetupError: If a proper geometry is not provided.
+            CalculatorSetupError: If abinitio methods other than 
+            'scf.RHF', 'scf.UHF', 'scf.ROHF', 'dft.RKS', 'dft.UKS', and 'dft.ROKS' are selected.
+        """
 
         implemented_methods = ['scf.RHF', 'scf.UHF', 'scf.ROHF',
                                'dft.RKS', 'dft.UKS', 'dft.ROKS']
         
         from pyscf import gto, scf, dft
 
+        # setting up self.atoms attribute. This is extracted from the atoms object. 
         Calculator.calculate(self, atoms=atoms)
 
+        # checking that self.atoms has been properly initiated/updated
         if self.atoms is None:
             raise CalculatorSetupError('An Atoms object must be provided to '
                                        'perform a calculation.')
-        atoms = self.atoms
-
+    
         # the spin variable corresponds to 2S instead of 2S+1
         spin = self.multiplicity - 1
 
         # passing geometry and other definitions
-        molecule = gto.M(atom=ase_atoms_to_pyscf(atoms), basis=self.basis, charge=self.charge, spin=spin)
+        molecule = gto.M(atom=ase_atoms_to_pyscf(self.atoms), basis=self.basis, charge=self.charge, spin=spin)
 
         # checking wf input name => this is case sensitive
         if self.method in implemented_methods:
@@ -177,3 +222,18 @@ class PySCF(Calculator):
             totalforces.extend(forces)
             totalforces = np.array(totalforces)
             self.results['forces'] = totalforces
+
+if __name__ == '__main__':
+    
+    print(PySCF.__doc__)
+    #help(PySCF)
+
+    from ase import Atoms
+    from ase.build import molecule
+    from ase.units import Ha
+    
+    mol = molecule('H2')
+    mol.calc = PySCF(method='dft.RKS', xc='pbe', basis='sto-3g')
+
+    #print(mol.calc.parameters.method)
+    #print(mol.get_potential_energy()/Ha)
