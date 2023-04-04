@@ -41,15 +41,7 @@ def test_PySCF_energy_rohf():
     # now using the built-in molecule dataset to define the geometry 
     o2_molecule = molecule('O2')
     
-    # define the calculator
-    o2_molecule.calc = PySCF()
-
-    # as an alternative to #1, define PySCF wave function using its specific attributes  
-    o2_molecule.calc.method = 'scf.ROHF'
-    o2_molecule.calc.basis = 'sto-3g'
-    o2_molecule.calc.charge = 0 
-    o2_molecule.calc.multiplicity = 3
-    o2_molecule.calc.verbose = 0
+    o2_molecule.calc = PySCF(method='scf.ROHF', basis='sto-3g', charge=0, multiplicity=3, verbose=0)
     energy_Eh = o2_molecule.get_potential_energy() / Ha
 
     assert energy_Eh == pytest.approx(-147.630640704849, 1e-6)
