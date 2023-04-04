@@ -92,11 +92,11 @@ class PySCF(Calculator):
             directory (str, optional): Working directory in which perform calculations. Defaults to '.'.
         """    
         
-        # initializing (sub)class Calculator; see ase/ase/calculators/calculator.py.
-        Calculator.__init__(self, restart=restart,
-                            ignore_bad_restart=ignore_bad_restart, label=label,
-                            atoms=atoms, command=command, directory=directory, 
-                            **kwargs)
+        # initializing base class Calculator; see ase/ase/calculators/calculator.py.
+        super().__init__(restart=restart, 
+                         ignore_bad_restart=ignore_bad_restart, label=label,
+                         atoms=atoms, command=command, directory=directory, 
+                         **kwargs)
         """Transforms **kwargs into a dictionary with calculation parameters.
         
         Starting with (attr1=value1, attr2=value2, ...) it creates self.parameters['attr1']=value1, and so on.
@@ -185,8 +185,8 @@ class PySCF(Calculator):
         
         from pyscf import gto, scf, dft
 
-        # setting up self.atoms attribute. This is extracted from the atoms Atoms object. 
-        Calculator.calculate(self, atoms=atoms)
+        # setting up self.atoms attribute from base class Calculator.calculate. This is extracted from the atoms Atoms object. 
+        super().calculate(atoms=atoms)
 
         # checking that self.atoms has been properly initiated/updated
         if self.atoms is None:

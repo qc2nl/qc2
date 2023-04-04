@@ -85,8 +85,7 @@ def test_PySCF_with_wf_error():
     with pytest.raises(CalculatorSetupError) as excinfo:
 
         mol = Atoms()
-        mol.calc = PySCF()
-        mol.calc.method='mp.MP2'
+        mol.calc = PySCF(method='mp.MP2')
         energy = mol.get_potential_energy()
    
     assert 'Method not yet implemented' in str(excinfo.value)    
