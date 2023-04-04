@@ -77,7 +77,6 @@ class PySCF(Calculator):
                  command : Optional[str] = None, 
                  directory : str = '.', 
                  **kwargs) -> None:
-        
         """ASE-PySCF Class Constructor to initialize the object. 
         
         Note: Basic implementation based on the class Psi4(Calculator); see, e.g., ase/ase/calculators/psi4.py.
@@ -93,11 +92,15 @@ class PySCF(Calculator):
             directory (str, optional): Working directory in which perform calculations. Defaults to '.'.
         """    
         
-        # initiating (sub)class Calculator; see ase/ase/calculators/calculator.py.
+        # initializing (sub)class Calculator; see ase/ase/calculators/calculator.py.
         Calculator.__init__(self, restart=restart,
                             ignore_bad_restart=ignore_bad_restart, label=label,
                             atoms=atoms, command=command, directory=directory, 
                             **kwargs)
+        """Transforms **kwargs into a dictionary with calculation parameters.
+        
+        Starting with (attr1=value1, attr2=value2, ...) it creates self.parameters['attr1']=value1, and so on.
+        """        
         
         self.set_pyscf()
 
@@ -229,7 +232,7 @@ class PySCF(Calculator):
 
 if __name__ == '__main__':
     
-    print(PySCF.__doc__)
+    #print(PySCF.__doc__)
     #help(PySCF)
 
     from ase import Atoms
