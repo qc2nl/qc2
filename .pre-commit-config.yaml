@@ -1,0 +1,21 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: trailing-whitespace       # trims trailing whitespace
+    -   id: end-of-file-fixer         # ensures that a file is either empty, or ends with one newline.
+    -   id: check-yaml                # checks yaml files for parseable syntax.
+    -   id: check-added-large-files   # prevents giant files from being committed.
+        args: ["--maxkb=700"]         # reasonable size ? to be defined...
+    -   id: check-docstring-first     # checks a common error of defining a docstring after code.
+-   repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+    -   id: pydocstyle                # pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
+        args: ["--convention=google"]
+-   repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
+    hooks:
+    -   id: flake8                    # python linting tool that checks your Python codebase for errors, styling issues and complexity
