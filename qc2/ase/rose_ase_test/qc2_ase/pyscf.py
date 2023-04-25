@@ -202,7 +202,7 @@ class PySCF(Calculator):
         implemented_methods: List[str] = ['scf.RHF', 'scf.UHF', 'scf.ROHF',
                                           'dft.RKS', 'dft.UKS', 'dft.ROKS']
 
-        from pyscf import gto  # , scf, dft
+        from pyscf import gto, scf, dft
 
         # setting up self.atoms attribute from base class Calculator.calculate.
         # this is extracted from the atoms Atoms object.

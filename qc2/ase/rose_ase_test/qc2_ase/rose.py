@@ -23,7 +23,7 @@ class ROSE(FileIOCalculator):
         FileIOCalculator (FileIOCalculator): Base class for calculators
             that write/read input/output files.
     """
-    implemented_properties = ['orbitals']
+    #implemented_properties = ['orbitals']
     command = 'echo "Executing Rose...done"'  # => test
 
     default_parameters = {
@@ -86,11 +86,12 @@ class ROSE(FileIOCalculator):
         # test
         mol = self.parameters.rose_target
         print('H2O energy/Eh =', mol.get_potential_energy()/Ha)
-        print('H2O energy/Eh =', mol.calc.wf.mo_coeff)
+        print('H2O orbitals =', mol.calc.wf.mo_coeff)
 
         for fragment in self.parameters.rose_frags:
             print(fragment.symbols, 'energy/Eh =',
                   fragment.get_potential_energy()/Ha)
+            print(fragment.calc.wf.mo_coeff)
         print(" ")
 
     def execute(self):
