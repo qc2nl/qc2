@@ -36,6 +36,8 @@ frag2 = Atoms('H',
 # Rose-ASE calculator
 rose_calc = ROSE(rose_calc_type='atom_frag',
                  rose_target=mol,
-                 rose_frags=[frag1, frag2])
+                 rose_frags=[frag1, frag2],
+                 avas_frag=[0], nmo_avas=[3, 4, 5]
+                 )
 
 rose_calc.calculate()
