@@ -49,7 +49,7 @@ class ROSE(FileIOCalculator):
     default_parameters: RoseInputDataTypes = {
         'rose_target': None,
         'rose_frags': [],
-        'rose_calc_type': ['atom_frag', 'mol_frag'][1],
+        'rose_calc_type': ['atom_frag', 'mol_frag'][0],
         'calculate_mo': True,
         'uncontract': True,
         'version': ['Stndrd_2013', 'Simple_2013', 'Simple_2014'][0],
@@ -83,8 +83,8 @@ class ROSE(FileIOCalculator):
             it creates self.parameters['attr1']=value1, and so on.
         """
 
-        print(self.parameters)
-        print(self.parameters.rose_target.calc.parameters.method)
+        #print(self.parameters)
+        #print(self.parameters.rose_target.calc.parameters.method)
         # print(self.parameters.rose_target.calc)
         # print(self.parameters.rose_frags[0].calc)
         # print(self.parameters.rose_frags[1].calc)
@@ -126,13 +126,3 @@ class ROSE(FileIOCalculator):
         # 2) Store IAOs & IBOs.
         # 3) Execute avas.x, if required.
         # 4) Post-HF calculations, if required.
-
-    # def read_results(self):
-    #    """_summary_"""
-    #    #
-    #    # TODO
-    #    #
-    #    # 1) Print SCF and/or post-HF energies
-    #    self.results['energy'] = 1.0
-    #    #print(self.results)
-    #    print("Reading/Printing results...done")

@@ -17,9 +17,11 @@ def write_input_genibo_avas(input_data: Dict[str, Any]) -> None:
     restricted = input_data.restricted
     test = input_data.test
     avas_frag = input_data.avas_frag
-    mo_calculator = input_data.rose_target.calc
+    mo_calculator = input_data.rose_target.calc.label.lower()
     natom = len(input_data.rose_target.symbols)
     nmo_avas = input_data.nmo_avas
+
+    print(mo_calculator)
 
     # creating INPUT_GENIBO file
     with open("INPUT_GENIBO", "w") as f:
