@@ -30,6 +30,20 @@ class RoseInterfaceMOCalculators(Enum):
     GAUSSIAN = 'gaussian'
 
 
+class RoseIFOVersion(Enum):
+    """Enumerator class defining the 'recipe' to obtain IFOs."""
+    STNDRD_2013 = "Stndrd_2013"
+    SIMPLE_2013 = "Simple_2013"
+    SIMPLE_2014 = "Simple_2014"
+
+
+class RoseILMOExponent(Enum):
+    """Enumerator class defining the exponent used in the model to obtain ILMOs."""
+    TWO = 2
+    THREE = 3
+    FOUR = 4
+
+
 @dataclass
 class RoseInputDataClass:
     """A dataclass representing input options for Rose."""
@@ -45,8 +59,8 @@ class RoseInputDataClass:
     relativistic: bool = False
 
     # Rose intrinsic options => expected to be fixed at the default values?
-    version: str = ['Stndrd_2013', 'Simple_2013', 'Simple_2014'][0]
-    exponent: int = [2, 3, 4][2]
+    version: RoseIFOVersion = RoseIFOVersion.STNDRD_2013.value
+    exponent: RoseILMOExponent = RoseILMOExponent.FOUR.value
     spherical: bool = False
     uncontract: bool = True
     test: bool = True
@@ -87,37 +101,40 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         Give an example here on how to use....
         """
         # initializing base classes
-        RoseInputDataClass.__init__(self, *args, **kwargs)
-        FileIOCalculator.__init__(self, *args, **kwargs)
+        # RoseInputDataClass.__init__(self, *args, **kwargs)
+        # FileIOCalculator.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+
+        print()
 
     def calculate(self) -> None:
         """Executes Rose workflow."""
-        self.get_input_genibo_avas()
-        self.get_input_xyz()
+        self.generate_input_genibo_avas()
+        self.generate_input_xyz()
 
         if self.calculate_mo:
-            self.get_mo_files()
+            self.generate_mo_files()
 
         self.run_rose()
 
         if self.save:
             self.save_ibos()
 
-        if len(self.avas_frag) != 0:
+        if self.avas_frag:
             self.run_avas()
 
         if self.run_postscf:
             self.run_post_hf()
 
-    def get_input_genibo_avas(self) -> None:
+    def generate_input_genibo_avas(self) -> None:
         """Generates INPUT_GENIBO & INPUT_AVAS fortran files for Rose."""
-        write_input_genibo_avas(self)
+        write_fortran_genibo_avas_input(self)
 
-    def get_input_xyz(self) -> None:
+    def generate_input_xyz(self) -> None:
         """Generates Molecule and Fragment xyz files for Rose."""
         print("Creating Molecule and Frags inputs....done")
 
-    def get_mo_files(self) -> None:
+    def generate_mo_files(self) -> None:
         """Generates atomic and molecular orbitals files for Rose."""
         print('Calculating MO files....done')
 
@@ -138,7 +155,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         print('CASSCF?....done')
 
 
-def write_input_genibo_avas(input_data: RoseInputDataClass) -> None:
+def write_fortran_genibo_avas_input(input_data: RoseInputDataClass) -> None:
     """Summary.
 
     Args:
@@ -193,7 +210,7 @@ def write_input_genibo_avas(input_data: RoseInputDataClass) -> None:
             f.write("0 # restricted\n")
         f.write("1 # spatial orbs\n")
         f.write(molecule_mo_calculator + " # MO file for the full molecule\n")
-        f.write(fragments_mo_calculator + " # MO file for the fragments\n")
+        #f.write(fragments_mo_calculator + " # MO file for the fragments\n")
         f.write(str(len(nmo_avas)) + " # number of valence MOs in B2\n")
         f.writelines("{:3d}".format(item) for item in nmo_avas)
 
