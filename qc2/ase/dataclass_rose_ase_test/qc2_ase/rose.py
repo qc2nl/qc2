@@ -94,6 +94,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
     ignore_bad_restart_file: bool = FileIOCalculator._deprecated
     label: str = 'rose'
     atoms: Atoms = None
+    _directory = '.'
 
     def __init__(self, *args, **kwargs) -> None:
         """ASE-Rose Class Constructor to initialize the object.
@@ -107,8 +108,9 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
         # print()
 
-    def calculate(self) -> None:
+    def calculate(self, *args, **kwargs) -> None:
         """Executes Rose workflow."""
+        super().calculate(*args, **kwargs)
         self.generate_input_genibo_avas()
         self.generate_input_xyz()
 
