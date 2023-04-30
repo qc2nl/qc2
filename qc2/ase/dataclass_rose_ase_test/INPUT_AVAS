@@ -1,7 +1,0 @@
-3 # natoms
-0 # charge
-1 # restricted
-1 # spatial orbs
-pyscf # MO file for the full molecule
-3 # number of valence MOs in B2
-  3  4  5

@@ -38,7 +38,7 @@ class RoseIFOVersion(Enum):
 
 
 class RoseILMOExponent(Enum):
-    """Enumerator class defining the exponent used in the model to obtain ILMOs."""
+    """Enumerator class defining the exponent used to obtain ILMOs."""
     TWO = 2
     THREE = 3
     FOUR = 4
@@ -105,7 +105,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         # FileIOCalculator.__init__(self, *args, **kwargs)
         super().__init__(*args, **kwargs)
 
-        print()
+        # print()
 
     def calculate(self) -> None:
         """Executes Rose workflow."""
@@ -128,7 +128,10 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
     def generate_input_genibo_avas(self) -> None:
         """Generates INPUT_GENIBO & INPUT_AVAS fortran files for Rose."""
-        write_fortran_genibo_avas_input(self)
+        genibo_filename = 'INPUT_GENIBO'
+        avas_filename = 'INPUT_AVAS'
+
+        write_fortran_genibo_avas_input(self, genibo_filename, avas_filename)
 
     def generate_input_xyz(self) -> None:
         """Generates Molecule and Fragment xyz files for Rose."""
@@ -155,11 +158,19 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         print('CASSCF?....done')
 
 
-def write_fortran_genibo_avas_input(input_data: RoseInputDataClass) -> None:
-    """Summary.
+def write_fortran_genibo_avas_input(
+        input_data: RoseInputDataClass,
+        genibo_filename: str = 'INPUT_GENIBO',
+        avas_filename: str = 'INPUT_AVAS') -> None:
+    """Writes Rose fortran inputs.
 
     Args:
-        input_data (RoseInputDataClass): description
+        input_data (RoseInputDataClass): dataclass defining input
+            options for Rose.
+        genibo_filename (str): file to be generated containing
+            Rose input options.
+        avas_filename (str): name of the file to be generated with
+            AVAS input options.
     """
     print("Creating genibo and avas input....done")
 
@@ -181,37 +192,42 @@ def write_fortran_genibo_avas_input(input_data: RoseInputDataClass) -> None:
     nmo_avas = input_data.nmo_avas
 
     # creating INPUT_GENIBO file
-    with open("INPUT_GENIBO", "w") as f:
+    with open(genibo_filename, "w") as f:
         f.write("**ROSE\n")
         f.write(".VERSION\n")
-        f.write(version+"\n")
+        f.write(version + "\n")
         f.write(".CHARGE\n")
         f.write(str(molecule_charge)+"\n")
         f.write(".EXPONENT\n")
-        f.write(str(exponent)+"\n")
+        f.write(str(exponent) + "\n")
         if not restricted:
             f.write(".UNRESTRICTED\n")
         f.write(".FILE_FORMAT\n")
-        f.write(molecule_mo_calculator+"\n")
-        if test == 1:
+        f.write(molecule_mo_calculator + "\n")
+        if test:
             f.write(".TEST  \n")
-        f.write(".AVAS  \n")
-        f.write(str(len(avas_frag))+"\n")
+        if avas_frag:
+            f.write(".AVAS  \n")
+        f.write(str(len(avas_frag)) + "\n")
         f.writelines("{:3d}".format(item) for item in avas_frag)
         f.write("\n*END OF INPUT\n")
 
     # creating INPUT_AVAS file
-    with open("INPUT_AVAS", "w") as f:
-        f.write(str(molecule_natom) + " # natoms\n")
-        f.write(str(molecule_charge) + " # charge\n")
-        if restricted:
-            f.write("1 # restricted\n")
-        else:
-            f.write("0 # restricted\n")
-        f.write("1 # spatial orbs\n")
-        f.write(molecule_mo_calculator + " # MO file for the full molecule\n")
-        #f.write(fragments_mo_calculator + " # MO file for the fragments\n")
-        f.write(str(len(nmo_avas)) + " # number of valence MOs in B2\n")
-        f.writelines("{:3d}".format(item) for item in nmo_avas)
+    if avas_frag:
+        with open(avas_filename, "w") as f:
+            f.write(str(molecule_natom) + " # natoms\n")
+            f.write(str(molecule_charge) + " # charge\n")
+            if restricted:
+                f.write("1 # restricted\n")
+            else:
+                f.write("0 # unrestricted\n")
+            f.write("1 # spatial orbs\n")
+            f.write(str(molecule_mo_calculator)
+                    + " # MO file for the full molecule\n")
+            f.write(" ".join(map(str, fragments_mo_calculator))
+                    + " # MO file for the fragments\n")
+            f.write(str(len(nmo_avas))
+                    + " # number of valence MOs in B2\n")
+            f.writelines("{:3d}".format(item) for item in nmo_avas)
 
     # print(molecule_natom)
