@@ -1,8 +1,11 @@
-"""Rose input test."""
+"""Rose water input test."""
 from ase import Atoms
+from ase.units import Ha
 from ase.build import molecule
-# from ase.units import Ha
-# import rose calculator module
+
+import sys
+sys.path.append('..')
+
 from qc2.ase.rose import Rose
 from qc2.ase.pyscf import PySCF
 
@@ -29,9 +32,9 @@ frag2 = Atoms('H',
                                )
               )
 
-# print(mol.get_potential_energy() / Ha)
-# print(frag1.get_potential_energy() / Ha)
-# print(frag2.get_potential_energy() / Ha)
+print(mol.get_potential_energy() / Ha)
+print(frag1.get_potential_energy() / Ha)
+print(frag2.get_potential_energy() / Ha)
 
 # Rose-ASE calculator
 rose_calc = Rose(rose_calc_type='atom_frag',

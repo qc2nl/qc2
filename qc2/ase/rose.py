@@ -57,6 +57,7 @@ class RoseInputDataClass:
     restricted: bool = True
     openshell: bool = False
     relativistic: bool = False
+    include_core: bool = False
 
     # Rose intrinsic options => expected to be fixed at the default values?
     version: RoseIFOVersion = RoseIFOVersion.STNDRD_2013.value
@@ -69,6 +70,10 @@ class RoseInputDataClass:
     save: bool = True
     avas_frag: Optional[List[int]] = field(default_factory=list)
     nmo_avas: Optional[List[int]] = field(default_factory=list)
+    additional_virtuals_cutoff: float = 2.0
+    frag_threshold: float = 10.0
+    frag_valence: Optional[List[List[int]]] = field(default_factory=list)
+    frag_core: Optional[List[List[int]]] = field(default_factory=list)
 
     def __post_init__(self):
         """This method is called after the instance is initialized."""
@@ -130,10 +135,9 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
     def generate_input_genibo_avas(self) -> None:
         """Generates INPUT_GENIBO & INPUT_AVAS fortran files for Rose."""
-        genibo_filename = 'INPUT_GENIBO'
-        avas_filename = 'INPUT_AVAS'
-
-        write_fortran_genibo_avas_input(self, genibo_filename, avas_filename)
+        write_fortran_genibo_avas_input(self,
+                                        genibo_filename="INPUT_GENIBO",
+                                        avas_filename="INPUT_AVAS")
 
     def generate_input_xyz(self) -> None:
         """Generates Molecule and Fragment xyz files for Rose."""
@@ -162,8 +166,8 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
 def write_fortran_genibo_avas_input(
         input_data: RoseInputDataClass,
-        genibo_filename: str = 'INPUT_GENIBO',
-        avas_filename: str = 'INPUT_AVAS') -> None:
+        genibo_filename: str = "INPUT_GENIBO",
+        avas_filename: str = "INPUT_AVAS") -> None:
     """Writes Rose fortran inputs.
 
     Args:
@@ -175,6 +179,8 @@ def write_fortran_genibo_avas_input(
             AVAS input options.
     """
     print("Creating genibo and avas input....done")
+
+    rose_calc_type = input_data.rose_calc_type
 
     molecule_charge = input_data.rose_target.calc.parameters.charge
     molecule_mo_calculator = input_data.rose_target.calc.name.lower()
@@ -199,7 +205,7 @@ def write_fortran_genibo_avas_input(
         f.write(".VERSION\n")
         f.write(version + "\n")
         f.write(".CHARGE\n")
-        f.write(str(molecule_charge)+"\n")
+        f.write(str(molecule_charge) + "\n")
         f.write(".EXPONENT\n")
         f.write(str(exponent) + "\n")
         if not restricted:
@@ -207,9 +213,11 @@ def write_fortran_genibo_avas_input(
         f.write(".FILE_FORMAT\n")
         f.write(molecule_mo_calculator + "\n")
         if test:
-            f.write(".TEST  \n")
+            f.write(".TEST\n")
+        if (rose_calc_type == RoseCalcType.MOL_FRAG.value):
+            f.write(".NFRAGMENTS\n")
         if avas_frag:
-            f.write(".AVAS  \n")
+            f.write(".AVAS\n")
         f.write(str(len(avas_frag)) + "\n")
         f.writelines("{:3d}".format(item) for item in avas_frag)
         f.write("\n*END OF INPUT\n")
