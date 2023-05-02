@@ -13,6 +13,7 @@ from enum import Enum
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
 from typing import Optional, List, Union, Sequence
+from ase.io import write
 
 
 class RoseCalcType(Enum):
@@ -136,24 +137,114 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         if self.avas_frag:
             self.run_avas()
 
-        if self.run_postscf:
-            self.run_post_hf()
+        # if self.run_postscf:
+        #     self.run_post_hf()
 
     def generate_input_genibo(self) -> None:
-        """Generates fortran input file for Rose."""
-        write_fortran_genibo_input(self,
-                                   genibo_filename="INPUT_GENIBO"
-                                   )
+        """Generates fortran input file for Rose.
+
+        This method generates a file named "INPUT_GENIBO"
+            containing Rose input options.
+        """
+        with open("INPUT_GENIBO", "w") as f:
+            f.write("**ROSE\n")
+            f.write(".VERSION\n")
+            f.write(self.version + "\n")
+            f.write(".CHARGE\n")
+            f.write(str(self.rose_target.calc
+                        .parameters.charge) + "\n")
+            f.write(".EXPONENT\n")
+            f.write(str(self.exponent) + "\n")
+            f.write(".FILE_FORMAT\n")
+            f.write(self.rose_target.calc
+                    .name.lower() + "\n")
+            if self.test:
+                f.write(".TEST\n")
+            if not self.restricted:
+                f.write(".UNRESTRICTED\n")
+            if self.relativistic:
+                f.write(".SPINORS\n")
+            if self.include_core:
+                f.write(".INCLUDE_CORE\n")
+            if self.rose_calc_type == RoseCalcType.MOL_FRAG.value:
+                f.write(".NFRAGMENTS\n")
+                f.write(str(len(self.rose_frags)) + "\n")
+                if self.additional_virtuals_cutoff:
+                    f.write(".ADDITIONAL_VIRTUALS_CUTOFF\n")
+                    f.write(str(self.additional_virtuals_cutoff) + "\n")
+                if self.frag_threshold:
+                    f.write(".FRAG_THRESHOLD\n")
+                    f.write(str(self.frag_threshold) + "\n")
+                if self.frag_valence:
+                    for item in self.frag_valence:
+                        f.write(".FRAG_VALENCE\n")
+                        f.write(str(item[0])+"\n")
+                        f.write(str(item[1])+"\n")
+                if self.frag_core:
+                    for item in self.frag_core:
+                        f.write(".FRAG_CORE\n")
+                        f.write(str(item[0])+"\n")
+                        f.write(str(item[1])+"\n")
+                if self.frag_bias:
+                    for item in self.frag_bias:
+                        f.write(".FRAG_BIAS\n")
+                        f.write(str(item[0])+"\n")
+                        f.write(str(item[1])+"\n")
+            if self.avas_frag:
+                f.write(".AVAS\n")
+                f.write(str(len(self.avas_frag)) + "\n")
+                f.writelines("{:3d}".format(item) for item in self.avas_frag)
+            f.write("\n*END OF INPUT\n")
 
     def generate_input_avas(self) -> None:
-        """Generates fortran AVAS input for Rose."""
-        write_fortran_avas_input(self,
-                                 avas_filename="INPUT_AVAS"
-                                 )
+        """Generates fortran AVAS input for Rose.
+
+        This method generates a file named "INPUT_AVAS"
+            containing input options to be used by Rose.
+        """
+        fragments_mo_calculator = []
+        for n_frag in range(len(self.rose_frags)):
+            frag_mo_program = self.rose_frags[n_frag].calc.name.lower()
+            fragments_mo_calculator.append(frag_mo_program)
+
+        with open("INPUT_AVAS", "w") as f:
+            f.write(str(len(self.rose_target.symbols))
+                    + " # natoms\n")
+            f.write(str(self.rose_target.calc
+                        .parameters.charge)
+                        + " # charge\n")
+            if self.restricted:
+                f.write("1 # restricted\n")
+            else:
+                f.write("0 # unrestricted\n")
+            f.write("1 # spatial orbs\n")
+            f.write(str(self.rose_target.calc
+                    .name.lower())
+                    + " # MO file for the full molecule\n")
+            f.write(" ".join(map(str, fragments_mo_calculator))
+                    + " # MO file for the fragments\n")
+            f.write(str(len(self.nmo_avas))
+                    + " # number of valence MOs in B2\n")
+            f.writelines("{:3d}".format(item) for item in self.nmo_avas)
 
     def generate_mol_frags_xyz(self) -> None:
         """Generates Molecule and Fragment xyz files for Rose."""
-        print("Creating Molecule and Frags inputs....done")
+        # generate supramolecule xyz file using ASE write()
+        write("MOLECULE.XYZ", self.rose_target)
+
+        # generate fragments xyz files
+        for n_frag in range(len(self.rose_frags)):
+
+            if self.rose_calc_type == RoseCalcType.ATOM_FRAG.value:
+                # defining atomic fragment's Z number
+                n_frag_Z = self.rose_frags[n_frag].numbers[0]
+
+                frag_file_name = "{:03d}.xyz".format(n_frag_Z)
+                write(frag_file_name, self.rose_frags[n_frag])
+
+            else:
+                frag_file_name = "frag{:d}.xyz".format(n_frag)
+                write(frag_file_name, self.rose_frags[n_frag])
 
     def generate_mo_files(self) -> None:
         """Generates atomic and molecular orbitals files for Rose."""
@@ -175,126 +266,48 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         """Performs CASCI and/or CASSCF calculations."""
         print('CASSCF?....done')
 
-
-def write_fortran_genibo_input(
-        input_data: RoseInputDataClass,
-        genibo_filename: str = "INPUT_GENIBO"
-        ) -> None:
-    """Writes Rose fortran input.
-
-    Args:
-        input_data (RoseInputDataClass): dataclass defining input
-            options for Rose.
-        genibo_filename (str): file to be generated containing
-            Rose input options.
-    """
-    print("Creating genibo input....done")
-
-    rose_calc_type = input_data.rose_calc_type
-    nfragments = len(input_data.rose_frags)
-    include_core = input_data.include_core
-    additional_virtuals_cutoff = input_data.additional_virtuals_cutoff
-    frag_threshold = input_data.frag_threshold
-    frag_valence = input_data.frag_valence
-    frag_core = input_data.frag_core
-    frag_bias = input_data.frag_bias
-
-    molecule_charge = input_data.rose_target.calc.parameters.charge
-    molecule_mo_calculator = input_data.rose_target.calc.name.lower()
-
-    version = input_data.version
-    exponent = input_data.exponent
-    restricted = input_data.restricted
-    test = input_data.test
-
-    avas_frag = input_data.avas_frag
-
-    # creating INPUT_GENIBO file
-    with open(genibo_filename, "w") as f:
-        f.write("**ROSE\n")
-        f.write(".VERSION\n")
-        f.write(version + "\n")
-        f.write(".CHARGE\n")
-        f.write(str(molecule_charge) + "\n")
-        f.write(".EXPONENT\n")
-        f.write(str(exponent) + "\n")
-        f.write(".FILE_FORMAT\n")
-        f.write(molecule_mo_calculator + "\n")
-        if test:
-            f.write(".TEST\n")
-        if not restricted:
-            f.write(".UNRESTRICTED\n")
-        if input_data.relativistic:
-            f.write(".SPINORS\n")
-        if include_core:
-            f.write(".INCLUDE_CORE\n")
-        if rose_calc_type == RoseCalcType.MOL_FRAG.value:
-            f.write(".NFRAGMENTS\n")
-            f.write(str(nfragments) + "\n")
-            if additional_virtuals_cutoff:
-                f.write(".ADDITIONAL_VIRTUALS_CUTOFF\n")
-                f.write(str(additional_virtuals_cutoff) + "\n")
-            if frag_threshold:
-                f.write(".FRAG_THRESHOLD\n")
-                f.write(str(frag_threshold) + "\n")
-            if frag_valence:
-                for item in frag_valence:
-                    f.write(".FRAG_VALENCE\n")
-                    f.write(str(item[0])+"\n")
-                    f.write(str(item[1])+"\n")
-            if frag_core:
-                for item in frag_core:
-                    f.write(".FRAG_CORE\n")
-                    f.write(str(item[0])+"\n")
-                    f.write(str(item[1])+"\n")
-            if frag_bias:
-                for item in frag_bias:
-                    f.write(".FRAG_BIAS\n")
-                    f.write(str(item[0])+"\n")
-                    f.write(str(item[1])+"\n")
-        if avas_frag:
-            f.write(".AVAS\n")
-            f.write(str(len(avas_frag)) + "\n")
-            f.writelines("{:3d}".format(item) for item in avas_frag)
-        f.write("\n*END OF INPUT\n")
-
-
-def write_fortran_avas_input(
-        input_data: RoseInputDataClass,
-        avas_filename: str = "INPUT_AVAS"
-        ) -> None:
-    """Writes Rose AVAS fortran input.
+def name_molecule(geometry,
+                  spin,
+                  charge,
+                  description):
+    """Function to name molecules.
 
     Args:
-        input_data (RoseInputDataClass): dataclass defining input
-            options for Rose.
-        avas_filename (str): name of the file to be generated with
-            AVAS input options.
+        geometry: A list of tuples giving the coordinates of each atom.
+            example is [('H', (0, 0, 0)), ('H', (0, 0, 0.7414))].
+            Distances in angstrom. Use atomic symbols to specify atoms.
+        spin: An integer giving the spin 2S (difference between alpha and beta electrons)
+        charge: An integer giving the total molecular charge.
+        description: A string giving a description. As an example,
+            for dimers a likely description is the bond length (e.g. 0.7414).
+
+    Returns:
+        name: A string giving the name of the instance.
     """
-    print("Creating avas input....done")
+    if not isinstance(geometry, basestring):
+        # Get sorted atom vector.
+        atoms = [item[0] for item in geometry]
+        atom_charge_info = [(atom, atoms.count(atom)) for atom in set(atoms)]
+        sorted_info = sorted(atom_charge_info,
+                             key=lambda atom: periodic_hash_table[atom[0]])
 
-    fragments_mo_calculator = []
-    for n in range(len(input_data.rose_frags)):
-        frag_mo_program = input_data.rose_frags[n].calc.name.lower()
-        fragments_mo_calculator.append(frag_mo_program)
+        # Name molecule.
+        name = '{}{}'.format(sorted_info[0][0], sorted_info[0][1])
+        for info in sorted_info[1::]:
+            name += '-{}{}'.format(info[0], info[1])
+    else:
+        name = geometry
 
-    molecule_natom = len(input_data.rose_target.symbols)
-    nmo_avas = input_data.nmo_avas
+    # Ass spin
+    name += '_{}'.format(spin)
 
-    # creating INPUT_AVAS file
-    #if avas_frag:
-    #    with open(avas_filename, "w") as f:
-    #        f.write(str(molecule_natom) + " # natoms\n")
-    #        f.write(str(molecule_charge) + " # charge\n")
-    #        if restricted:
-    #            f.write("1 # restricted\n")
-    #        else:
-    #            f.write("0 # unrestricted\n")
-    #        f.write("1 # spatial orbs\n")
-    #        f.write(str(molecule_mo_calculator)
-    #                + " # MO file for the full molecule\n")
-    #        f.write(" ".join(map(str, fragments_mo_calculator))
-    #                + " # MO file for the fragments\n")
-    #        f.write(str(len(nmo_avas))
-    #                + " # number of valence MOs in B2\n")
-    #        f.writelines("{:3d}".format(item) for item in nmo_avas)
+    # Add charge.
+    if charge > 0:
+        name += '_{}+'.format(charge)
+    elif charge < 0:
+        name += '_{}-'.format(charge)
+
+    # Optionally add descriptive tag and return.
+    if description:
+        name += '_{}'.format(description)
+    return name
