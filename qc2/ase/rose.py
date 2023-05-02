@@ -55,25 +55,26 @@ class RoseInputDataClass:
 
     run_postscf: bool = False
     restricted: bool = True
-    openshell: bool = False
+    # openshell: bool = False => made inactive
     relativistic: bool = False
     include_core: bool = False
 
     # Rose intrinsic options => expected to be fixed at the default values?
     version: RoseIFOVersion = RoseIFOVersion.STNDRD_2013.value
-    exponent: RoseILMOExponent = RoseILMOExponent.FOUR.value
+    exponent: RoseILMOExponent = RoseILMOExponent.TWO.value
     spherical: bool = False
     uncontract: bool = True
-    test: bool = True
+    test: bool = False
     wf_restart: bool = True
     get_oeint: bool = True
     save: bool = True
     avas_frag: Optional[List[int]] = field(default_factory=list)
     nmo_avas: Optional[List[int]] = field(default_factory=list)
-    additional_virtuals_cutoff: float = 2.0
-    frag_threshold: float = 10.0
+    additional_virtuals_cutoff: float = 2.0  # Eh
+    frag_threshold: float = 10.0  # Eh
     frag_valence: Optional[List[List[int]]] = field(default_factory=list)
     frag_core: Optional[List[List[int]]] = field(default_factory=list)
+    frag_bias: Optional[List[List[int]]] = field(default_factory=list)
 
     def __post_init__(self):
         """This method is called after the instance is initialized."""
@@ -111,13 +112,18 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         # FileIOCalculator.__init__(self, *args, **kwargs)
         super().__init__(*args, **kwargs)
 
-        # print()
+        # print(self.parameters)
 
     def calculate(self, *args, **kwargs) -> None:
         """Executes Rose workflow."""
         super().calculate(*args, **kwargs)
-        self.generate_input_genibo_avas()
-        self.generate_input_xyz()
+
+        self.generate_input_genibo()
+
+        if self.avas_frag:
+            self.generate_input_avas()
+
+        self.generate_mol_frags_xyz()
 
         if self.calculate_mo:
             self.generate_mo_files()
@@ -133,13 +139,19 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         if self.run_postscf:
             self.run_post_hf()
 
-    def generate_input_genibo_avas(self) -> None:
-        """Generates INPUT_GENIBO & INPUT_AVAS fortran files for Rose."""
-        write_fortran_genibo_avas_input(self,
-                                        genibo_filename="INPUT_GENIBO",
-                                        avas_filename="INPUT_AVAS")
+    def generate_input_genibo(self) -> None:
+        """Generates fortran input file for Rose."""
+        write_fortran_genibo_input(self,
+                                   genibo_filename="INPUT_GENIBO"
+                                   )
 
-    def generate_input_xyz(self) -> None:
+    def generate_input_avas(self) -> None:
+        """Generates fortran AVAS input for Rose."""
+        write_fortran_avas_input(self,
+                                 avas_filename="INPUT_AVAS"
+                                 )
+
+    def generate_mol_frags_xyz(self) -> None:
         """Generates Molecule and Fragment xyz files for Rose."""
         print("Creating Molecule and Frags inputs....done")
 
@@ -164,32 +176,31 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         print('CASSCF?....done')
 
 
-def write_fortran_genibo_avas_input(
+def write_fortran_genibo_input(
         input_data: RoseInputDataClass,
-        genibo_filename: str = "INPUT_GENIBO",
-        avas_filename: str = "INPUT_AVAS") -> None:
-    """Writes Rose fortran inputs.
+        genibo_filename: str = "INPUT_GENIBO"
+        ) -> None:
+    """Writes Rose fortran input.
 
     Args:
         input_data (RoseInputDataClass): dataclass defining input
             options for Rose.
         genibo_filename (str): file to be generated containing
             Rose input options.
-        avas_filename (str): name of the file to be generated with
-            AVAS input options.
     """
-    print("Creating genibo and avas input....done")
+    print("Creating genibo input....done")
 
     rose_calc_type = input_data.rose_calc_type
+    nfragments = len(input_data.rose_frags)
+    include_core = input_data.include_core
+    additional_virtuals_cutoff = input_data.additional_virtuals_cutoff
+    frag_threshold = input_data.frag_threshold
+    frag_valence = input_data.frag_valence
+    frag_core = input_data.frag_core
+    frag_bias = input_data.frag_bias
 
     molecule_charge = input_data.rose_target.calc.parameters.charge
     molecule_mo_calculator = input_data.rose_target.calc.name.lower()
-    molecule_natom = len(input_data.rose_target.symbols)
-
-    fragments_mo_calculator = []
-    for n in range(len(input_data.rose_frags)):
-        frag_mo_program = input_data.rose_frags[n].calc.name.lower()
-        fragments_mo_calculator.append(frag_mo_program)
 
     version = input_data.version
     exponent = input_data.exponent
@@ -197,7 +208,6 @@ def write_fortran_genibo_avas_input(
     test = input_data.test
 
     avas_frag = input_data.avas_frag
-    nmo_avas = input_data.nmo_avas
 
     # creating INPUT_GENIBO file
     with open(genibo_filename, "w") as f:
@@ -208,36 +218,83 @@ def write_fortran_genibo_avas_input(
         f.write(str(molecule_charge) + "\n")
         f.write(".EXPONENT\n")
         f.write(str(exponent) + "\n")
-        if not restricted:
-            f.write(".UNRESTRICTED\n")
         f.write(".FILE_FORMAT\n")
         f.write(molecule_mo_calculator + "\n")
         if test:
             f.write(".TEST\n")
-        if (rose_calc_type == RoseCalcType.MOL_FRAG.value):
+        if not restricted:
+            f.write(".UNRESTRICTED\n")
+        if input_data.relativistic:
+            f.write(".SPINORS\n")
+        if include_core:
+            f.write(".INCLUDE_CORE\n")
+        if rose_calc_type == RoseCalcType.MOL_FRAG.value:
             f.write(".NFRAGMENTS\n")
+            f.write(str(nfragments) + "\n")
+            if additional_virtuals_cutoff:
+                f.write(".ADDITIONAL_VIRTUALS_CUTOFF\n")
+                f.write(str(additional_virtuals_cutoff) + "\n")
+            if frag_threshold:
+                f.write(".FRAG_THRESHOLD\n")
+                f.write(str(frag_threshold) + "\n")
+            if frag_valence:
+                for item in frag_valence:
+                    f.write(".FRAG_VALENCE\n")
+                    f.write(str(item[0])+"\n")
+                    f.write(str(item[1])+"\n")
+            if frag_core:
+                for item in frag_core:
+                    f.write(".FRAG_CORE\n")
+                    f.write(str(item[0])+"\n")
+                    f.write(str(item[1])+"\n")
+            if frag_bias:
+                for item in frag_bias:
+                    f.write(".FRAG_BIAS\n")
+                    f.write(str(item[0])+"\n")
+                    f.write(str(item[1])+"\n")
         if avas_frag:
             f.write(".AVAS\n")
-        f.write(str(len(avas_frag)) + "\n")
-        f.writelines("{:3d}".format(item) for item in avas_frag)
+            f.write(str(len(avas_frag)) + "\n")
+            f.writelines("{:3d}".format(item) for item in avas_frag)
         f.write("\n*END OF INPUT\n")
 
-    # creating INPUT_AVAS file
-    if avas_frag:
-        with open(avas_filename, "w") as f:
-            f.write(str(molecule_natom) + " # natoms\n")
-            f.write(str(molecule_charge) + " # charge\n")
-            if restricted:
-                f.write("1 # restricted\n")
-            else:
-                f.write("0 # unrestricted\n")
-            f.write("1 # spatial orbs\n")
-            f.write(str(molecule_mo_calculator)
-                    + " # MO file for the full molecule\n")
-            f.write(" ".join(map(str, fragments_mo_calculator))
-                    + " # MO file for the fragments\n")
-            f.write(str(len(nmo_avas))
-                    + " # number of valence MOs in B2\n")
-            f.writelines("{:3d}".format(item) for item in nmo_avas)
 
-    # print(molecule_natom)
+def write_fortran_avas_input(
+        input_data: RoseInputDataClass,
+        avas_filename: str = "INPUT_AVAS"
+        ) -> None:
+    """Writes Rose AVAS fortran input.
+
+    Args:
+        input_data (RoseInputDataClass): dataclass defining input
+            options for Rose.
+        avas_filename (str): name of the file to be generated with
+            AVAS input options.
+    """
+    print("Creating avas input....done")
+
+    fragments_mo_calculator = []
+    for n in range(len(input_data.rose_frags)):
+        frag_mo_program = input_data.rose_frags[n].calc.name.lower()
+        fragments_mo_calculator.append(frag_mo_program)
+
+    molecule_natom = len(input_data.rose_target.symbols)
+    nmo_avas = input_data.nmo_avas
+
+    # creating INPUT_AVAS file
+    #if avas_frag:
+    #    with open(avas_filename, "w") as f:
+    #        f.write(str(molecule_natom) + " # natoms\n")
+    #        f.write(str(molecule_charge) + " # charge\n")
+    #        if restricted:
+    #            f.write("1 # restricted\n")
+    #        else:
+    #            f.write("0 # unrestricted\n")
+    #        f.write("1 # spatial orbs\n")
+    #        f.write(str(molecule_mo_calculator)
+    #                + " # MO file for the full molecule\n")
+    #        f.write(" ".join(map(str, fragments_mo_calculator))
+    #                + " # MO file for the fragments\n")
+    #        f.write(str(len(nmo_avas))
+    #                + " # number of valence MOs in B2\n")
+    #        f.writelines("{:3d}".format(item) for item in nmo_avas)
