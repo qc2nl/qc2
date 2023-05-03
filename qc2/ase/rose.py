@@ -10,10 +10,13 @@ Note: see also https://pubs.acs.org/doi/10.1021/ct400687b.
 """
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Optional, List, Union, Sequence
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
-from typing import Optional, List, Union, Sequence
 from ase.io import write
+from ase.units import Bohr
+
+import os
 
 
 class RoseCalcType(Enum):
@@ -51,10 +54,10 @@ class RoseInputDataClass:
     rose_target: Atoms
     rose_frags: Union[Atoms, Sequence[Atoms]]
 
-    calculate_mo: bool = True
+    # calculate_mo: bool = True => made inactive
     rose_calc_type: RoseCalcType = RoseCalcType.ATOM_FRAG.value
 
-    run_postscf: bool = False
+    # run_postscf: bool = False => made inactive
     restricted: bool = True
     # openshell: bool = False => made inactive
     relativistic: bool = False
@@ -66,11 +69,13 @@ class RoseInputDataClass:
     spherical: bool = False
     uncontract: bool = True
     test: bool = False
-    wf_restart: bool = True
+    wf_restart: bool = False
     get_oeint: bool = True
     save: bool = True
     avas_frag: Optional[List[int]] = field(default_factory=list)
     nmo_avas: Optional[List[int]] = field(default_factory=list)
+
+    # options for virtual orbitals localization.
     additional_virtuals_cutoff: float = 2.0  # Eh
     frag_threshold: float = 10.0  # Eh
     frag_valence: Optional[List[List[int]]] = field(default_factory=list)
@@ -125,10 +130,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
             self.generate_input_avas()
 
         self.generate_mol_frags_xyz()
-
-        if self.calculate_mo:
-            self.generate_mo_files()
-
+        self.generate_mo_files()
         self.run_rose()
 
         if self.save:
@@ -178,18 +180,18 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                 if self.frag_valence:
                     for item in self.frag_valence:
                         f.write(".FRAG_VALENCE\n")
-                        f.write(str(item[0])+"\n")
-                        f.write(str(item[1])+"\n")
+                        f.write(str(item[0]) + "\n")
+                        f.write(str(item[1]) + "\n")
                 if self.frag_core:
                     for item in self.frag_core:
                         f.write(".FRAG_CORE\n")
-                        f.write(str(item[0])+"\n")
-                        f.write(str(item[1])+"\n")
+                        f.write(str(item[0]) + "\n")
+                        f.write(str(item[1]) + "\n")
                 if self.frag_bias:
                     for item in self.frag_bias:
                         f.write(".FRAG_BIAS\n")
-                        f.write(str(item[0])+"\n")
-                        f.write(str(item[1])+"\n")
+                        f.write(str(item[0]) + "\n")
+                        f.write(str(item[1]) + "\n")
             if self.avas_frag:
                 f.write(".AVAS\n")
                 f.write(str(len(self.avas_frag)) + "\n")
@@ -200,19 +202,20 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         """Generates fortran AVAS input for Rose.
 
         This method generates a file named "INPUT_AVAS"
-            containing input options to be used by Rose.
+            containing input options to be read by Rose.
         """
+        # create a vector containing the calculator of each fragment
+        # Could we use different calculators for them ?
         fragments_mo_calculator = []
-        for n_frag in range(len(self.rose_frags)):
-            frag_mo_program = self.rose_frags[n_frag].calc.name.lower()
-            fragments_mo_calculator.append(frag_mo_program)
+        for frag in enumerate(self.rose_frags):
+            fragments_mo_calculator.append(self.rose_frags[frag[0]]
+                                           .calc.name.lower())
 
         with open("INPUT_AVAS", "w") as f:
             f.write(str(len(self.rose_target.symbols))
                     + " # natoms\n")
-            f.write(str(self.rose_target.calc
-                        .parameters.charge)
-                        + " # charge\n")
+            f.write(str(
+                self.rose_target.calc.parameters.charge) + " # charge\n")
             if self.restricted:
                 f.write("1 # restricted\n")
             else:
@@ -228,27 +231,170 @@ class Rose(RoseInputDataClass, FileIOCalculator):
             f.writelines("{:3d}".format(item) for item in self.nmo_avas)
 
     def generate_mol_frags_xyz(self) -> None:
-        """Generates Molecule and Fragment xyz files for Rose."""
+        """Generates Molecule and Fragment xyz files for Rose.
+
+        Note: cartesian coordinates in angstrom.
+        """
+        # define a list of filenames
+        self.mol_frags_filenames = []
+
         # generate supramolecule xyz file using ASE write()
-        write("MOLECULE.XYZ", self.rose_target)
+        mol_filename = "MOLECULE"
+        write(mol_filename + ".XYZ", self.rose_target)
+        self.mol_frags_filenames.append(mol_filename)
 
         # generate fragments xyz files
-        for n_frag in range(len(self.rose_frags)):
+        for frag in enumerate(self.rose_frags):
 
+            # comply with the required Rose files format
             if self.rose_calc_type == RoseCalcType.ATOM_FRAG.value:
                 # defining atomic fragment's Z number
-                n_frag_Z = self.rose_frags[n_frag].numbers[0]
+                frag_Z = self.rose_frags[frag[0]].numbers[0]
 
-                frag_file_name = "{:03d}.xyz".format(n_frag_Z)
-                write(frag_file_name, self.rose_frags[n_frag])
+                frag_file_name = "{:03d}".format(frag_Z)
+                write(frag_file_name + ".xyz", self.rose_frags[frag[0]])
+                self.mol_frags_filenames.append(frag_file_name)
 
             else:
-                frag_file_name = "frag{:d}.xyz".format(n_frag)
-                write(frag_file_name, self.rose_frags[n_frag])
+                frag_file_name = "frag{:d}".format(frag[0])
+                write(frag_file_name + ".xyz", self.rose_frags[frag[0]])
+                self.mol_frags_filenames.append(frag_file_name)
 
     def generate_mo_files(self) -> None:
         """Generates atomic and molecular orbitals files for Rose."""
-        print('Calculating MO files....done')
+        # First, check whether the required mo files already exist
+
+        # create a vector with selected calculators for molecule and frags
+        # putting here no restrictions that they must be the same
+        calculator_file_extensions = []
+        calculator_file_extensions.append(
+            self.rose_target.calc.name.lower())
+        for frag in enumerate(self.rose_frags):
+            calculator_file_extensions.append(
+                self.rose_frags[frag[0]].calc.name.lower())
+
+        # vector with all expected mo files
+        mo_files_with_extensions = []
+        for file in enumerate(self.mol_frags_filenames):
+            mo_files_with_extensions.append(
+                str(file[1]) + "." + calculator_file_extensions[file[0]])
+
+        # check if such mo files with the required extensions exist
+        all_files_exist = True
+
+        for file in mo_files_with_extensions:
+            if not os.path.exists(file):
+                all_files_exist = False
+
+        # if they do not exist, then generate them
+        if not all_files_exist:
+
+            # create a list with all ASE Atoms object
+            list_of_Atoms = []
+            list_of_Atoms.append(self.rose_target)
+            for frag in enumerate(self.rose_frags):
+                list_of_Atoms.append(self.rose_frags[frag[0]])
+
+            # create dictionary with filename as key and ASE Atoms as values
+            dict_of_tasks = dict(zip(mo_files_with_extensions, list_of_Atoms))
+
+            for filename_key in dict_of_tasks:
+
+                natom = len(dict_of_tasks[filename_key].symbols)
+
+                # nelec = atomic number minus electronic charge
+                nelec = (sum(dict_of_tasks[filename_key].numbers)
+                         - dict_of_tasks[filename_key].calc.parameters.charge)
+                spin = dict_of_tasks[
+                    filename_key].calc.parameters.multiplicity - 1
+                nalpha = (nelec + spin)//2
+                nbeta = (nelec - spin)//2
+
+                # cartesian coordinates in a.u.
+                cart_coord = []
+                for i in range(natom):
+                    for j in range(3):
+                        cart_coord.append(
+                            dict_of_tasks[filename_key].positions[i][j]/Bohr)
+
+                # Rose restrictions on spherical x cartesian basis functions
+                if self.spherical:
+                    pureamd = 0
+                    pureamf = 0
+                    print("ROSE does not work with spherical basis functions.")
+                else:
+                    pureamd = 1
+                    pureamf = 1
+
+                # => pyscf specific variables # begin
+
+                nao = dict_of_tasks[
+                    filename_key].calc.mol.nao_cart()
+
+                nshells = dict_of_tasks[
+                    filename_key].calc.mol.nbas
+
+                shell_atom_map = []
+                orb_momentum = []
+                contract_coeff = []
+                mol_bas = dict_of_tasks[
+                    filename_key].calc.mol._bas
+
+                for i in range(len(mol_bas)):
+                    shell_atom_map.append(mol_bas[i][0] + 1)
+                    orb_momentum.append(mol_bas[i][1])
+                    contract_coeff.append(mol_bas[i][3])
+
+                nprim_shell = []
+                coord_shell = []
+                for i in range(nshells):
+                    nprim_shell.append(1)
+                    for j in range(3):
+                        coord_shell.append(dict_of_tasks[
+                            filename_key].positions[
+                                shell_atom_map[i] - 1][j])
+
+                prim_exp = []
+                for i in range(natom):
+                # atom_type =
+                    print(i)
+
+                # => pyscf specific variables # end
+
+                # start writing Rose input mo files
+                with open(filename_key, "w") as f:
+                    f.write("{:13}{:10}\n"
+                            .format("Generated by",
+                                    dict_of_tasks[filename_key]
+                                    .calc.name.upper()))
+                    write_int(f, "Number of atoms", natom)
+                    write_int(f, "Charge", dict_of_tasks[filename_key]
+                              .calc.parameters.charge)
+                    write_int(f, "Multiplicity", dict_of_tasks[filename_key]
+                              .calc.parameters.multiplicity)
+                    write_int(f, "Number of electrons", nelec)
+                    write_int(f, "Number of alpha electrons", nalpha)
+                    write_int(f, "Number of beta electrons", nbeta)
+                    write_int(f, "Number of basis functions", nao)
+                    write_int_list(f, "Atomic numbers", dict_of_tasks[
+                        filename_key].numbers)
+                    write_singlep_list(f, "Nuclear charges", dict_of_tasks[
+                        filename_key].numbers)
+                    write_doublep_list(f, "Current cartesian coordinates",
+                                       cart_coord)
+                    write_int(f, "Number of primitive shells", nshells)
+                    write_int(f, "Pure/Cartesian d shells", pureamd)
+                    write_int(f, "Pure/Cartesian f shells", pureamf)
+                    write_int_list(f, "Shell types", orb_momentum)
+                    write_int_list(f, "Number of primitives per shell",
+                                   nprim_shell)
+                    write_int_list(f, "Shell to atom map", shell_atom_map)
+                    write_singlep_list(f, "Primitive exponents", prim_exp)
+
+                pass
+        else:
+            print("MO files", mo_files_with_extensions, "exist.")
+            print("Proceeding to the next step.")
 
     def run_rose(self) -> None:
         """Runs Rose executable 'genibo.x'."""
@@ -266,48 +412,72 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         """Performs CASCI and/or CASSCF calculations."""
         print('CASSCF?....done')
 
-def name_molecule(geometry,
-                  spin,
-                  charge,
-                  description):
-    """Function to name molecules.
+def write_int(f,text,var):
+    """_summary.
 
     Args:
-        geometry: A list of tuples giving the coordinates of each atom.
-            example is [('H', (0, 0, 0)), ('H', (0, 0, 0.7414))].
-            Distances in angstrom. Use atomic symbols to specify atoms.
-        spin: An integer giving the spin 2S (difference between alpha and beta electrons)
-        charge: An integer giving the total molecular charge.
-        description: A string giving a description. As an example,
-            for dimers a likely description is the bond length (e.g. 0.7414).
-
-    Returns:
-        name: A string giving the name of the instance.
+        f (_type_): _description_
+        text (_type_): _description_
+        var (_type_): _description_
     """
-    if not isinstance(geometry, basestring):
-        # Get sorted atom vector.
-        atoms = [item[0] for item in geometry]
-        atom_charge_info = [(atom, atoms.count(atom)) for atom in set(atoms)]
-        sorted_info = sorted(atom_charge_info,
-                             key=lambda atom: periodic_hash_table[atom[0]])
+    f.write("{:43}I{:17d}\n".format(text,var))
 
-        # Name molecule.
-        name = '{}{}'.format(sorted_info[0][0], sorted_info[0][1])
-        for info in sorted_info[1::]:
-            name += '-{}{}'.format(info[0], info[1])
-    else:
-        name = geometry
 
-    # Ass spin
-    name += '_{}'.format(spin)
+def write_int_list(f,text,var):
+    """_summary.
 
-    # Add charge.
-    if charge > 0:
-        name += '_{}+'.format(charge)
-    elif charge < 0:
-        name += '_{}-'.format(charge)
+    Args:
+        f (_type_): _description_
+        text (_type_): _description_
+        var (_type_): _description_
+    """
+    f.write("{:43}{:3} N={:12d}\n".format(text,"I",len(var)))
+    dim = 0
+    buff = 6
+    if (len(var) < 6): buff = len(var)
+    for i in range((len(var)-1)//6+1):
+        for j in range(buff):
+            f.write("{:12d}".format(var[dim+j]))
+        f.write("\n")
+        dim = dim + 6
+        if (len(var) - dim) < 6 : buff = len(var) - dim
 
-    # Optionally add descriptive tag and return.
-    if description:
-        name += '_{}'.format(description)
-    return name
+
+def write_singlep_list(f,text,var):
+    """_summary.
+
+    Args:
+        f (_type_): _description_
+        text (_type_): _description_
+        var (_type_): _description_
+    """
+    f.write("{:43}{:3} N={:12d}\n".format(text,"R",len(var)))
+    dim = 0
+    buff = 5
+    if (len(var) < 5): buff = len(var)
+    for i in range((len(var)-1)//5+1):
+        for j in range(buff):
+            f.write("{:16.8e}".format(var[dim+j]))
+        f.write("\n")
+        dim = dim + 5
+        if (len(var) - dim) < 5 : buff = len(var) - dim
+
+
+def write_doublep_list(f,text,var):
+    """_summary.
+
+    Args:
+        f (_type_): _description_
+        text (_type_): _description_
+        var (_type_): _description_
+    """
+    f.write("{:43}{:3} N={:12d}\n".format(text,"R",len(var)))
+    dim = 0
+    buff = 5
+    if (len(var) < 5): buff = len(var)
+    for i in range((len(var)-1)//5+1):
+        for j in range(buff):
+            f.write("{:24.16e}".format(var[dim+j]))
+        f.write("\n")
+        dim = dim + 5
+        if (len(var) - dim) < 5 : buff = len(var) - dim

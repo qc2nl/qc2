@@ -217,14 +217,14 @@ class PySCF(Calculator):
         spin_2s = self.parameters['multiplicity'] - 1
 
         # passing geometry and other definitions
-        molecule = gto.M(atom=ase_atoms_to_pyscf(self.atoms),
+        self.mol = gto.M(atom=ase_atoms_to_pyscf(self.atoms),
                          basis=self.parameters['basis'],
                          charge=self.parameters['charge'],
                          spin=spin_2s)
 
         # checking wf input name => this is case sensitive
         if self.parameters['method'] in implemented_methods:
-            self.wf = eval(self.parameters['method'])(molecule)
+            self.wf = eval(self.parameters['method'])(self.mol)
         else:
             raise CalculatorSetupError('Method not yet implemented. '
                                        'Current PySCF-ASE calculator '

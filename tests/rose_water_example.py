@@ -16,22 +16,22 @@ mol = Atoms('OH2',
                        [0., -0.76544, -0.00836]
                        ],
                calculator=PySCF(method='scf.RHF',
-                                basis='sto-3g',
-                                multiplicity=1
+                                basis='unc-sto-3g',
+                                multiplicity=1,
                                 )
                )
 
 # define atomic fragments
 frag1 = Atoms('O',
               calculator=PySCF(method='scf.RHF',
-                               basis='sto-3g',
-                               multiplicity=1
+                               basis='unc-sto-3g',
+                               multiplicity=1,
                                )
               )
 
 frag2 = Atoms('H',
               calculator=PySCF(method='scf.ROHF',
-                               basis='sto-3g',
+                               basis='unc-sto-3g',
                                multiplicity=2
                                )
               )
@@ -48,3 +48,4 @@ rose_calc = Rose(rose_calc_type='atom_frag',
                  )
 
 rose_calc.calculate()
+print(rose_calc.mol_frags_filenames)
