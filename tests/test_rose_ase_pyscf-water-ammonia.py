@@ -84,6 +84,4 @@ def test_rose_output():
 
     output = open('rose.out').read()
 
-    clean_stuff()
-
     assert output == expected_output
