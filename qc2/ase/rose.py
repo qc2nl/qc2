@@ -17,6 +17,7 @@ from ase.io import write
 from ase.units import Bohr
 
 import os
+import subprocess
 
 
 class RoseCalcType(Enum):
@@ -65,12 +66,12 @@ class RoseInputDataClass:
 
     # Rose intrinsic options => expected to be fixed at the default values?
     version: RoseIFOVersion = RoseIFOVersion.STNDRD_2013.value
-    exponent: RoseILMOExponent = RoseILMOExponent.TWO.value
+    exponent: RoseILMOExponent = RoseILMOExponent.FOUR.value
     spherical: bool = False
     uncontract: bool = True
     test: bool = False
     wf_restart: bool = False
-    get_oeint: bool = True
+    get_oeint: bool = False
     save: bool = True
     avas_frag: Optional[List[int]] = field(default_factory=list)
     nmo_avas: Optional[List[int]] = field(default_factory=list)
@@ -327,23 +328,24 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                     pureamf = 1
 
                 # => pyscf specific variables # begin
+                # self.wf = scf.addons.frac_occ(self.wf)
+                # important to reproduce the results
 
-                nao = dict_of_tasks[
-                    filename_key].calc.mol.nao_cart()
+                mol = dict_of_tasks[filename_key].calc.mol
+                mf = dict_of_tasks[filename_key].calc.wf
 
-                nshells = dict_of_tasks[
-                    filename_key].calc.mol.nbas
+                nao = mol.nao_cart()
+
+                nshells = mol.nbas
 
                 shell_atom_map = []
                 orb_momentum = []
                 contract_coeff = []
-                mol_bas = dict_of_tasks[
-                    filename_key].calc.mol._bas
 
-                for i in range(len(mol_bas)):
-                    shell_atom_map.append(mol_bas[i][0] + 1)
-                    orb_momentum.append(mol_bas[i][1])
-                    contract_coeff.append(mol_bas[i][3])
+                for i in range(len(mol._bas)):
+                    shell_atom_map.append(mol._bas[i][0] + 1)
+                    orb_momentum.append(mol._bas[i][1])
+                    contract_coeff.append(mol._bas[i][3])
 
                 nprim_shell = []
                 coord_shell = []
@@ -352,12 +354,64 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                     for j in range(3):
                         coord_shell.append(dict_of_tasks[
                             filename_key].positions[
-                                shell_atom_map[i] - 1][j])
+                                shell_atom_map[i] - 1][j]/Bohr)
 
                 prim_exp = []
                 for i in range(natom):
-                # atom_type =
-                    print(i)
+                    atom_type = dict_of_tasks[
+                            filename_key].symbols[i]
+                    primitives_exp = mol._basis[atom_type]
+                    for j in range(len(primitives_exp)):
+                        for k in range(1, len(primitives_exp[0])):
+                            prim_exp.append(primitives_exp[j][k][0])
+
+                scf_e = mf.e_tot
+
+                alpha_MO = []
+                beta_MO = []
+
+                if self.restricted:
+                    alpha_coeff = mf.mo_coeff.copy()
+                    alpha_energies = mf.mo_energy.copy()
+                if not self.restricted:
+                    alpha_coeff = mf.mo_coeff[0].copy()
+                    beta_coeff = mf.mo_coeff[1].copy()
+                    alpha_energies = mf.mo_energy[0].copy()
+                    beta_energies = mf.mo_energy[1].copy()
+
+                for i in range(alpha_coeff.shape[1]):
+                    for j in range(alpha_coeff.shape[0]):
+                        alpha_MO.append(alpha_coeff[j][i])
+
+                if not self.restricted:
+                    for i in range(beta_coeff.shape[1]):
+                        for j in range(beta_coeff.shape[0]):
+                            beta_MO.append(beta_coeff[j][i])
+
+                if self.get_oeint:
+                    E_core = scf_e - mf.energy_elec()[0]
+                    one_body_int = []
+                    if self.restricted:
+                        h1e = alpha_coeff.T.dot(
+                            mf.get_hcore()).dot(alpha_coeff)
+                        h1e = mf.mo_coeff.T.dot(
+                            mf.get_hcore()).dot(mf.mo_coeff)
+                        for i in range(1, h1e.shape[0]+1):
+                            for j in range(1, i+1):
+                                one_body_int.append(h1e[i-1, j-1])
+                    else:
+                        h1e_alpha = alpha_coeff.T.dot(
+                            mf.get_hcore()).dot(alpha_coeff)
+                        h1e_beta = beta_coeff.T.dot(
+                            mf.get_hcore()).dot(beta_coeff)
+                        h1e_alpha = mf.mo_coeff[0].T.dot(
+                            mf.get_hcore()).dot(mf.mo_coeff[0])
+                        h1e_beta = mf.mo_coeff[1].T.dot(
+                            mf.get_hcore()).dot(mf.mo_coeff[1])
+                        for i in range(1, h1e_alpha.shape[0]+1):
+                            for j in range(1, i+1):
+                                one_body_int.append(h1e_alpha[i-1, j-1])
+                                one_body_int.append(h1e_beta[i-1, j-1])
 
                 # => pyscf specific variables # end
 
@@ -390,27 +444,47 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                                    nprim_shell)
                     write_int_list(f, "Shell to atom map", shell_atom_map)
                     write_singlep_list(f, "Primitive exponents", prim_exp)
-
-                pass
+                    write_singlep_list(f, "Contraction coefficients",
+                                       [1]*len(prim_exp))
+                    write_doublep_list(f, "Coordinates of each shell",
+                                       coord_shell)
+                    f.write("{:43}R{:27.15e}\n".format("Total Energy", scf_e))
+                    write_doublep_list(f, "Alpha Orbital Energies",
+                                       alpha_energies)
+                    write_doublep_list(f, "Alpha MO coefficients", alpha_MO)
+                    if not self.restricted:
+                        write_doublep_list(f, "Beta Orbital Energies",
+                                           beta_energies)
+                        write_doublep_list(f, "Beta MO coefficients", beta_MO)
+                    if self.get_oeint:
+                        f.write("{:43}R{:27.15e}\n".format(
+                            "Core Energy", E_core))
+                        write_doublep_list(f, "One electron integrals",
+                                           one_body_int)
         else:
             print("MO files", mo_files_with_extensions, "exist.")
             print("Proceeding to the next step.")
 
     def run_rose(self) -> None:
         """Runs Rose executable 'genibo.x'."""
-        print('Executing Rose....done')
+        data_directory = os.getcwd()
+        # provisory solution
+        genibo_executable = data_directory+"/genibo.x"
+        subprocess.check_call(genibo_executable,
+                              shell=True, cwd=data_directory)
 
     def save_ibos(self) -> None:
         """Generates a checkpoint file ('ibo.chk') with the final IBOs."""
-        print('Saving ibos....done')
+        pass
 
     def run_avas(self) -> None:
         """Runs 'avas.x' executable."""
-        print('Executing avas....done')
+        pass
 
     def run_post_hf(self) -> None:
         """Performs CASCI and/or CASSCF calculations."""
-        print('CASSCF?....done')
+        pass
+
 
 def write_int(f,text,var):
     """_summary.
