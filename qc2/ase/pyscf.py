@@ -121,6 +121,9 @@ class PySCF(Calculator):
         # Check self.parameters input keys and values
         self.check_pyscf_attributes()
 
+        self.mol = None
+        self.wf = None
+
     def check_pyscf_attributes(self) -> None:
         """Checks for any missing and/or mispelling PySCF input attribute.
 

@@ -56,6 +56,7 @@ rose_calc = Rose(rose_calc_type='mol_frag',
                  rose_target=mol,
                  rose_frags=[frag1, frag2],
                  avas_frag=[0], nmo_avas=[3, 4, 5],
+                 test = True,
                  frag_valence=[[1,7],[2,6]],
                  frag_core=[[1,1],[2,1]]
                  )

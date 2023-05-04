@@ -102,7 +102,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
     """
     implemented_properties: List[str] = []
-    command: str = 'echo "Executing Rose...done"'
+    command: str = ''
     restart: bool = None
     ignore_bad_restart_file: bool = FileIOCalculator._deprecated
     label: str = 'rose'
@@ -115,15 +115,14 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         Give an example here on how to use....
         """
         # initializing base classes
-        # RoseInputDataClass.__init__(self, *args, **kwargs)
-        # FileIOCalculator.__init__(self, *args, **kwargs)
-        super().__init__(*args, **kwargs)
+        RoseInputDataClass.__init__(self, *args, **kwargs)
+        FileIOCalculator.__init__(self, *args, **kwargs)
+        # super().__init__(*args, **kwargs)
 
-        # print(self.parameters)
 
     def calculate(self, *args, **kwargs) -> None:
         """Executes Rose workflow."""
-        super().calculate(*args, **kwargs)
+        FileIOCalculator.calculate(self, *args, **kwargs)
 
         self.generate_input_genibo()
 
@@ -467,11 +466,10 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
     def run_rose(self) -> None:
         """Runs Rose executable 'genibo.x'."""
-        data_directory = os.getcwd()
-        # provisory solution
-        genibo_executable = data_directory+"/genibo.x"
-        subprocess.check_call(genibo_executable,
-                              shell=True, cwd=data_directory)
+        self.rose_output_filename = "rose.out"
+        command = "genibo.x > " + self.rose_output_filename
+        proc = subprocess.Popen(command, shell=True, cwd=self.directory)
+
 
     def save_ibos(self) -> None:
         """Generates a checkpoint file ('ibo.chk') with the final IBOs."""

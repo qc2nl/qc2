@@ -1,0 +1,29 @@
+
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ @                                                @
+ @       Reduction of Orbital Space Extent        @
+ @                     (ROSE)                     @
+ @                                                @
+ @ By Bruno Senjean, Souloke Sen, Michal Repisky, @
+ @        Gerald Knizia and Lucas Visscher.       @
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+ Select algebra (rcq) based on the use of restricted and spatial orbitals:
+   rcq = 1, 2 or 4  : real, complex or quaternion algebra, respectively
+   restricted       :  T
+   spatial_orbitals :  T
+   rcq              :  1
+
+ ####################################
+ #      Molecular  Coordinates      #
+ ####################################
+
+Atom    Z           X           Y           Z
+N    7.00 -2.63728288 -0.04074250  0.00007559
+H    1.00 -3.07989454  1.81621578 -0.20072671
+H    1.00 -3.52012514 -0.96856023 -1.42857626
+H    1.00 -3.46490734 -0.62506471  1.62952974
+H    1.00  1.14657243 -0.06417510 -0.00119053
+H    1.00  3.66705134 -1.47398638  0.00041574
+O    8.00  2.96403543  0.20010310  0.00001890
+ error: MO coefficient file frag0.pyscf          not found
