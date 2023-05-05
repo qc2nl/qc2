@@ -11,8 +11,10 @@ Note: see also https://pubs.acs.org/doi/10.1021/ct400687b.
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, List, Union, Sequence
+
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
+from ase.calculators.calculator import CalculationFailed
 from ase.io import write
 from ase.units import Bohr
 
@@ -468,8 +470,21 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         """Runs Rose executable 'genibo.x'."""
         self.rose_output_filename = "rose.out"
         command = "genibo.x > " + self.rose_output_filename
-        proc = subprocess.Popen(command, shell=True, cwd=self.directory)
 
+        try:
+            proc = subprocess.Popen(command, shell=True, cwd=self.directory)
+        except OSError as err:
+            msg = 'Failed to execute "{}"'.format(command)
+            raise EnvironmentError(msg) from err
+
+        errorcode = proc.wait()
+
+        if errorcode:
+            path = os.path.abspath(self.directory)
+            msg = ('Calculator "{}" failed with command "{}" failed in '
+                   '{} with error code {}'.format(self.name, command,
+                                                  path, errorcode))
+            raise CalculationFailed(msg)
 
     def save_ibos(self) -> None:
         """Generates a checkpoint file ('ibo.chk') with the final IBOs."""

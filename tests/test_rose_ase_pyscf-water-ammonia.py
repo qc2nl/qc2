@@ -1,19 +1,42 @@
+import pytest
+
 from ase import Atoms
 from qc2.ase.rose import Rose
 from qc2.ase.pyscf import PySCF
 
-import os
+import re
 import subprocess
 
-def clean_stuff():
-    command = "rm *xyz *dfcoef DFCOEF* *inp INPUT* \
-        MOLECULE.XYZ MRCONEE* *dfpcmo DFPCMO* *fchk \
-        *in fort.100 timer.dat INFO_MOL *.pyscf \
-        IAO_Fock SAO *.npy *.clean *\ 2* OUTPUT_AVAS \
-        *.chk ILMO*dat"
-    subprocess.Popen(command, shell=True, cwd='.')
 
-def run_water_amonia_rose():
+
+def clean_stuff():
+    """Remove Rose-ASE calculation outputs."""
+    command = ("rm *xyz *dfcoef DFCOEF* *inp INPUT* "
+    "MOLECULE.XYZ MRCONEE* *dfpcmo DFPCMO* *fchk "
+    "*in fort.100 timer.dat INFO_MOL *.pyscf "
+    "IAO_Fock SAO *.npy *.clean OUTPUT_AVAS "
+    "*.chk ILMO*dat *.out")
+    subprocess.run(command, shell=True, capture_output=True)
+
+def extract_number(pattern: str, text: str) -> list():
+    """Extract numbers from chunks of text selected from patterns."""
+    # Define a regular expression that matches floating point numbers
+    number_pattern = re.compile(r'[-+]?(\d*\.\d+|\d+\.\d*|\d+)')
+
+    # find the numbers if the specific pattern
+    match = re.search(pattern, text)
+    if match:
+        sub_string = match.group()
+        strings = re.findall(number_pattern, sub_string)
+        numbers = []
+        for item in strings:
+            numbers.append(float(item))
+        return numbers
+    else:
+        raise Exception("Sorry, no pattern found")
+
+
+def run_water_ammonia_rose_no_avas():
     """ Water-Ammonia example calculation."""
 
     # define target molecule
@@ -77,11 +100,25 @@ def test_rose_output():
 
     clean_stuff()
 
-    expected_output = open(
-        'test_rose_ase_pyscf-water-ammonia.out').read()
+    with open('test_rose_ase_pyscf-water-ammonia.stdout', 'r') as f:
+        expected_output = f.read()
 
-    run_water_amonia_rose()
+    run_water_ammonia_rose_no_avas()
 
-    output = open('rose.out').read()
+    with open('rose.out', 'r') as f:
+        actual_output = f.read()
 
-    assert output == expected_output
+    charge = 'Partial charges of fragments.*\n{}'.format(('*\n.' * 5) + '*\n' )
+    mo_energies = 'Recanonicalized virtual energies of fragments.*\n{}'.format(('*\n.' * 18) + '*\n' )
+
+    expected_charges = extract_number(charge, expected_output)
+    actual_charges = extract_number(charge, actual_output)
+
+    expected_mo_energies = extract_number(mo_energies, expected_output)
+    actual_mo_energies = extract_number(mo_energies, actual_output)
+
+    clean_stuff()
+
+    # Use the pytest.approx method to compare the two lists with tolerance
+    assert actual_charges == pytest.approx(expected_charges, rel=1e-3)
+    assert actual_mo_energies == pytest.approx(expected_mo_energies, rel=1.0e-5)

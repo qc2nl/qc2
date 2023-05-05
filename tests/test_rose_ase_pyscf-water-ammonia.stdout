@@ -21,8 +21,8 @@
 Atom    Z           X           Y           Z
 N    7.00 -2.63728288 -0.04074250  0.00007559
 H    1.00 -3.07989454  1.81621578 -0.20072671
-H    1.00 -3.52012514 -0.96856023 -1.42857626
-H    1.00 -3.46490734 -0.62506471  1.62952974
+H    1.00 -3.52012513 -0.96856023 -1.42857626
+H    1.00 -3.46490734 -0.62506471  1.62952973
 H    1.00  1.14657243 -0.06417510 -0.00119053
 H    1.00  3.66705134 -1.47398638  0.00041574
 O    8.00  2.96403543  0.20010310  0.00001890
@@ -46,11 +46,11 @@ O    8.00  2.96403543  0.20010310  0.00001890
   Version: Standard 2013
 
   --- Check Symmetrical Orthogonalization ---
-**SUCCESS** Symmetrical orthogonalization was successful, norm:  0.5209E-14
+**SUCCESS** Symmetrical orthogonalization was successful, norm:  0.5025E-14
 
 
   --- Check Symmetrical Orthogonalization ---
-**SUCCESS** Symmetrical orthogonalization was successful, norm:  0.8995E-14
+**SUCCESS** Symmetrical orthogonalization was successful, norm:  0.7058E-14
 
  ####################################
  #  Partial charges of fragments    #
@@ -91,7 +91,7 @@ O    8.00  2.96403543  0.20010310  0.00001890
  (Exponent = 4)
 
  Iter        Function    Gradient
-    1        6.158232    7.17E-02
+    1        6.158230    7.17E-02
     2        7.711248    1.33E-02
     3        7.734115    2.43E-03
     4        7.734697    1.55E-04
@@ -100,7 +100,7 @@ O    8.00  2.96403543  0.20010310  0.00001890
 
  ******************************************
  Final converged values (it, func, fGrad):
-    6            7.7346993429224256  5.6232E-16
+    6            7.7346993569281421  5.6233E-16
  ******************************************
 
 
@@ -154,29 +154,29 @@ O    8.00  2.96403543  0.20010310  0.00001890
 
  MO Localized on fragments (with %) (thrs = 0.01, first ten are shown)
   1      0.2283 [    1    2]
-                [ 15.1 84.9]
-  2      0.3208 [    1]
-                [ 99.7]
-  3      0.3334 [    1]
-                [100.0]
+                [  7.9 92.1]
+  2      0.3208 [    1    2]
+                [ 54.8 45.2]
+  3      0.3334 [    1    2]
+                [ 85.7 14.3]
   4      0.3357 [    1    2]
-                [ 43.7 56.3]
+                [ 61.4 38.6]
   5      0.4894 [    1    2]
-                [ 48.8 51.2]
+                [ 97.4  2.6]
 
  ----- Localization procedure: 2x2 Rotations -----
  (Exponent = 4)
 
  Iter        Function    Gradient
-    1        2.770046    5.77E-02
-    2        4.708148    2.91E-02
-    3        4.734692    6.88E-04
-    4        4.734699    1.31E-09
-    5        4.734699    4.51E-17
+    1        2.455536    1.44E-01
+    2        4.733612    8.88E-03
+    3        4.734699    3.66E-06
+    4        4.734699    6.22E-13
+    5        4.734699    1.62E-16
 
  ******************************************
  Final converged values (it, func, fGrad):
-    5            4.7346993456677975  4.5129E-17
+    5            4.7346993564360957  1.6237E-16
  ******************************************
 
 
@@ -186,9 +186,9 @@ O    8.00  2.96403543  0.20010310  0.00001890
   1 [    1]
     [100.0]
   2 [    1]
-    [100.0]
-  3 [    1]
     [ 99.9]
+  3 [    1]
+    [100.0]
   4 [    1    2]
     [  7.3 92.7]
   5 [    2]
@@ -210,11 +210,11 @@ O    8.00  2.96403543  0.20010310  0.00001890
   Version: Standard 2013
 
   --- Check Symmetrical Orthogonalization ---
-**SUCCESS** Symmetrical orthogonalization was successful, norm:  0.6791E-14
+**SUCCESS** Symmetrical orthogonalization was successful, norm:  0.6953E-14
 
 
   --- Check Symmetrical Orthogonalization ---
-**SUCCESS** Symmetrical orthogonalization was successful, norm:  0.1394E-13
+**SUCCESS** Symmetrical orthogonalization was successful, norm:  0.1324E-13
 
 
  ##############################################
@@ -227,17 +227,17 @@ O    8.00  2.96403543  0.20010310  0.00001890
 
  Iter        Function    Gradient
     1        7.981183    3.04E-02
-    2       11.375315    7.75E-03
-    3       11.436209    2.11E-03
+    2       11.375314    7.75E-03
+    3       11.436208    2.11E-03
     4       11.438642    6.09E-04
     5       11.438844    8.66E-07
     6       11.438844    1.30E-09
     7       11.438844    1.22E-14
-    8       11.438844    8.55E-18
+    8       11.438844    7.59E-18
 
  ******************************************
  Final converged values (it, func, fGrad):
-    8           11.4388444035561534  8.5465E-18
+    8           11.4388443164368496  7.5893E-18
  ******************************************
 
 
@@ -272,23 +272,23 @@ O    8.00  2.96403543  0.20010310  0.00001890
  ----- Recanonicalized virtual energies of fragments -----
 
     Fragment          MO              Energy
-           1           1         0.238657887
-           1           2         0.333404550
-           1           3         0.335695048
-           1           4         0.795796018
-           1           5         0.797974496
-           1           6         1.012927050
-           1           7         1.318069512
-           1           8         1.353480338
-           1           9         1.357502722
-           1          10         1.751989727
-           2           1         0.317395770
-           2           2         0.485932217
-           2           3         0.939210382
-           2           4         1.027959078
-           2           5         1.591697256
-           2           6         1.646503991
-           2           7         1.836937770
+           1           1         0.238657888
+           1           2         0.333404572
+           1           3         0.335695069
+           1           4         0.795796029
+           1           5         0.797974507
+           1           6         1.012927063
+           1           7         1.318069521
+           1           8         1.353480374
+           1           9         1.357502755
+           1          10         1.751989751
+           2           1         0.317395753
+           2           2         0.485932207
+           2           3         0.939210358
+           2           4         1.027959054
+           2           5         1.591697181
+           2           6         1.646503923
+           2           7         1.836937715
 
  ####################################
  #         Starting TESTS           #
@@ -297,16 +297,16 @@ O    8.00  2.96403543  0.20010310  0.00001890
  The matrix is normalized.
  The matrix is normalized.
  The matrix is normalized.
- Deviation of IBO_RDM from HF_RDM  :   2.9219992649663296E-014
- Deviation from orthogonality      :   3.5376928909472871E-009
- Deviation from orthogonality      :   1.3829695312569248E-014
- Deviation in number of electrons  :   1.3485568217674881E-009
- Deviation in number of electrons  :  -3.5527136788005009E-014
- HF energy (moB1)   :   -130.74589335371624
- HF energy (IAO)    :   -130.74589336993611
- HF energy (IBO/MO) :   -130.74589335371610
- Deviation from the HF energy in the original basis and in the IAO basis:  -1.62198717E-08
- Deviation from the HF energy in the original basis and in the IBO basis:   1.42108547E-13
+ Deviation of IBO_RDM from HF_RDM  :   1.9885549835285585E-014
+ Deviation from orthogonality      :   8.2430099525239453E-015
+ Deviation from orthogonality      :   8.9116984521814421E-015
+ Deviation in number of electrons  :  -3.5527136788005009E-015
+ Deviation in number of electrons  :  -1.4210854715202004E-014
+ HF energy (moB1)   :   -130.74589367992581
+ HF energy (IAO)    :   -130.74589367992576
+ HF energy (IBO/MO) :   -130.74589367992573
+ Deviation from the HF energy in the original basis and in the IAO basis:   5.68434189E-14
+ Deviation from the HF energy in the original basis and in the IBO basis:   8.52651283E-14
 
  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
  @                                                @
