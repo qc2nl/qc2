@@ -33,6 +33,19 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip setuptools
           python3 -m pip install .[dev,publishing]
+      - name: Rose install
+        run: |
+          git clone https://gitlab.com/quantum_rose/rose.git
+          cd rose
+          mkdir build
+          cd build
+          cmake ..
+          make install
+          cd ..
+          cd bin/
+          export PATH=`pwd`:$PATH
+          cd ..
+          cd ..
       - name: Run unit tests
         run: pytest -v
       - name: Verify that we can build the package
