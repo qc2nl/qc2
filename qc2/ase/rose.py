@@ -484,8 +484,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
     def save_ibos(self) -> None:
         """Generates a checkpoint file ('ibo.chk') with the final IBOs."""
-        ibo_input_filename = "ibo"
-        + "." + str(self.rose_target.calc.name.lower())
+        ibo_input_filename = "ibo" + "." + str(self.rose_target.calc.name.lower())
         ibo_output_filename = "ibo.chk"
 
         try:
