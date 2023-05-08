@@ -33,7 +33,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip setuptools
           python3 -m pip install .[dev,publishing]
-      - name: Rose install
+      - name: Rose install for tests
         run: |
           git clone https://gitlab.com/quantum_rose/rose.git
           cd rose
