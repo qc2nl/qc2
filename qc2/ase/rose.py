@@ -19,7 +19,10 @@ from ase.io import write
 from ase.units import Bohr
 
 import os
+import re
 import subprocess
+import numpy as np
+import copy
 
 
 class RoseCalcType(Enum):
@@ -101,7 +104,6 @@ class Rose(RoseInputDataClass, FileIOCalculator):
             for Rose; see above.
         FileIOCalculator (FileIOCalculator): Base class for ASE calculators
             that write/read input/output files.
-
     """
     implemented_properties: List[str] = []
     command: str = ''
@@ -120,7 +122,6 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         RoseInputDataClass.__init__(self, *args, **kwargs)
         FileIOCalculator.__init__(self, *args, **kwargs)
         # super().__init__(*args, **kwargs)
-
 
     def calculate(self, *args, **kwargs) -> None:
         """Executes Rose workflow."""
@@ -263,11 +264,11 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                 self.mol_frags_filenames.append(frag_file_name)
 
     def generate_mo_files(self) -> None:
-        """Generates atomic and molecular orbitals files for Rose."""
+        """Generates orbitals input files for Rose."""
         # First, check whether the required mo files already exist
 
         # create a vector with selected calculators for molecule and frags
-        # putting here no restrictions that they must be the same
+        # put here no restrictions that they must be the same
         calculator_file_extensions = []
         calculator_file_extensions.append(
             self.rose_target.calc.name.lower())
@@ -283,7 +284,6 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
         # check if such mo files with the required extensions exist
         all_files_exist = True
-
         for file in mo_files_with_extensions:
             if not os.path.exists(file):
                 all_files_exist = False
@@ -291,7 +291,8 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         # if they do not exist, then generate them
         if not all_files_exist:
 
-            # create a list with all ASE Atoms object
+            # create a list with all ASE Atoms objects
+            # for the supramolecule and fragments
             list_of_Atoms = []
             list_of_Atoms.append(self.rose_target)
             for frag in enumerate(self.rose_frags):
@@ -302,13 +303,14 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
             for filename_key in dict_of_tasks:
 
-                natom = len(dict_of_tasks[filename_key].symbols)
+                ase_Atom = dict_of_tasks[filename_key]
+
+                natom = len(ase_Atom.symbols)
 
                 # nelec = atomic number minus electronic charge
-                nelec = (sum(dict_of_tasks[filename_key].numbers)
-                         - dict_of_tasks[filename_key].calc.parameters.charge)
-                spin = dict_of_tasks[
-                    filename_key].calc.parameters.multiplicity - 1
+                nelec = (sum(ase_Atom.numbers)
+                         - ase_Atom.calc.parameters.charge)
+                spin = ase_Atom.calc.parameters.multiplicity - 1
                 nalpha = (nelec + spin)//2
                 nbeta = (nelec - spin)//2
 
@@ -317,7 +319,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                 for i in range(natom):
                     for j in range(3):
                         cart_coord.append(
-                            dict_of_tasks[filename_key].positions[i][j]/Bohr)
+                            ase_Atom.positions[i][j]/Bohr)
 
                 # Rose restrictions on spherical x cartesian basis functions
                 if self.spherical:
@@ -332,8 +334,8 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                 # self.wf = scf.addons.frac_occ(self.wf)
                 # important to reproduce the results
 
-                mol = dict_of_tasks[filename_key].calc.mol
-                mf = dict_of_tasks[filename_key].calc.wf
+                mol = ase_Atom.calc.mol
+                mf = ase_Atom.calc.wf
 
                 nao = mol.nao_cart()
 
@@ -353,14 +355,12 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                 for i in range(nshells):
                     nprim_shell.append(1)
                     for j in range(3):
-                        coord_shell.append(dict_of_tasks[
-                            filename_key].positions[
+                        coord_shell.append(ase_Atom.positions[
                                 shell_atom_map[i] - 1][j]/Bohr)
 
                 prim_exp = []
                 for i in range(natom):
-                    atom_type = dict_of_tasks[
-                            filename_key].symbols[i]
+                    atom_type = ase_Atom.symbols[i]
                     primitives_exp = mol._basis[atom_type]
                     for j in range(len(primitives_exp)):
                         for k in range(1, len(primitives_exp[0])):
@@ -420,21 +420,17 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                 with open(filename_key, "w") as f:
                     f.write("{:13}{:10}\n"
                             .format("Generated by",
-                                    dict_of_tasks[filename_key]
-                                    .calc.name.upper()))
+                                    ase_Atom.calc.name.upper()))
                     write_int(f, "Number of atoms", natom)
-                    write_int(f, "Charge", dict_of_tasks[filename_key]
-                              .calc.parameters.charge)
-                    write_int(f, "Multiplicity", dict_of_tasks[filename_key]
-                              .calc.parameters.multiplicity)
+                    write_int(f, "Charge", ase_Atom.calc.parameters.charge)
+                    write_int(f, "Multiplicity",
+                              ase_Atom.calc.parameters.multiplicity)
                     write_int(f, "Number of electrons", nelec)
                     write_int(f, "Number of alpha electrons", nalpha)
                     write_int(f, "Number of beta electrons", nbeta)
                     write_int(f, "Number of basis functions", nao)
-                    write_int_list(f, "Atomic numbers", dict_of_tasks[
-                        filename_key].numbers)
-                    write_singlep_list(f, "Nuclear charges", dict_of_tasks[
-                        filename_key].numbers)
+                    write_int_list(f, "Atomic numbers", ase_Atom.numbers)
+                    write_singlep_list(f, "Nuclear charges", ase_Atom.numbers)
                     write_doublep_list(f, "Current cartesian coordinates",
                                        cart_coord)
                     write_int(f, "Number of primitive shells", nshells)
@@ -468,7 +464,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
     def run_rose(self) -> None:
         """Runs Rose executable 'genibo.x'."""
-        self.rose_output_filename = "rose.out"
+        self.rose_output_filename = "OUTPUT_ROSE"
         command = "genibo.x > " + self.rose_output_filename
 
         try:
@@ -488,10 +484,86 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
     def save_ibos(self) -> None:
         """Generates a checkpoint file ('ibo.chk') with the final IBOs."""
-        pass
+        ibo_input_filename = "ibo"
+        + "." + str(self.rose_target.calc.name.lower())
+        ibo_output_filename = "ibo.chk"
+
+        try:
+            with open(ibo_input_filename, "r") as f:
+                nao = read_int("Number of basis functions", f)
+                alpha_energies = read_real_list("Alpha Orbital Energies", f)
+                alpha_IBO = read_real_list("Alpha MO coefficients", f)
+                beta_energies = read_real_list("Beta Orbital Energies", f)
+                beta_IBO = read_real_list("Beta MO coefficients", f)
+            f.close()
+        except FileNotFoundError:
+            print("Cannot open", ibo_input_filename)
+
+        # => pyscf specific variables # begin
+
+        from pyscf.scf.chkfile import dump_scf
+
+        mol = self.rose_target.calc.mol
+        mf = self.rose_target.calc.wf
+
+        ibo_wfn = copy.copy(mf)
+
+        nmo = len(alpha_energies)
+        if self.restricted:
+            alpha_IBO_coeff = np.zeros((len(mf.mo_coeff), nao), dtype=float)
+            beta_IBO_coeff = np.zeros((len(mf.mo_coeff), nao), dtype=float)
+        else:
+            alpha_IBO_coeff = np.zeros((len(mf.mo_coeff[0]), nao), dtype=float)
+            beta_IBO_coeff = np.zeros((len(mf.mo_coeff[1]), nao), dtype=float)
+
+        ij = 0
+        for i in range(nmo):
+            for j in range(nao):
+                alpha_IBO_coeff[j, i] = alpha_IBO[ij]
+                if not self.restricted:
+                    beta_IBO_coeff[j, i] = beta_IBO[ij]
+                ij += 1
+
+        if self.restricted:
+            alpha_energy = np.zeros(len(mf.mo_energy), dtype=float)
+            alpha_energy[:len(alpha_energies)] = alpha_energies
+            ibo_wfn.mo_energy = alpha_energy
+            ibo_wfn.mo_coeff = alpha_IBO_coeff
+        else:
+            alpha_energy = np.zeros(len(mf.mo_energy[0]), dtype=float)
+            alpha_energy[:len(alpha_energies)] = alpha_energies
+            beta_energy = np.zeros(len(mf.mo_energy[1]), dtype=float)
+            beta_energy[:len(beta_energies)] = beta_energies
+            ibo_wfn.mo_energy[0] = alpha_energy
+            ibo_wfn.mo_energy[1] = beta_energy
+            ibo_wfn.mo_coeff[0] = alpha_IBO_coeff
+            ibo_wfn.mo_coeff[1] = beta_IBO_coeff
+
+        e_tot = 0.0
+        dump_scf(mol, ibo_output_filename,
+                 e_tot, ibo_wfn.mo_energy, ibo_wfn.mo_coeff, ibo_wfn.mo_occ)
+
+        # => pyscf specific variables # end
 
     def run_avas(self) -> None:
         """Runs 'avas.x' executable."""
+        self.avas_output_filename = "OUTPUT_AVAS"
+        command = "avas.x > " + self.avas_output_filename
+
+        try:
+            proc = subprocess.Popen(command, shell=True, cwd=self.directory)
+        except OSError as err:
+            msg = 'Failed to execute "{}"'.format(command)
+            raise EnvironmentError(msg) from err
+
+        errorcode = proc.wait()
+
+        if errorcode:
+            path = os.path.abspath(self.directory)
+            msg = ('Calculator "{}" failed with command "{}" failed in '
+                   '{} with error code {}'.format(self.name, command,
+                                                  path, errorcode))
+            raise CalculationFailed(msg)
         pass
 
     def run_post_hf(self) -> None:
@@ -499,72 +571,166 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         pass
 
 
-def write_int(f,text,var):
-    """_summary.
+def write_int(f, text, var):
+    """Writes an integer value to a file in a specific format.
 
     Args:
-        f (_type_): _description_
-        text (_type_): _description_
-        var (_type_): _description_
+        f (file object): The file object to write to.
+        text (str): A string of text to precede the integer value.
+        var (int): The integer value to be written to the file.
+
+    Returns:
+        None
     """
-    f.write("{:43}I{:17d}\n".format(text,var))
+    f.write("{:43}I{:17d}\n".format(text, var))
 
 
-def write_int_list(f,text,var):
-    """_summary.
+def write_int_list(f, text, var):
+    """Writes a list of integers to a file in a specific format.
 
     Args:
-        f (_type_): _description_
-        text (_type_): _description_
-        var (_type_): _description_
+        f (file object): The file object to write to.
+        text (str): A string of text to precede the list of integers.
+        var (list): The list of integers to be written to the file.
+
+    Returns:
+        None
     """
-    f.write("{:43}{:3} N={:12d}\n".format(text,"I",len(var)))
+    f.write("{:43}{:3} N={:12d}\n".format(text, "I", len(var)))
     dim = 0
     buff = 6
-    if (len(var) < 6): buff = len(var)
+    if (len(var) < 6):
+        buff = len(var)
     for i in range((len(var)-1)//6+1):
         for j in range(buff):
             f.write("{:12d}".format(var[dim+j]))
         f.write("\n")
         dim = dim + 6
-        if (len(var) - dim) < 6 : buff = len(var) - dim
+        if (len(var) - dim) < 6:
+            buff = len(var) - dim
 
 
-def write_singlep_list(f,text,var):
-    """_summary.
+def write_singlep_list(f, text, var):
+    """Writes a list of single-precision floating-point values to a file object.
 
     Args:
-        f (_type_): _description_
-        text (_type_): _description_
-        var (_type_): _description_
+        f: A file object to write to.
+        text (str): The text to be written before the list.
+        var (list): The list of single-precision floating-point
+            values to write.
+
+    Returns:
+        None
     """
-    f.write("{:43}{:3} N={:12d}\n".format(text,"R",len(var)))
+    f.write("{:43}{:3} N={:12d}\n".format(text, "R", len(var)))
     dim = 0
     buff = 5
-    if (len(var) < 5): buff = len(var)
+    if (len(var) < 5):
+        buff = len(var)
     for i in range((len(var)-1)//5+1):
         for j in range(buff):
             f.write("{:16.8e}".format(var[dim+j]))
         f.write("\n")
         dim = dim + 5
-        if (len(var) - dim) < 5 : buff = len(var) - dim
+        if (len(var) - dim) < 5:
+            buff = len(var) - dim
 
 
-def write_doublep_list(f,text,var):
-    """_summary.
+def write_doublep_list(f, text, var):
+    """Writes a list of double precision floating point numbers to a file.
 
     Args:
-        f (_type_): _description_
-        text (_type_): _description_
-        var (_type_): _description_
+        f (file object): the file to write the data to
+        text (str): a label or description for the data
+        var (list): a list of double precision floating point
+            numbers to write to file
+
+    Returns:
+        None
     """
-    f.write("{:43}{:3} N={:12d}\n".format(text,"R",len(var)))
+    f.write("{:43}{:3} N={:12d}\n".format(text, "R", len(var)))
     dim = 0
     buff = 5
-    if (len(var) < 5): buff = len(var)
+    if (len(var) < 5):
+        buff = len(var)
     for i in range((len(var)-1)//5+1):
         for j in range(buff):
             f.write("{:24.16e}".format(var[dim+j]))
         f.write("\n")
         dim = dim + 5
-        if (len(var) - dim) < 5 : buff = len(var) - dim
+        if (len(var) - dim) < 5:
+            buff = len(var) - dim
+
+
+def read_int(text, f):
+    """Reads an integer value from a text file.
+
+    Args:
+        text (str): The text to search for in the file.
+        f (file): The file object to read from.
+
+    Returns:
+        int: The integer value found in the file.
+    """
+    for line in f:
+        if re.search(text, line):
+            var = int(line.rsplit(None, 1)[-1])
+            return var
+
+
+def read_real(text, f):
+    """Reads a floating-point value from a text file.
+
+    Args:
+        text (str): The text to search for in the file.
+        f (file): The file object to read from.
+
+    Returns:
+        float: The floating-point value found in the file.
+    """
+    for line in f:
+        if re.search(text, line):
+            var = float(line.rsplit(None, 1)[-1])
+            return var
+
+
+def read_int_list(text, f):
+    """Reads a list of integers from a text file.
+
+    Args:
+        text (str): The text to search for in the file.
+        f (file): The file object to read from.
+
+    Returns:
+        list: A list of integers found in the file.
+    """
+    for line in f:
+        if re.search(text, line):
+            n = int(line.rsplit(None, 1)[-1])
+            var = []
+            for i in range((n-1)//6+1):
+                line = next(f)
+                for j in line.split():
+                    var += [int(j)]
+            return var
+
+
+def read_real_list(text, f):
+    """Reads a list of floating-point values from a text file.
+
+    Args:
+        text (str): The text to search for in the file.
+        f (file): The file object to read from.
+
+    Returns:
+        list: A list of floating-point values found in the file.
+    """
+    for line in f:
+        if re.search(text, line):
+            n = int(line.rsplit(None, 1)[-1])
+            var = []
+            for i in range((n-1)//5+1):
+                line = next(f)
+                for j in line.split():
+                    var += [float(j)]
+            return var

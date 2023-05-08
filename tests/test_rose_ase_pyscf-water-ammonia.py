@@ -1,43 +1,23 @@
 import pytest
 
+from .rose_test_functions import clean_stuff
+from .rose_test_functions import extract_number
+from .rose_test_functions import read_output
+
 from ase import Atoms
 from qc2.ase.rose import Rose
 from qc2.ase.pyscf import PySCF
 
-import re
-import subprocess
 
+EXPECTED_OUTPUT_FILE = 'test_rose_ase_pyscf-water-ammonia.stdout'
+ACTUAL_OUTPUT_FILE = 'OUTPUT_ROSE'
 
-
-def clean_stuff():
-    """Remove Rose-ASE calculation outputs."""
-    command = ("rm *xyz *dfcoef DFCOEF* *inp INPUT* "
-    "MOLECULE.XYZ MRCONEE* *dfpcmo DFPCMO* *fchk "
-    "*in fort.100 timer.dat INFO_MOL *.pyscf "
-    "IAO_Fock SAO *.npy *.clean OUTPUT_AVAS "
-    "*.chk ILMO*dat *.out")
-    subprocess.run(command, shell=True, capture_output=True)
-
-def extract_number(pattern: str, text: str) -> list():
-    """Extract numbers from chunks of text selected from patterns."""
-    # Define a regular expression that matches floating point numbers
-    number_pattern = re.compile(r'[-+]?(\d*\.\d+|\d+\.\d*|\d+)')
-
-    # find the numbers if the specific pattern
-    match = re.search(pattern, text)
-    if match:
-        sub_string = match.group()
-        strings = re.findall(number_pattern, sub_string)
-        numbers = []
-        for item in strings:
-            numbers.append(float(item))
-        return numbers
-    else:
-        raise Exception("Sorry, no pattern found")
-
+CHARGE_REGEX = 'Partial charges of fragments.*\n{}'.format(('*\n.' * 5) + '*\n')
+MO_ENERGIES_REGEX = 'Recanonicalized virtual energies of fragments.*\n{}'.format(('*\n.' * 18) + '*\n')
+HF_ENERGIES_REGEX = 'HF energy.*\n{}'.format(('*\n.' * 2) + '*\n')
 
 def run_water_ammonia_rose_no_avas():
-    """ Water-Ammonia example calculation."""
+    """Water-Ammonia mol_frag example calculation."""
 
     # define target molecule
     mol = Atoms('NH3OH2',
@@ -87,38 +67,48 @@ def run_water_ammonia_rose_no_avas():
     rose_calc = Rose(rose_calc_type='mol_frag',
                      rose_target=mol,
                      rose_frags=[frag1, frag2],
-                     test = True,
-                     avas_frag=[0], nmo_avas=[3, 4, 5],
-                     frag_valence=[[1,7],[2,6]],
-                     frag_core=[[1,1],[2,1]]
+                     test = True
                      )
 
     # run the calculator
     rose_calc.calculate()
 
-def test_rose_output():
+def test_partial_charges():
+    """Test case #1 - Partial charges of fragments."""
 
+    # clean files from previous runs, if any
     clean_stuff()
 
-    with open('test_rose_ase_pyscf-water-ammonia.stdout', 'r') as f:
-        expected_output = f.read()
-
+    # run Rose calculation just once
     run_water_ammonia_rose_no_avas()
 
-    with open('rose.out', 'r') as f:
-        actual_output = f.read()
+    expected_output = read_output(EXPECTED_OUTPUT_FILE)
+    actual_output = read_output(ACTUAL_OUTPUT_FILE)
 
-    charge = 'Partial charges of fragments.*\n{}'.format(('*\n.' * 5) + '*\n' )
-    mo_energies = 'Recanonicalized virtual energies of fragments.*\n{}'.format(('*\n.' * 18) + '*\n' )
+    expected_charges = extract_number(CHARGE_REGEX, expected_output)
+    actual_charges = extract_number(CHARGE_REGEX, actual_output)
 
-    expected_charges = extract_number(charge, expected_output)
-    actual_charges = extract_number(charge, actual_output)
+    assert actual_charges == pytest.approx(expected_charges, rel=1e-3)
 
-    expected_mo_energies = extract_number(mo_energies, expected_output)
-    actual_mo_energies = extract_number(mo_energies, actual_output)
+def test_virtual_energies():
+    """Test case #2 - Recanonicalized virtual energies of fragments."""
+    expected_output = read_output(EXPECTED_OUTPUT_FILE)
+    actual_output = read_output(ACTUAL_OUTPUT_FILE)
 
+    expected_energies = extract_number(MO_ENERGIES_REGEX, expected_output)
+    actual_energies = extract_number(MO_ENERGIES_REGEX, actual_output)
+
+    assert actual_energies == pytest.approx(expected_energies, rel=1.0e-5)
+
+def test_hf_energy():
+    """Test case #3 - Check final HF energies, if test = True."""
+    expected_output = read_output(EXPECTED_OUTPUT_FILE)
+    actual_output = read_output(ACTUAL_OUTPUT_FILE)
+
+    expected_energy = extract_number(HF_ENERGIES_REGEX, expected_output)
+    actual_energy = extract_number(HF_ENERGIES_REGEX, actual_output)
+
+    # clean output files
     clean_stuff()
 
-    # Use the pytest.approx method to compare the two lists with tolerance
-    assert actual_charges == pytest.approx(expected_charges, rel=1e-3)
-    assert actual_mo_energies == pytest.approx(expected_mo_energies, rel=1.0e-5)
+    assert actual_energy == pytest.approx(expected_energy, rel=1.0e-8)
