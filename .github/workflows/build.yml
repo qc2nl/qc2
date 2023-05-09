@@ -39,11 +39,9 @@ jobs:
         run: |
           git clone https://gitlab.com/quantum_rose/rose.git
           cd rose
-          mkdir build
-          cd build
-          cmake ..
-          make install
-          cd ..
+          cmake -S . -B build
+          cmake --build build
+          cmake --install build
           cd bin/
           echo `pwd` >> $GITHUB_PATH
           cd ..
@@ -53,8 +51,8 @@ jobs:
           echo $PATH
       - name: Run unit tests
         run: |
-          pwd
-          ls
+          cd test
           pytest -v
+          cd ..
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel
