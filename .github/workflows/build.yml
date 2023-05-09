@@ -42,18 +42,13 @@ jobs:
           cmake -S . -B build
           cmake --build build
           cmake --install build
-          cd bin/
-          echo `pwd` >> $GITHUB_PATH
-          cd ..
+          echo `pwd`/bin >> $GITHUB_PATH
           cd ..
       - name: Path info
         run: |
           echo $PATH
       - name: Run unit tests
         run: |
-          ls
-          cd test
-          pytest -v
-          cd ..
+          pytest -v tests/
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel
