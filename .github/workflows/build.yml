@@ -51,6 +51,7 @@ jobs:
           echo $PATH
       - name: Run unit tests
         run: |
+          ls
           cd test
           pytest -v
           cd ..
