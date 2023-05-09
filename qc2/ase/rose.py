@@ -309,7 +309,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
                 ase_Atom = filename_Atoms_dict[filename_key]
 
-                natom = len(ase_Atom.symbols)
+                natom = len(ase_Atom.symbols) 
 
                 # nelec = atomic number minus electronic charge
                 nelec = (sum(ase_Atom.numbers)
