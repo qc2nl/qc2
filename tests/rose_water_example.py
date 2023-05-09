@@ -49,4 +49,4 @@ rose_calc = Rose(rose_calc_type='atom_frag',
                  )
 
 rose_calc.calculate()
-print(rose_calc.mol_frags_filenames)
+# print(rose_calc.mol_frags_filenames)
