@@ -49,6 +49,8 @@ jobs:
           echo $PATH
       - name: Run unit tests
         run: |
-          pytest -v tests/
+          cd tests/
+          pytest -v
+          cd ..
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel
