@@ -65,6 +65,7 @@ class RoseInputDataClass:
     restricted: bool = True
     # openshell: bool = False => made inactive
     relativistic: bool = False
+    spatial_orbitals: bool = True
     include_core: bool = False
 
     # Rose intrinsic options => expected to be fixed at the default values?
@@ -80,8 +81,8 @@ class RoseInputDataClass:
     nmo_avas: Optional[List[int]] = field(default_factory=list)
 
     # options for virtual orbitals localization.
-    additional_virtuals_cutoff: float = 2.0  # Eh
-    frag_threshold: float = 10.0  # Eh
+    additional_virtuals_cutoff: Optional[float] = None  # 2.0  # Eh
+    frag_threshold: Optional[float] = None  # 10.0  # Eh
     frag_valence: Optional[List[List[int]]] = field(default_factory=list)
     frag_core: Optional[List[List[int]]] = field(default_factory=list)
     frag_bias: Optional[List[List[int]]] = field(default_factory=list)
@@ -127,8 +128,6 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         """Executes Rose workflow."""
         FileIOCalculator.calculate(self, *args, **kwargs)
 
-        print(self.parameters, self)
-
         self.generate_input_genibo()
 
         if self.avas_frag:
@@ -171,7 +170,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                 f.write(".TEST\n")
             if not self.restricted:
                 f.write(".UNRESTRICTED\n")
-            if self.relativistic:
+            if not self.spatial_orbitals:
                 f.write(".SPINORS\n")
             if self.include_core:
                 f.write(".INCLUDE_CORE\n")
@@ -485,7 +484,6 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                 alpha_IBO = read_real_list("Alpha MO coefficients", f)
                 beta_energies = read_real_list("Beta Orbital Energies", f)
                 beta_IBO = read_real_list("Beta MO coefficients", f)
-            f.close()
         except FileNotFoundError:
             print("Cannot open", ibo_input_filename)
 
@@ -504,7 +502,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
             beta_IBO_coeff = np.zeros((len(mf.mo_coeff), nao), dtype=float)
         else:
             alpha_IBO_coeff = np.zeros((len(mf.mo_coeff[0]), nao), dtype=float)
-            beta_IBO_coeff = np.zeros((len(mf.mo_coeff[1]), nao), dtype=float)
+            beta_IBO_coeff = np.zeros((len(mf.mo_coeff[1]), nao), dtype=float)   
 
         ij = 0
         for i in range(nmo):

@@ -40,7 +40,7 @@ class PySCF(Calculator):
     Raises:
         InputError: If attributes other than
             'method', 'xc', 'basis', 'multiplicity',
-            'charge', and 'verbose' are input as Calculator.
+            'charge', 'relativistic', 'cart' and 'verbose' are input as Calculator.
         CalculatorSetupError: If abinitio methods other than
             'scf.RHF', 'scf.UHF', 'scf.ROHF',
             'dft.RKS', 'dft.UKS', and 'dft.ROKS' are selected.
@@ -69,6 +69,15 @@ class PySCF(Calculator):
            = 'dft.RKS'
            = 'dft.UKS'
            = 'dft.ROKS'
+    
+    Note: scalar relativistic correction can also be added via 'relativistic' keyword
+
+    where
+
+    relativistic = 'x2c'
+                 = 'x2c1e'
+                 = 'sfx2c'
+                 = 'sfx2c1e'
     """
     implemented_properties: List[str] = ['energy', 'forces']
 
@@ -77,6 +86,8 @@ class PySCF(Calculator):
                                           'xc': 'b3lyp',
                                           'multiplicity': 1,
                                           'charge': 0,
+                                          'relativistic': None,
+                                          'cart': True,
                                           'verbose': 0}
 
     def __init__(self,
@@ -133,6 +144,7 @@ class PySCF(Calculator):
         recognized_attributes: List[str] = [
             'ignore_bad_restart', 'command', 'method',
             'xc', 'basis', 'multiplicity', 'charge',
+            'relativistic', 'cart', 
             'verbose', 'kpts', 'nbands', 'smearing'
             ]
 
@@ -159,6 +171,14 @@ class PySCF(Calculator):
         # verbose = 0 prints no info
         if 'verbose' not in self.parameters.keys():
             self.parameters['verbose'] = 0
+
+        # scalar relativistic corrections
+        if 'relativistic' not in self.parameters.keys():
+            self.parameters['relativistic'] = None
+
+        # cartesian vs spherical basis functions
+        if 'cart' not in self.parameters.keys():
+            self.parameters['cart'] = False
 
         # dealing with some ASE specific inputs
         if 'kpts' in self.parameters.keys():
@@ -223,7 +243,7 @@ class PySCF(Calculator):
         self.mol = gto.M(atom=ase_atoms_to_pyscf(self.atoms),
                          basis=self.parameters['basis'],
                          charge=self.parameters['charge'],
-                         spin=spin_2s)
+                         spin=spin_2s, cart=self.parameters['cart'])
 
         # checking wf input name => this is case sensitive
         if self.parameters['method'] in implemented_methods:
@@ -240,6 +260,12 @@ class PySCF(Calculator):
 
         if 'dft' in self.parameters['method']:
             self.wf.xc = self.parameters['xc']
+
+        # add scalar relativistic corrections
+        if self.parameters['relativistic']:
+            self.wf = self.wf.x2c()
+        #    print(self.parameters['relativistic'], self.wf)
+        # self.wf = scf.addons.frac_occ(self.wf)
 
         # calculating energy in eV
         energy = self.wf.kernel() * Ha
