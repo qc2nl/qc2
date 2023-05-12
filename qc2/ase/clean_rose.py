@@ -134,14 +134,15 @@ class Rose(RoseInputDataClass, FileIOCalculator):
             self.generate_input_avas()
 
         self.generate_mol_frags_xyz()
-        self.generate_mo_files()
-        self.run_rose()
+        self.new_generate_mo_files()
+        #self.generate_mo_files()
+        #self.run_rose()
 
-        if self.save:
-            self.save_ibos()
+        #if self.save:
+        #    self.save_ibos()
 
-        if self.avas_frag:
-            self.run_avas()
+        #if self.avas_frag:
+        #    self.run_avas()
 
         # if self.run_postscf:
         #     self.run_post_hf()
@@ -213,12 +214,12 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         input_avas_filename = "INPUT_AVAS"
 
         # create a vector containing the calculator of each fragment
-        # Could we use different calculators for each of them ?           
-        fragments_mo_calculator = [
-            *[frag.calc.name.lower() for frag in self.rose_frags]
-            ]
+        # Could we use different calculators for them ?
+        fragments_mo_calculator = []
+        for frag in enumerate(self.rose_frags):
+            fragments_mo_calculator.append(self.rose_frags[frag[0]]
+                                           .calc.name.lower())
 
-        # generate AVAS input
         with open(input_avas_filename, "w") as f:
             f.write(str(len(self.rose_target.symbols))
                     + " # natoms\n")
@@ -265,32 +266,30 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                 write(frag_file_name + ".xyz", self.rose_frags[frag[0]])
                 self.mol_frags_filenames.append(frag_file_name)
 
-
     def generate_mo_files(self) -> None:
         """Generates orbitals input files for Rose."""
-        # First, check whether the required mo files already exist
-
         # Create a set of calculator file extensions for molecule and fragments
-        calculator_file_extensions = [
+        calculator_file_extensions = {
             self.rose_target.calc.name.lower(),
             *[frag.calc.name.lower() for frag in self.rose_frags]
-            ]
+            }
+        
+        print([frag.calc.name.lower() for frag in self.rose_frags])
+        print(calculator_file_extensions)
 
         # Generate a set of expected MO file names
         mo_file_names = [
             f"{file}.{ext}" for file, ext in zip(self.mol_frags_filenames,
                                                  calculator_file_extensions)]
-        
+
         # Check if all expected MO files already exist
         if all(os.path.exists(file) for file in mo_file_names):
-            print("MO files", mo_file_names, "exist.")
-            print("Proceeding to the next step.")
             return
-
+        
         # Generate a dictionary of filenames and corresponding ASE Atoms objects
         filename_atoms_dict = dict(zip(mo_file_names,
                                        [self.rose_target, *self.rose_frags]))
-        
+
         for filename, atoms in filename_atoms_dict.items():
             # Generate MO file for each ASE Atoms object
 
@@ -310,136 +309,15 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
             # Extract necessary information from the ASE Atoms object
             # and associated PySCF objects
-
-            # => pyscf specific variables # begin
-            # self.mf = scf.addons.frac_oc(self.mf)
-            # assign fractional occupancy for degenerated occupied HOMOs.
-            # important to reproduce the results
-
             mol = atoms.calc.mol
-            mf = atoms.calc.mf
-
+            mf = atoms.calc.wf
             nao = mol.nao_cart()
             nshells = mol.nbas
+            # shell_atom_map = [mol._bas[i][0] + 1 for i in
 
-            shell_atom_map = []
-            orb_momentum = []
-            contract_coeff = []
+            #print(filename, atoms, cart_coord)
 
-            for i in range(len(mol._bas)):
-                shell_atom_map.append(mol._bas[i][0] + 1)
-                orb_momentum.append(mol._bas[i][1])
-                contract_coeff.append(mol._bas[i][3])
-
-            nprim_shell = []
-            coord_shell = []
-            for i in range(nshells):
-                nprim_shell.append(1)
-                for j in range(3):
-                    coord_shell.append(atoms.positions[
-                            shell_atom_map[i] - 1][j]/Bohr)
-
-            prim_exp = []
-            for i in range(natom):
-                atom_type = atoms.symbols[i]
-                primitives_exp = mol._basis[atom_type]
-                for j in range(len(primitives_exp)):
-                    for k in range(1, len(primitives_exp[0])):
-                        prim_exp.append(primitives_exp[j][k][0])
-
-            scf_e = mf.e_tot
-
-            alpha_MO = []
-            beta_MO = []
-
-            if self.restricted:
-                alpha_coeff = mf.mo_coeff.copy()
-                alpha_energies = mf.mo_energy.copy()
-            if not self.restricted:
-                alpha_coeff = mf.mo_coeff[0].copy()
-                beta_coeff = mf.mo_coeff[1].copy()
-                alpha_energies = mf.mo_energy[0].copy()
-                beta_energies = mf.mo_energy[1].copy()
-
-            for i in range(alpha_coeff.shape[1]):
-                for j in range(alpha_coeff.shape[0]):
-                    alpha_MO.append(alpha_coeff[j][i])
-
-            if not self.restricted:
-                for i in range(beta_coeff.shape[1]):
-                    for j in range(beta_coeff.shape[0]):
-                        beta_MO.append(beta_coeff[j][i])
-
-            if self.get_oeint:
-                E_core = scf_e - mf.energy_elec()[0]
-                one_body_int = []
-                if self.restricted:
-                    h1e = alpha_coeff.T.dot(
-                        mf.get_hcore()).dot(alpha_coeff)
-                    h1e = mf.mo_coeff.T.dot(
-                        mf.get_hcore()).dot(mf.mo_coeff)
-                    for i in range(1, h1e.shape[0]+1):
-                        for j in range(1, i+1):
-                            one_body_int.append(h1e[i-1, j-1])
-                else:
-                    h1e_alpha = alpha_coeff.T.dot(
-                        mf.get_hcore()).dot(alpha_coeff)
-                    h1e_beta = beta_coeff.T.dot(
-                        mf.get_hcore()).dot(beta_coeff)
-                    h1e_alpha = mf.mo_coeff[0].T.dot(
-                        mf.get_hcore()).dot(mf.mo_coeff[0])
-                    h1e_beta = mf.mo_coeff[1].T.dot(
-                        mf.get_hcore()).dot(mf.mo_coeff[1])
-                    for i in range(1, h1e_alpha.shape[0]+1):
-                        for j in range(1, i+1):
-                            one_body_int.append(h1e_alpha[i-1, j-1])
-                            one_body_int.append(h1e_beta[i-1, j-1])
-
-            # => pyscf specific variables # end
-
-            # start writing Rose input mo files
-            with open(filename, "w") as f:
-                f.write("{:13}{:10}\n"
-                        .format("Generated by",
-                                atoms.calc.name.upper()))
-                write_int(f, "Number of atoms", natom)
-                write_int(f, "Charge", atoms.calc.parameters.charge)
-                write_int(f, "Multiplicity",
-                          atoms.calc.parameters.multiplicity)
-                write_int(f, "Number of electrons", nelec)
-                write_int(f, "Number of alpha electrons", nalpha)
-                write_int(f, "Number of beta electrons", nbeta)
-                write_int(f, "Number of basis functions", nao)
-                write_int_list(f, "Atomic numbers", atoms.numbers)
-                write_singlep_list(f, "Nuclear charges", atoms.numbers)
-                write_doublep_list(f, "Current cartesian coordinates",
-                                   cart_coord)
-                write_int(f, "Number of primitive shells", nshells)
-                write_int(f, "Pure/Cartesian d shells", pureamd)
-                write_int(f, "Pure/Cartesian f shells", pureamf)
-                write_int_list(f, "Shell types", orb_momentum)
-                write_int_list(f, "Number of primitives per shell",
-                               nprim_shell)
-                write_int_list(f, "Shell to atom map", shell_atom_map)
-                write_singlep_list(f, "Primitive exponents", prim_exp)
-                write_singlep_list(f, "Contraction coefficients",
-                                   [1]*len(prim_exp))
-                write_doublep_list(f, "Coordinates of each shell",
-                                   coord_shell)
-                f.write("{:43}R{:27.15e}\n".format("Total Energy", scf_e))
-                write_doublep_list(f, "Alpha Orbital Energies",
-                                   alpha_energies)
-                write_doublep_list(f, "Alpha MO coefficients", alpha_MO)
-                if not self.restricted:
-                    write_doublep_list(f, "Beta Orbital Energies",
-                                       beta_energies)
-                    write_doublep_list(f, "Beta MO coefficients", beta_MO)
-                if self.get_oeint:
-                    f.write("{:43}R{:27.15e}\n".format(
-                        "Core Energy", E_core))
-                    write_doublep_list(f, "One electron integrals",
-                                       one_body_int)
-
+        #print(mo_file_names)
 
     def run_rose(self) -> None:
         """Runs Rose executable 'genibo.x'."""
@@ -467,7 +345,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         from pyscf.scf.chkfile import dump_scf
 
         mol = self.rose_target.calc.mol
-        mf = self.rose_target.calc.mf
+        mf = self.rose_target.calc.wf
 
         ibo_wfn = copy.copy(mf)
 
@@ -661,3 +539,55 @@ def read_real_list(text, f):
                     var += [float(j)]
             return var
 
+
+if __name__ == '__main__':
+
+    from ase import Atoms
+    from ase.units import Ha
+
+    # import sys
+    # sys.path.append('..')
+
+    # from qc2.ase.rose import Rose
+    from .pyscf import PySCF
+
+    # define target molecule
+    mol = Atoms('OH2',
+                positions=[[0.,  0.00000,  0.59372],
+                           [0.,  0.76544, -0.00836],
+                           [0., -0.76544, -0.00836]
+                           ],
+                   calculator=PySCF(method='scf.RHF',
+                                    basis='unc-sto-3g',
+                                    multiplicity=1,
+                                    )
+                   )
+    
+    # define atomic fragments
+    frag1 = Atoms('O',
+                  calculator=PySCF(method='scf.RHF',
+                                   basis='unc-sto-3g',
+                                   multiplicity=1,
+                                   )
+                  )
+    
+    frag2 = Atoms('H',
+                  calculator=PySCF(method='scf.ROHF',
+                                   basis='unc-sto-3g',
+                                   multiplicity=2
+                                   )
+                  )
+    
+    print(mol.get_potential_energy() / Ha)
+    print(frag1.get_potential_energy() / Ha)
+    print(frag2.get_potential_energy() / Ha)
+    
+    # Rose-ASE calculator
+    rose_calc = Rose(rose_calc_type='atom_frag',
+                     rose_target=mol,
+                     rose_frags=[frag1, frag2],
+                     test = True,
+                     avas_frag=[0], nmo_avas=[3, 4, 5]
+                     )
+    
+    rose_calc.calculate()

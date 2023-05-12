@@ -40,7 +40,8 @@ class PySCF(Calculator):
     Raises:
         InputError: If attributes other than
             'method', 'xc', 'basis', 'multiplicity',
-            'charge', 'relativistic', 'cart' and 'verbose' are input as Calculator.
+            'charge', 'relativistic', 'cart', 'scf_addons' 
+            and 'verbose' are input as Calculator.
         CalculatorSetupError: If abinitio methods other than
             'scf.RHF', 'scf.UHF', 'scf.ROHF',
             'dft.RKS', 'dft.UKS', and 'dft.ROKS' are selected.
@@ -57,7 +58,9 @@ class PySCF(Calculator):
                             basis='6-31g*',
                             charge=0,
                             multiplicity=1,
-                            verbose=0)
+                            verbose=0,
+                            cart=False,
+                            relativistic=False)
     >>> energy = molecule.get_potential_energy()
     >>> gradient = molecule.get_forces()
 
@@ -70,14 +73,11 @@ class PySCF(Calculator):
            = 'dft.UKS'
            = 'dft.ROKS'
     
-    Note: scalar relativistic correction can also be added via 'relativistic' keyword
-
-    where
-
-    relativistic = 'x2c'
-                 = 'x2c1e'
-                 = 'sfx2c'
-                 = 'sfx2c1e'
+    Notes: 
+        - Scalar relativistic corrections can be added with 
+            'relativistic = True' keyword. If selected,
+            the scf object will be decorated by x2c() method, e.g.,
+            mf = scf.RHF(mol).x2c()
     """
     implemented_properties: List[str] = ['energy', 'forces']
 
@@ -86,8 +86,9 @@ class PySCF(Calculator):
                                           'xc': 'b3lyp',
                                           'multiplicity': 1,
                                           'charge': 0,
-                                          'relativistic': None,
-                                          'cart': True,
+                                          'relativistic': False,
+                                          'cart': False,
+                                          'scf_addons': None,
                                           'verbose': 0}
 
     def __init__(self,
@@ -133,7 +134,7 @@ class PySCF(Calculator):
         self.check_pyscf_attributes()
 
         self.mol = None
-        self.wf = None
+        self.mf = None
 
     def check_pyscf_attributes(self) -> None:
         """Checks for any missing and/or mispelling PySCF input attribute.
@@ -144,7 +145,7 @@ class PySCF(Calculator):
         recognized_attributes: List[str] = [
             'ignore_bad_restart', 'command', 'method',
             'xc', 'basis', 'multiplicity', 'charge',
-            'relativistic', 'cart', 
+            'relativistic', 'cart', 'scf_addons',
             'verbose', 'kpts', 'nbands', 'smearing'
             ]
 
@@ -174,11 +175,15 @@ class PySCF(Calculator):
 
         # scalar relativistic corrections
         if 'relativistic' not in self.parameters.keys():
-            self.parameters['relativistic'] = None
+            self.parameters['relativistic'] = False
 
         # cartesian vs spherical basis functions
         if 'cart' not in self.parameters.keys():
             self.parameters['cart'] = False
+
+        # cartesian vs spherical basis functions
+        if 'scf_addons' not in self.parameters.keys():
+            self.parameters['scf_addons'] = None
 
         # dealing with some ASE specific inputs
         if 'kpts' in self.parameters.keys():
@@ -247,7 +252,7 @@ class PySCF(Calculator):
 
         # checking wf input name => this is case sensitive
         if self.parameters['method'] in implemented_methods:
-            self.wf = eval(self.parameters['method'])(self.mol)
+            self.mf = eval(self.parameters['method'])(self.mol)
         else:
             raise CalculatorSetupError('Method not yet implemented. '
                                        'Current PySCF-ASE calculator '
@@ -256,24 +261,26 @@ class PySCF(Calculator):
                                        'wave functions.'
                                        ' Please check input method.')
 
-        self.wf.verbose = self.parameters['verbose']
+        self.mf.verbose = self.parameters['verbose']
 
         if 'dft' in self.parameters['method']:
-            self.wf.xc = self.parameters['xc']
+            self.mf.xc = self.parameters['xc']
 
         # add scalar relativistic corrections
         if self.parameters['relativistic']:
-            self.wf = self.wf.x2c()
-        #    print(self.parameters['relativistic'], self.wf)
-        # self.wf = scf.addons.frac_occ(self.wf)
+            self.mf = self.mf.x2c()
+
+        if self.parameters['scf_addons']:
+            func = 'scf.addons.' + self.parameters['scf_addons']
+            self.mf = eval(func)(self.mf)
 
         # calculating energy in eV
-        energy = self.wf.kernel() * Ha
+        energy = self.mf.kernel() * Ha
         self.results['energy'] = energy
 
         # calculating forces
         if 'forces' in properties:
-            gf = self.wf.nuc_grad_method()
+            gf = self.mf.nuc_grad_method()
             gf.verbose = self.parameters['verbose']
             if 'dft' in self.parameters['method']:
                 gf.grid_response = True
