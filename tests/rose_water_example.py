@@ -18,6 +18,8 @@ mol = Atoms('OH2',
                calculator=PySCF(method='scf.RHF',
                                 basis='unc-sto-3g',
                                 multiplicity=1,
+                                cart=True,
+                                scf_addons='frac_occ'
                                 )
                )
 
@@ -26,13 +28,17 @@ frag1 = Atoms('O',
               calculator=PySCF(method='scf.RHF',
                                basis='unc-sto-3g',
                                multiplicity=1,
+                               cart=True,
+                               scf_addons='frac_occ'
                                )
               )
 
 frag2 = Atoms('H',
               calculator=PySCF(method='scf.ROHF',
                                basis='unc-sto-3g',
-                               multiplicity=2
+                               multiplicity=2,
+                               cart=True,
+                               scf_addons='frac_occ'
                                )
               )
 

@@ -312,9 +312,6 @@ class Rose(RoseInputDataClass, FileIOCalculator):
             # and associated PySCF objects
 
             # => pyscf specific variables # begin
-            # self.mf = scf.addons.frac_oc(self.mf)
-            # assign fractional occupancy for degenerated occupied HOMOs.
-            # important to reproduce the results
 
             mol = atoms.calc.mol
             mf = atoms.calc.mf
