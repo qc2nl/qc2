@@ -37,7 +37,7 @@ mol = Atoms('FeC10H10',
                calculator=PySCF(method='scf.RHF',
                                 basis='unc-sto-3g',
                                 multiplicity=1,
-                                relativistic='x2c', 
+                                relativistic='x2c',
                                 cart=True
                                 )
                )
@@ -49,6 +49,7 @@ frag1 = Atoms('Fe',
                                basis='unc-sto-3g',
                                multiplicity=1,
                                cart=True,
+                               relativistic='x2c',
                                charge=2
                                )
                )
@@ -70,6 +71,7 @@ frag2 = Atoms('C5H5',
                                basis='unc-sto-3g',
                                multiplicity=1,
                                cart=True,
+                               relativistic='x2c',
                                charge=-1
                                )
               )
@@ -91,6 +93,7 @@ frag3 = Atoms('C5H5',
                                basis='unc-sto-3g',
                                multiplicity=1,
                                cart=True,
+                               relativistic='x2c',
                                charge=-1
                                )
               )

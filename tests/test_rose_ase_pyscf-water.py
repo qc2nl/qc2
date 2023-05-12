@@ -19,6 +19,8 @@ def run_water_rose_no_avas():
                calculator=PySCF(method='scf.RHF',
                                 basis='unc-sto-3g',
                                 multiplicity=1,
+                                cart=True,
+                                scf_addons='frac_occ'
                                 )
                )
 
@@ -27,13 +29,17 @@ def run_water_rose_no_avas():
               calculator=PySCF(method='scf.RHF',
                                basis='unc-sto-3g',
                                multiplicity=1,
+                               cart=True,
+                               scf_addons='frac_occ'
                                )
               )
 
     frag2 = Atoms('H',
               calculator=PySCF(method='scf.ROHF',
                                basis='unc-sto-3g',
-                               multiplicity=2
+                               multiplicity=2,
+                               cart=True,
+                               scf_addons='frac_occ'
                                )
               )
 

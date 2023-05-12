@@ -23,7 +23,10 @@ def run_water_ammonia_rose_no_avas():
                            ],
                 calculator=PySCF(method='scf.RHF',
                                  basis='unc-sto-3g',
-                                 multiplicity=1)
+                                 multiplicity=1,
+                                 cart=True,
+                                 scf_addons='frac_occ'
+                                 )
                 )
 
     # define molecular fragments
@@ -35,7 +38,9 @@ def run_water_ammonia_rose_no_avas():
                              ],
                   calculator=PySCF(method='scf.RHF',
                                    basis='unc-sto-3g',
-                                   multiplicity=1
+                                   multiplicity=1,
+                                   cart=True,
+                                   scf_addons='frac_occ'
                                    )
                   )
 
@@ -46,7 +51,9 @@ def run_water_ammonia_rose_no_avas():
                              ],
                   calculator=PySCF(method='scf.RHF',
                                    basis='unc-sto-3g',
-                                   multiplicity=1
+                                   multiplicity=1,
+                                   cart=True,
+                                   scf_addons='frac_occ'
                                    )
                   )
 
