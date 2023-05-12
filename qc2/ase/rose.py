@@ -249,21 +249,20 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         self.mol_frags_filenames.append(mol_filename)
 
         # generate fragments xyz files
-        for frag in enumerate(self.rose_frags):
+        for i, frag in enumerate(self.rose_frags):
 
             # comply with the required Rose files format
             if self.rose_calc_type == RoseCalcType.ATOM_FRAG.value:
-                # defining atomic fragment's Z number
-                frag_Z = self.rose_frags[frag[0]].numbers[0]
-
-                frag_file_name = "{:03d}".format(frag_Z)
-                write(frag_file_name + ".xyz", self.rose_frags[frag[0]])
-                self.mol_frags_filenames.append(frag_file_name)
-
+                # use the Z number of the atom for filename
+                frag_Z = frag.numbers[0]
+                frag_filename = f"{frag_Z:03d}"
             else:
-                frag_file_name = "frag{:d}".format(frag[0])
-                write(frag_file_name + ".xyz", self.rose_frags[frag[0]])
-                self.mol_frags_filenames.append(frag_file_name)
+                # use the index of the fragment for filename
+                frag_filename = f"frag{i}"
+
+            # use ASE write() to generate files
+            write(frag_filename + ".xyz", frag)
+            self.mol_frags_filenames.append(frag_filename)
 
 
     def generate_mo_files(self) -> None:
