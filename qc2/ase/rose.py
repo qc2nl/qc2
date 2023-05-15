@@ -233,10 +233,10 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                                                  calculator_file_extensions)]
         
         # Check if all expected MO files already exist
-        if all(os.path.exists(file) for file in mo_file_names):
-            print("MO files", mo_file_names, "exist.")
-            print("Proceeding to the next step.")
-            return
+        # if all(os.path.exists(file) for file in mo_file_names):
+        #     print("MO files", mo_file_names, "exist.")
+        #     print("Proceeding to the next step.")
+        #     return
 
         # Generate a dictionary of filenames and corresponding ASE Atoms objects
         filename_atoms_dict = dict(zip(mo_file_names,

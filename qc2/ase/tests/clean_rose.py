@@ -134,7 +134,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
             self.generate_input_avas()
 
         self.generate_mol_frags_xyz()
-        self.generate_mo_files()
+        self.new_generate_mo_files()
         #self.generate_mo_files()
         #self.run_rose()
 
@@ -549,7 +549,7 @@ if __name__ == '__main__':
     # sys.path.append('..')
 
     # from qc2.ase.rose import Rose
-    from pyscf import PySCF
+    from .pyscf import PySCF
 
     # define target molecule
     mol = Atoms('OH2',
