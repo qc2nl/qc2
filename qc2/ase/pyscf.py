@@ -74,10 +74,15 @@ class PySCF(Calculator):
            = 'dft.ROKS'
     
     Notes: 
-        - Scalar relativistic corrections can be added with 
+        - Scalar relativistic corrections can be added with
             'relativistic = True' keyword. If selected,
             the scf object will be decorated by x2c() method, e.g.,
-            mf = scf.RHF(mol).x2c()
+            mf = scf.RHF(mol).x2c().
+            relativistic is False by default.
+        - pyscf.scf.addons functions can also be included, e.g.:
+            if scf_addons='frac_occ' keyword is added, then
+            mf = scf.addons.frac_occ(mf).
+            scf_addons is None by default.
     """
     implemented_properties: List[str] = ['energy', 'forces']
 
@@ -227,9 +232,6 @@ class PySCF(Calculator):
             'scf.RHF', 'scf.UHF', 'scf.ROHF', 'dft.RKS', 'dft.UKS',
                 and 'dft.ROKS' are selected.
         """
-        implemented_methods: List[str] = ['scf.RHF', 'scf.UHF', 'scf.ROHF',
-                                          'dft.RKS', 'dft.UKS', 'dft.ROKS']
-
         from pyscf import gto, scf, dft
 
         # setting up self.atoms attribute from base class Calculator.calculate.
@@ -250,9 +252,19 @@ class PySCF(Calculator):
                          charge=self.parameters['charge'],
                          spin=spin_2s, cart=self.parameters['cart'])
 
-        # checking wf input name => this is case sensitive
+        # make dictionary of implemented methods
+        implemented_methods = {'scf.HF': scf.HF,
+                               'scf.RHF': scf.RHF,
+                               'scf.UHF': scf.UHF,
+                               'scf.ROHF': scf.ROHF,
+                               'dft.KS': dft.KS,
+                               'dft.RKS': dft.RKS,
+                               'dft.UKS': dft.UKS,
+                               'dft.ROKS': dft.ROKS}
+
+        # define mf object 
         if self.parameters['method'] in implemented_methods:
-            self.mf = eval(self.parameters['method'])(self.mol)
+            self.mf = implemented_methods[self.parameters['method']](self.mol)
         else:
             raise CalculatorSetupError('Method not yet implemented. '
                                        'Current PySCF-ASE calculator '

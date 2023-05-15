@@ -50,9 +50,10 @@ print(frag2.get_potential_energy() / Ha)
 rose_calc = Rose(rose_calc_type='atom_frag',
                  rose_target=mol,
                  rose_frags=[frag1, frag2],
-                 test = True,
-                 avas_frag=[0], nmo_avas=[3, 4, 5]
+                 test = True
                  )
+
+# ,avas_frag=[0], nmo_avas=[3, 4, 5]
 
 rose_calc.calculate()
 

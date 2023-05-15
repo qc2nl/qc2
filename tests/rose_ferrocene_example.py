@@ -38,7 +38,8 @@ mol = Atoms('FeC10H10',
                                 basis='unc-sto-3g',
                                 multiplicity=1,
                                 relativistic='x2c',
-                                cart=True
+                                cart=True,
+                                scf_addons='frac_occ'
                                 )
                )
 
@@ -50,7 +51,8 @@ frag1 = Atoms('Fe',
                                multiplicity=1,
                                cart=True,
                                relativistic='x2c',
-                               charge=2
+                               charge=2,
+                               scf_addons='frac_occ'
                                )
                )
 
@@ -72,7 +74,8 @@ frag2 = Atoms('C5H5',
                                multiplicity=1,
                                cart=True,
                                relativistic='x2c',
-                               charge=-1
+                               charge=-1,
+                               scf_addons='frac_occ'
                                )
               )
 
@@ -94,7 +97,8 @@ frag3 = Atoms('C5H5',
                                multiplicity=1,
                                cart=True,
                                relativistic='x2c',
-                               charge=-1
+                               charge=-1,
+                               scf_addons='frac_occ'
                                )
               )
 

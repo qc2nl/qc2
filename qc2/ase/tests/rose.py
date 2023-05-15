@@ -77,8 +77,8 @@ class RoseInputDataClass:
     # wf_restart: bool = False => made inactive
     get_oeint: bool = False
     save: bool = True
-    # avas_frag: Optional[List[int]] = field(default_factory=list) => made inactive
-    # nmo_avas: Optional[List[int]] = field(default_factory=list) => made inactive
+    avas_frag: Optional[List[int]] = field(default_factory=list)
+    nmo_avas: Optional[List[int]] = field(default_factory=list)
 
     # options for virtual orbitals localization.
     additional_virtuals_cutoff: Optional[float] = None  # 2.0  # Eh
@@ -129,12 +129,22 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         FileIOCalculator.calculate(self, *args, **kwargs)
 
         self.generate_input_genibo()
+
+        #if self.avas_frag:
+        #    self.generate_input_avas()
+
         self.generate_mol_frags_xyz()
         self.generate_mo_files()
         self.run_rose()
 
         if self.save:
             self.save_ibos()
+
+        # if self.avas_frag:
+        #    self.run_avas()
+
+        # if self.run_postscf:
+        #     self.run_post_hf()
 
     def generate_input_genibo(self) -> None:
         """Generates fortran input file for Rose.
@@ -188,7 +198,45 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                         f.write(".FRAG_BIAS\n")
                         f.write(str(item[0]) + "\n")
                         f.write(str(item[1]) + "\n")
+            if self.avas_frag:
+                f.write(".AVAS\n")
+                f.write(str(len(self.avas_frag)) + "\n")
+                f.writelines("{:3d}".format(item) for item in self.avas_frag)
             f.write("\n*END OF INPUT\n")
+
+    def generate_input_avas(self) -> None:
+        """Generates fortran AVAS input for Rose.
+
+        This method generates a file named "INPUT_AVAS"
+            containing input options to be read by Rose.
+        """
+        input_avas_filename = "INPUT_AVAS"
+
+        # create a vector containing the calculator of each fragment
+        # Could we use different calculators for each of them ?           
+        fragments_mo_calculator = [
+            *[frag.calc.name.lower() for frag in self.rose_frags]
+            ]
+
+        # generate AVAS input
+        with open(input_avas_filename, "w") as f:
+            f.write(str(len(self.rose_target.symbols))
+                    + " # natoms\n")
+            f.write(str(
+                self.rose_target.calc.parameters.charge) + " # charge\n")
+            if self.restricted:
+                f.write("1 # restricted\n")
+            else:
+                f.write("0 # unrestricted\n")
+            f.write("1 # spatial orbs\n")
+            f.write(str(self.rose_target.calc
+                    .name.lower())
+                    + " # MO file for the full molecule\n")
+            f.write(" ".join(map(str, fragments_mo_calculator))
+                    + " # MO file for the fragments\n")
+            f.write(str(len(self.nmo_avas))
+                    + " # number of valence MOs in B2\n")
+            f.writelines("{:3d}".format(item) for item in self.nmo_avas)
 
     def generate_mol_frags_xyz(self) -> None:
         """Generates Molecule and Fragment xyz files for Rose.
@@ -388,6 +436,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                     write_doublep_list(f, "One electron integrals",
                                        one_body_int)
 
+
     def run_rose(self) -> None:
         """Runs Rose executable 'genibo.x'."""
         self.rose_output_filename = "OUTPUT_ROSE"
@@ -455,6 +504,15 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
         # => pyscf specific variables # end
 
+    def run_avas(self) -> None:
+        """Runs 'avas.x' executable."""
+        self.avas_output_filename = "OUTPUT_AVAS"
+        self.command = "avas.x > " + self.avas_output_filename
+        FileIOCalculator.calculate(self)
+
+    def run_post_hf(self) -> None:
+        """Performs CASCI and/or CASSCF calculations."""
+        pass
 
 def write_int(f, text, var):
     """Writes an integer value to a file in a specific format.
