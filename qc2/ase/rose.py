@@ -142,6 +142,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         This method generates a file named "INPUT_GENIBO"
             containing Rose input options.
         """
+        print(self.parameters)
         input_genibo_filename = "INPUT_GENIBO"
 
         with open(input_genibo_filename, "w") as f:
@@ -219,8 +220,6 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
     def generate_mo_files(self) -> None:
         """Generates orbitals input files for Rose."""
-        # First, check whether the required mo files already exist
-
         # Create a set of calculator file extensions for molecule and fragments
         calculator_file_extensions = [
             self.rose_target.calc.name.lower(),

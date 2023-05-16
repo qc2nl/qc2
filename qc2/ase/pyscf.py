@@ -16,6 +16,7 @@ from ase.calculators.calculator import Calculator, all_changes
 from ase.units import Ha, Bohr
 from ase.calculators.calculator import InputError
 from ase.calculators.calculator import CalculatorSetupError
+from pyscf import gto, scf, dft
 
 
 def ase_atoms_to_pyscf(ase_atoms: Atoms) -> List[List[Union[str, np.ndarray]]]:
@@ -232,8 +233,6 @@ class PySCF(Calculator):
             'scf.RHF', 'scf.UHF', 'scf.ROHF', 'dft.RKS', 'dft.UKS',
                 and 'dft.ROKS' are selected.
         """
-        from pyscf import gto, scf, dft
-
         # setting up self.atoms attribute from base class Calculator.calculate.
         # this is extracted from the atoms Atoms object.
         super().calculate(atoms=atoms)
@@ -283,8 +282,11 @@ class PySCF(Calculator):
             self.mf = self.mf.x2c()
 
         if self.parameters['scf_addons']:
-            func = 'scf.addons.' + self.parameters['scf_addons']
-            self.mf = eval(func)(self.mf)
+            # get the name of the function to call
+            func_name = self.parameters['scf_addons']
+            # get the function object from the scf.addons module
+            func = getattr(scf.addons, func_name)
+            self.mf = func(self.mf)
 
         # calculating energy in eV
         energy = self.mf.kernel() * Ha
