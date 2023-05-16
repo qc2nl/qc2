@@ -48,6 +48,7 @@ print(frag2.get_potential_energy() / Ha)
 
 # Rose-ASE calculator
 rose_calc = Rose(rose_calc_type='atom_frag',
+                 exponent=4,
                  rose_target=mol,
                  rose_frags=[frag1, frag2],
                  test = True

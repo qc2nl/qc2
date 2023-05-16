@@ -79,11 +79,11 @@ class PySCF(Calculator):
             'relativistic = True' keyword. If selected,
             the scf object will be decorated by x2c() method, e.g.,
             mf = scf.RHF(mol).x2c().
-            relativistic is False by default.
+            'relativistic' is False by default.
         - pyscf.scf.addons functions can also be included, e.g.:
             if scf_addons='frac_occ' keyword is added, then
             mf = scf.addons.frac_occ(mf).
-            scf_addons is None by default.
+            'scf_addons' is None by default.
     """
     implemented_properties: List[str] = ['energy', 'forces']
 
@@ -304,3 +304,140 @@ class PySCF(Calculator):
             totalforces.extend(forces)
             totalforces = np.array(totalforces)
             self.results['forces'] = totalforces
+
+    def dump_mo(self) -> Dict[str, Any]:
+        """Writes MO and one-electron integrals to a file"""
+        # Extract molecule info
+        charge = self.mol.charge
+        natom  = self.mol.natm
+        nelec  = self.mol.nelectron
+        nalpha = (nelec + self.mol.spin)//2
+        nbeta  = (nelec - self.mol.spin)//2
+        nao    = self.mol.nao_cart()
+        nshells= self.mol.nbas
+        multiplicity = self.mol.spin + 1
+
+        cart_coord = []
+        for i in range(natom):
+            cart_coord.append(self.mol.atom_coords().tolist()[i][0])
+            cart_coord.append(self.mol.atom_coords().tolist()[i][1])
+            cart_coord.append(self.mol.atom_coords().tolist()[i][2])
+
+        Zint = []
+        for i in range(len(self.mol._atm)):
+            Zint.append(self.mol._atm[i][0])
+        Zreal = Zint
+
+        mol_data = {}
+        mol_data = {'charge': charge,
+                    'natom': natom,
+                    'nelec': nelec,
+                    'nalpha': nalpha,
+                    'nbeta': nbeta,
+                    'nao': nao,
+                    'nshells': nshells,
+                    'multiplicity': multiplicity,
+                    'cart_coord': cart_coord,
+                    'Zint': Zint,
+                    'Zreal': Zreal}
+
+        # Extract basis set info
+        shell_atom_map = []
+        orb_momentum = []
+        contract_coeff = []
+        for i in range(len(self.mol._bas)):
+            shell_atom_map.append(self.mol._bas[i][0] + 1)
+            orb_momentum.append(self.mol._bas[i][1])
+            contract_coeff.append(self.mol._bas[i][3])
+
+        nprim_shell = []
+        coord_shell = []
+        for i in range(nshells):
+            nprim_shell.append(1)
+            coord_shell.append(self.mol.atom_coords().tolist()[shell_atom_map[i] - 1][0])
+            coord_shell.append(self.mol.atom_coords().tolist()[shell_atom_map[i] - 1][1])
+            coord_shell.append(self.mol.atom_coords().tolist()[shell_atom_map[i] - 1][2])
+
+        prim_exp = []
+        for i in range(natom):
+            atom_type = self.atoms.symbols[i]
+            primitives_exp = self.mol._basis[atom_type]
+            for j in range(len(primitives_exp)):
+                for k in range(1,len(primitives_exp[0])):
+                    prim_exp.append(primitives_exp[j][k][0])
+
+        if self.mol.cart:
+            pureamd = 1
+            pureamf = 1
+
+        basis_data = {}
+        basis_data = {'nshells': nshells,
+                      'pureamd': pureamd,
+                      'pureamf': pureamf,
+                      'orb_momentum': orb_momentum,
+                      'nprim_shell': nprim_shell,
+                      'shell_atom_map': shell_atom_map,
+                      'prim_exp': prim_exp,
+                      'contr_coeffs': [1]*len(prim_exp),
+                      'coord_shell': coord_shell}
+
+        # Extract MO coeffs
+        scf_e = self.mf.e_tot
+
+        alpha_MO = []
+        alpha_energies = []
+        beta_MO = []
+        beta_energies = []
+
+        if ('UHF' not in self.mf._method_name() and
+            'UKS' not in self.mf._method_name()):
+            alpha_coeff = self.mf.mo_coeff.copy()
+            alpha_energies = self.mf.mo_energy.copy()
+        else:
+            alpha_coeff = self.mf.mo_coeff[0].copy()
+            beta_coeff = self.mf.mo_coeff[1].copy()
+            alpha_energies = self.mf.mo_energy[0].copy()
+            beta_energies = self.mf.mo_energy[1].copy()
+
+        for i in range(alpha_coeff.shape[1]):
+            for j in range(alpha_coeff.shape[0]):
+                alpha_MO.append(alpha_coeff[j][i])
+
+        if ('UHF' in self.mf._method_name() and
+            'UKS' in self.mf._method_name()):
+            for i in range(beta_coeff.shape[1]):
+                for j in range(beta_coeff.shape[0]):
+                    beta_MO.append(beta_coeff[j][i])
+
+        mo_data = {}
+        mo_data = {'scf_e': scf_e,
+                   'alpha_energies': alpha_energies,
+                   'alpha_MO': alpha_MO,
+                   'beta_energies': beta_energies,
+                   'beta_MO': beta_MO}
+
+        # Extract one-electron integrals
+        E_core = scf_e - self.mf.energy_elec()[0]
+        one_body_int = []
+        if ('UHF' not in self.mf._method_name() and
+            'UKS' not in self.mf._method_name()):
+            h1e = alpha_coeff.T.dot(self.mf.get_hcore()).dot(alpha_coeff)
+            h1e = self.mf.mo_coeff.T.dot(self.mf.get_hcore()).dot(self.mf.mo_coeff)
+            for i in range(1, h1e.shape[0]+1):
+                for j in range(1, i+1):
+                    one_body_int.append(h1e[i-1, j-1])
+        else:
+            h1e_alpha = alpha_coeff.T.dot(self.mf.get_hcore()).dot(alpha_coeff)
+            h1e_beta = beta_coeff.T.dot(self.mf.get_hcore()).dot(beta_coeff)
+            h1e_alpha = self.mf.mo_coeff[0].T.dot(self.mf.get_hcore()).dot(self.mf.mo_coeff[0])
+            h1e_beta = self.mf.mo_coeff[1].T.dot(self.mf.get_hcore()).dot(self.mf.mo_coeff[1])
+            for i in range(1, h1e_alpha.shape[0]+1):
+                for j in range(1, i+1):
+                    one_body_int.append(h1e_alpha[i-1, j-1])
+                    one_body_int.append(h1e_beta[i-1, j-1])
+
+        oei_data = {}
+        oei_data = {'E_core': E_core,
+                    'one_body_int': one_body_int}
+    
+        return mol_data, basis_data, mo_data, oei_data

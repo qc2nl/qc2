@@ -50,9 +50,10 @@ def run_water_rose_no_avas():
 
     # prepare Rose-ASE calculator
     rose_calc = Rose(rose_calc_type='atom_frag',
-                 rose_target=mol,
-                 rose_frags=[frag1, frag2],
-                 test = True
+                     exponent=4,
+                     rose_target=mol,
+                     rose_frags=[frag1, frag2],
+                     test = True
                  )
 
     # run the calculator

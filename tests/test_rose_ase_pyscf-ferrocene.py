@@ -110,6 +110,7 @@ def run_ferrocene_rose_no_avas():
 
     # Rose-ASE calculator
     rose_calc = Rose(rose_calc_type='mol_frag',
+                     exponent=4,
                      rose_target=mol,
                      rose_frags=[frag1, frag2, frag3],
                      test = True,

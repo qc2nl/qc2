@@ -64,6 +64,7 @@ def run_water_ammonia_rose_no_avas():
 
     # prepare Rose-ASE calculator
     rose_calc = Rose(rose_calc_type='mol_frag',
+                     exponent=4,
                      rose_target=mol,
                      rose_frags=[frag1, frag2],
                      test = True
