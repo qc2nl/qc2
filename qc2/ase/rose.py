@@ -135,7 +135,10 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         for filename, atoms in filename_atoms_dict.items():
             # generate MO file for each ASE Atoms object
 
-            mol_data, basis_data, mo_data, oei_data = atoms.calc.dump_mo()
+            mol_data = atoms.calc.dump_mol_data()
+            basis_data = atoms.calc.dump_basis_set_data()
+            mo_data = atoms.calc.dump_mo_data()
+            oei_data = atoms.calc.dump_oei_data()
 
             # start writing Rose input mo files
             with open(filename, "w") as f:

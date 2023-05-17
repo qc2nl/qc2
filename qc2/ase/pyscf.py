@@ -16,7 +16,7 @@ from ase.calculators.calculator import Calculator, all_changes
 from ase.units import Ha, Bohr
 from ase.calculators.calculator import InputError
 from ase.calculators.calculator import CalculatorSetupError
-from pyscf import gto, scf, dft
+from pyscf import gto, scf, dft, lib
 
 
 def ase_atoms_to_pyscf(ase_atoms: Atoms) -> List[List[Union[str, np.ndarray]]]:
@@ -41,8 +41,8 @@ class PySCF(Calculator):
     Raises:
         InputError: If attributes other than
             'method', 'xc', 'basis', 'multiplicity',
-            'charge', 'relativistic', 'cart', 'scf_addons' 
-            and 'verbose' are input as Calculator.
+            'charge', 'relativistic', 'cart', 'scf_addons', 
+            'verbose', and 'output' are input as Calculator.
         CalculatorSetupError: If abinitio methods other than
             'scf.RHF', 'scf.UHF', 'scf.ROHF',
             'dft.RKS', 'dft.UKS', and 'dft.ROKS' are selected.
@@ -61,7 +61,8 @@ class PySCF(Calculator):
                             multiplicity=1,
                             verbose=0,
                             cart=False,
-                            relativistic=False)
+                            relativistic=False,
+                            output='output_file_name_with_no_extension')
     >>> energy = molecule.get_potential_energy()
     >>> gradient = molecule.get_forces()
 
@@ -95,6 +96,7 @@ class PySCF(Calculator):
                                           'relativistic': False,
                                           'cart': False,
                                           'scf_addons': None,
+                                          'output': None,
                                           'verbose': 0}
 
     def __init__(self,
@@ -152,7 +154,7 @@ class PySCF(Calculator):
             'ignore_bad_restart', 'command', 'method',
             'xc', 'basis', 'multiplicity', 'charge',
             'relativistic', 'cart', 'scf_addons',
-            'verbose', 'kpts', 'nbands', 'smearing'
+            'output', 'verbose', 'kpts', 'nbands', 'smearing'
             ]
 
         # self.parameters gathers all PYSCF input options in a dictionary.
@@ -190,6 +192,10 @@ class PySCF(Calculator):
         # cartesian vs spherical basis functions
         if 'scf_addons' not in self.parameters.keys():
             self.parameters['scf_addons'] = None
+
+        # outputfile
+        if 'output' not in self.parameters.keys():
+            self.parameters['output'] = None
 
         # dealing with some ASE specific inputs
         if 'kpts' in self.parameters.keys():
@@ -245,11 +251,19 @@ class PySCF(Calculator):
         # the spin variable corresponds to 2S instead of 2S+1
         spin_2s = self.parameters['multiplicity'] - 1
 
+        outputfile = None
+        if self.parameters['output'] is not None:
+            outputfile = self.parameters['output'] + ".out"
+            self.parameters['verbose'] = 5
+
         # passing geometry and other definitions
         self.mol = gto.M(atom=ase_atoms_to_pyscf(self.atoms),
                          basis=self.parameters['basis'],
                          charge=self.parameters['charge'],
-                         spin=spin_2s, cart=self.parameters['cart'])
+                         spin=spin_2s,
+                         verbose=self.parameters['verbose'],
+                         cart=self.parameters['cart'],
+                         output=outputfile)
 
         # make dictionary of implemented methods
         implemented_methods = {'scf.HF': scf.HF,
@@ -272,8 +286,6 @@ class PySCF(Calculator):
                                        'wave functions.'
                                        ' Please check input method.')
 
-        self.mf.verbose = self.parameters['verbose']
-
         if 'dft' in self.parameters['method']:
             self.mf.xc = self.parameters['xc']
 
@@ -287,6 +299,8 @@ class PySCF(Calculator):
             # get the function object from the scf.addons module
             func = getattr(scf.addons, func_name)
             self.mf = func(self.mf)
+
+        # self.mf.chkfile =  self.parameters['output'] + ".chk"
 
         # calculating energy in eV
         energy = self.mf.kernel() * Ha
@@ -305,8 +319,8 @@ class PySCF(Calculator):
             totalforces = np.array(totalforces)
             self.results['forces'] = totalforces
 
-    def dump_mo(self) -> Dict[str, Any]:
-        """Writes MO and one-electron integrals to a file"""
+    def dump_mol_data(self) -> Dict[str, Any]:
+        """Writes relevant molecular info to chkfile in HDF5 format."""
         # Extract molecule info
         charge = self.mol.charge
         natom  = self.mol.natm
@@ -341,7 +355,18 @@ class PySCF(Calculator):
                     'Zint': Zint,
                     'Zreal': Zreal}
 
+        if self.mol.output:
+            filename = self.mol.output.split(".")
+            output_filename = filename[0] + '.chk'
+            lib.chkfile.save(output_filename, 'mol_data', mol_data)
+        return mol_data
+
+    def dump_basis_set_data(self) -> Dict[str, Any]:
+        """Writes basis set data to a chkfile in HDF5 format."""
         # Extract basis set info
+        natom  = self.mol.natm
+        nshells= self.mol.nbas
+
         shell_atom_map = []
         orb_momentum = []
         contract_coeff = []
@@ -369,6 +394,9 @@ class PySCF(Calculator):
         if self.mol.cart:
             pureamd = 1
             pureamf = 1
+        else:
+            pureamd = 0
+            pureamf = 0
 
         basis_data = {}
         basis_data = {'nshells': nshells,
@@ -380,7 +408,15 @@ class PySCF(Calculator):
                       'prim_exp': prim_exp,
                       'contr_coeffs': [1]*len(prim_exp),
                       'coord_shell': coord_shell}
+        
+        if self.mol.output:
+            filename = self.mol.output.split(".")
+            output_filename = filename[0] + '.chk'
+            lib.chkfile.save(output_filename, 'basis_data', basis_data)
+        return basis_data
 
+    def dump_mo_data(self) -> Dict[str, Any]:
+        """Writes molecular orbital data to a chkfile in HDF5 format."""
         # Extract MO coeffs
         scf_e = self.mf.e_tot
 
@@ -415,8 +451,25 @@ class PySCF(Calculator):
                    'alpha_MO': alpha_MO,
                    'beta_energies': beta_energies,
                    'beta_MO': beta_MO}
+        
+        if self.mol.output:
+            filename = self.mol.output.split(".")
+            output_filename = filename[0] + '.chk'
+            lib.chkfile.save(output_filename, 'mo_data', mo_data)
+        return mo_data
 
+    def dump_oei_data(self) -> Dict[str, Any]:
+        """Writes one-electron integrals to a chkfile in HDF5 format."""
         # Extract one-electron integrals
+        scf_e = self.mf.e_tot
+
+        if ('UHF' not in self.mf._method_name() and
+            'UKS' not in self.mf._method_name()):
+            alpha_coeff = self.mf.mo_coeff.copy()
+        else:
+            alpha_coeff = self.mf.mo_coeff[0].copy()
+            beta_coeff = self.mf.mo_coeff[1].copy()
+
         E_core = scf_e - self.mf.energy_elec()[0]
         one_body_int = []
         if ('UHF' not in self.mf._method_name() and
@@ -439,5 +492,9 @@ class PySCF(Calculator):
         oei_data = {}
         oei_data = {'E_core': E_core,
                     'one_body_int': one_body_int}
-    
-        return mol_data, basis_data, mo_data, oei_data
+        
+        if self.mol.output:
+            filename = self.mol.output.split(".")
+            output_filename = filename[0] + '.chk'
+            lib.chkfile.save(output_filename, 'oei_data', oei_data)
+        return oei_data

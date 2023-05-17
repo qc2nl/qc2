@@ -19,7 +19,8 @@ mol = Atoms('OH2',
                                 basis='unc-sto-3g',
                                 multiplicity=1,
                                 cart=True,
-                                scf_addons='frac_occ'
+                                scf_addons='frac_occ',
+                                output='water'
                                 )
                )
 
@@ -29,7 +30,8 @@ frag1 = Atoms('O',
                                basis='unc-sto-3g',
                                multiplicity=1,
                                cart=True,
-                               scf_addons='frac_occ'
+                               scf_addons='frac_occ',
+                               output='O'
                                )
               )
 
@@ -38,7 +40,8 @@ frag2 = Atoms('H',
                                basis='unc-sto-3g',
                                multiplicity=2,
                                cart=True,
-                               scf_addons='frac_occ'
+                               scf_addons='frac_occ',
+                               output='H'
                                )
               )
 
