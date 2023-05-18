@@ -57,8 +57,8 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         FileIOCalculator.calculate(self, *args, **kwargs)
 
         self.generate_input_genibo()
-        #self.generate_mol_frags_xyz()
-        #self.generate_mo_files()
+        self.generate_mol_frags_xyz()
+        self.generate_mo_files()
         self.run_rose()
 
         if self.save:
