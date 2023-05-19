@@ -15,7 +15,10 @@ from ase.calculators.calculator import FileIOCalculator
 from ase.io import write
 from ase.units import Bohr
 from .rose_dataclass import RoseInputDataClass, RoseCalcType
+from .rose_dataclass import RoseInterfaceMOCalculators
 from .rose_io import write_rose_in
+from .rose_io import save_ibo_pyscf, save_ibo_psi4
+from .rose_io import save_ibo_dirac, save_ibo_adf, save_ibo_gaussian
 
 import os
 import re
@@ -156,6 +159,20 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                 beta_IBO = read_real_list("Beta MO coefficients", f)
         except FileNotFoundError:
             print("Cannot open", ibo_input_filename)
+
+        # defining a dictionary of calculators.
+        call_calculator_to_save_ibo = {
+            RoseInterfaceMOCalculators.PYSCF.value: save_ibo_pyscf,
+            RoseInterfaceMOCalculators.PSI4.value: save_ibo_psi4,
+            RoseInterfaceMOCalculators.DIRAC.value: save_ibo_dirac,
+            RoseInterfaceMOCalculators.ADF.value: save_ibo_adf,
+            RoseInterfaceMOCalculators.GAUSSIAN.value: save_ibo_gaussian
+        }
+
+        # call the calculator to save ibos; see "rose_io.py" for their definition.
+        call_calculator_to_save_ibo[self.rose_target.calc.name.lower()](
+            self, nao, alpha_energies, alpha_IBO,
+            beta_energies, beta_IBO, "test.chk") #ibo_output_filename)
 
         # => pyscf specific variables # begin
 
