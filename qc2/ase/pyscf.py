@@ -10,13 +10,17 @@ https://github.com/pyscf/pyscf/issues/624
 """
 from typing import Union, Optional, List, Dict, Any
 import warnings
+import copy
 import numpy as np
+import re
+import os
 from ase import Atoms
 from ase.calculators.calculator import Calculator, all_changes
 from ase.units import Ha, Bohr
 from ase.calculators.calculator import InputError
 from ase.calculators.calculator import CalculatorSetupError
 from pyscf import gto, scf, dft, lib
+from pyscf.scf.chkfile import dump_scf
 
 
 def ase_atoms_to_pyscf(ase_atoms: Atoms) -> List[List[Union[str, np.ndarray]]]:
@@ -109,8 +113,9 @@ class PySCF(Calculator):
                  **kwargs) -> None:
         """ASE-PySCF Class Constructor to initialize the object.
 
-        Note: Basic implementation based on the
-            class Psi4(Calculator); see, e.g., ase/ase/calculators/psi4.py.
+        Notes:
+            Basic implementation based on the class Psi4(Calculator);
+            see, e.g., ase/ase/calculators/psi4.py.
 
         Args:
             restart (bool, optional): Prefix for restart file.
@@ -147,8 +152,9 @@ class PySCF(Calculator):
     def check_pyscf_attributes(self) -> None:
         """Checks for any missing and/or mispelling PySCF input attribute.
 
-        Note: it can also be used to eventually set specific
-        environment variables, ios, etc.
+        Notes:
+            it can also be used to eventually set specific
+            environment variables, ios, etc.
         """
         recognized_attributes: List[str] = [
             'ignore_bad_restart', 'command', 'method',
@@ -321,12 +327,11 @@ class PySCF(Calculator):
             totalforces = np.array(totalforces)
             self.results['forces'] = totalforces
 
-    def dump_mo_coeff_file_for_rose(self, output_file: str = 'rose.pyscf') -> None:
-        """Dump the molecular orbitals file for ROSE.
+    def dump_mo_file_for_rose(self, output_file: str) -> None:
+        """Writes molecular orbitals input file for ROSE.
 
         Args:
             output_file (str, optional): Output file name.
-                Defaults to 'rose.pyscf'.
 
         Raises:
             IOError: If there is an error while writing the file.
@@ -334,7 +339,6 @@ class PySCF(Calculator):
         Notes:
             This method extracts relevant information from the PySCF "dumpers" and writes
             an input file to be read by ROSE.
-
         """
         # extracting relevant info from pyscf "dumpers"
         mol_data = self.dump_mol_data()
@@ -373,20 +377,96 @@ class PySCF(Calculator):
                                basis_data['contr_coeffs'])
             write_doublep_list(f, "Coordinates of each shell",
                                basis_data['coord_shell'])
-            f.write("{:43}R{:27.15e}\n".format("Total Energy", mo_data['scf_e']))
+            f.write("{:43}R{:27.15e}\n".format("Total Energy",
+                                               mo_data['scf_e']))
             write_doublep_list(f, "Alpha Orbital Energies",
                                mo_data['alpha_energies'])
-            write_doublep_list(f, "Alpha MO coefficients", mo_data['alpha_MO'])
+            write_doublep_list(f, "Alpha MO coefficients",
+                               mo_data['alpha_MO'])
 
             if ('UHF' in method_name) or ('UKS' in method_name):
                 write_doublep_list(f, "Beta Orbital Energies",
                                    mo_data['beta_energies'])
-                write_doublep_list(f, "Beta MO coefficients", mo_data['beta_MO'])
+                write_doublep_list(f, "Beta MO coefficients",
+                                   mo_data['beta_MO'])
 
             f.write("{:43}R{:27.15e}\n".format(
                 "Core Energy", oei_data['E_core']))
             write_doublep_list(f, "One electron integrals",
                                oei_data['one_body_int'])
+            
+    def dump_rose_ibos_to_file(self,
+                               input_file: str = "ibo.pyscf",
+                               output_file: str = "ibo.chk") -> None:
+        """Saves calculated ROSE IBOs to a checkpoint file.
+
+        Args:
+            input_file (str): Input file containing ROSE IBO data.
+                Defaults to "ibo.pyscf".
+            output_file (str): Output checkpoint file.
+                Defaults to "ibo.chk".
+
+        Raises:
+            FileNotFoundError: If the input file does not exist.
+
+        Notes:
+            This method reads the ROSE IBO data from the input file and saves it
+            in the specified output file in a checkpoint format. The data is
+            stored in a PySCF compatible format.
+        """
+        # reading info from ROSE "ibo.pyscf" output
+        if os.path.exists(input_file):
+            with open(input_file, "r") as f:
+                nao = read_int("Number of basis functions", f)
+                alpha_energies = read_real_list("Alpha Orbital Energies", f)
+                alpha_IBO = read_real_list("Alpha MO coefficients", f)
+                beta_energies = read_real_list("Beta Orbital Energies", f)
+                beta_IBO = read_real_list("Beta MO coefficients", f)
+        else:
+            raise FileNotFoundError("Cannot open", input_file,
+                                    "Run ROSE before calling this method.")
+
+        # start preparing the data
+        mol = self.mol
+        mf = self.mf
+        method_name = self.mf._method_name()
+
+        ibo_wfn = copy.copy(mf)
+
+        nmo = len(alpha_energies)
+        if ('UHF' not in method_name) and ('UKS' not in method_name):
+            alpha_IBO_coeff = np.zeros((len(mf.mo_coeff), nao), dtype=float)
+            beta_IBO_coeff = np.zeros((len(mf.mo_coeff), nao), dtype=float)
+        else:
+            alpha_IBO_coeff = np.zeros((len(mf.mo_coeff[0]), nao), dtype=float)
+            beta_IBO_coeff = np.zeros((len(mf.mo_coeff[1]), nao), dtype=float)   
+
+        ij = 0
+        for i in range(nmo):
+            for j in range(nao):
+                alpha_IBO_coeff[j, i] = alpha_IBO[ij]
+                if ('UHF' in method_name) or ('UKS' in method_name):
+                    beta_IBO_coeff[j, i] = beta_IBO[ij]
+                ij += 1
+
+        if ('UHF' not in method_name) and ('UKS' not in method_name):
+            alpha_energy = np.zeros(len(mf.mo_energy), dtype=float)
+            alpha_energy[:len(alpha_energies)] = alpha_energies
+            ibo_wfn.mo_energy = alpha_energy
+            ibo_wfn.mo_coeff = alpha_IBO_coeff
+        else:
+            alpha_energy = np.zeros(len(mf.mo_energy[0]), dtype=float)
+            alpha_energy[:len(alpha_energies)] = alpha_energies
+            beta_energy = np.zeros(len(mf.mo_energy[1]), dtype=float)
+            beta_energy[:len(beta_energies)] = beta_energies
+            ibo_wfn.mo_energy[0] = alpha_energy
+            ibo_wfn.mo_energy[1] = beta_energy
+            ibo_wfn.mo_coeff[0] = alpha_IBO_coeff
+            ibo_wfn.mo_coeff[1] = beta_IBO_coeff
+
+        e_tot = self.mf.e_tot
+        dump_scf(mol, output_file,
+             e_tot, ibo_wfn.mo_energy, ibo_wfn.mo_coeff, ibo_wfn.mo_occ)
 
     def dump_mol_data(self) -> Dict[str, Any]:
         """Writes molecular data to a chkfile in HDF5 format.
@@ -400,7 +480,6 @@ class PySCF(Calculator):
             number of atoms, number of electrons, number of alpha and beta electrons,
             number of basis functions, number of primitive shells, multiplicity, Cartesian
             coordinates of each atom, atomic numbers, and nuclear charges.
-
         """
         charge = self.mol.charge
         natom  = self.mol.natm
@@ -422,7 +501,6 @@ class PySCF(Calculator):
             Zint.append(self.mol._atm[i][0])
         Zreal = Zint
 
-        mol_data = {}
         mol_data = {'charge': charge,
                     'natom': natom,
                     'nelec': nelec,
@@ -452,8 +530,9 @@ class PySCF(Calculator):
             it in a dictionary format. The dictionary includes the number of shells,
             pure/cartesian d shells indicator, pure/cartesian f shells indicator, shell
             types, number of primitives per shell, shell to atom map, primitive exponents,
-            contraction coefficients, and coordinates of each shell.
-
+            contraction coefficients, and coordinates of each shell. If an output file name
+            is passed to the PySCF calculator, this method also adds these info into
+            the file.
     """
         natom  = self.mol.natm
         nshells= self.mol.nbas
@@ -489,7 +568,6 @@ class PySCF(Calculator):
             pureamd = 0
             pureamf = 0
 
-        basis_data = {}
         basis_data = {'nshells': nshells,
                       'pureamd': pureamd,
                       'pureamf': pureamf,
@@ -516,8 +594,9 @@ class PySCF(Calculator):
             This method retrieves the molecular orbital data from the PySCF object and
             saves it in a dictionary format. The dictionary includes the total energy,
             alpha orbital energies, alpha MO coefficients, beta orbital energies (if applicable),
-            and beta MO coefficients (if applicable).
-
+            and beta MO coefficients (if applicable). If an output file name
+            is passed to the PySCF calculator, this method also adds these info into
+            the file.
         """
         scf_e = self.mf.e_tot
 
@@ -546,7 +625,6 @@ class PySCF(Calculator):
                 for j in range(beta_coeff.shape[0]):
                     beta_MO.append(beta_coeff[j][i])
 
-        mo_data = {}
         mo_data = {'scf_e': scf_e,
                    'alpha_energies': alpha_energies,
                    'alpha_MO': alpha_MO,
@@ -568,8 +646,9 @@ class PySCF(Calculator):
         Notes:
             This method extracts the one-electron integrals from the PySCF object
             and saves them in a dictionary format. The dictionary includes the total
-            energy, core energy, and one-electron integrals.
-
+            energy, core energy, and one-electron integrals. If an output file name
+            is passed to the PySCF calculator, this method also adds these info into
+            the file.
     """
         scf_e = self.mf.e_tot
 
@@ -610,7 +689,7 @@ class PySCF(Calculator):
         return oei_data
 
 
-def write_int(f, text, var):
+def write_int(file, text: str, var: int) -> None:
     """Writes an integer value to a file in a specific format.
 
     Args:
@@ -621,10 +700,10 @@ def write_int(f, text, var):
     Returns:
         None
     """
-    f.write("{:43}I{:17d}\n".format(text, var))
+    file.write("{:43}I{:17d}\n".format(text, var))
 
 
-def write_int_list(f, text, var):
+def write_int_list(file, text: str, var: List[int]) -> None:
     """Writes a list of integers to a file in a specific format.
 
     Args:
@@ -635,25 +714,25 @@ def write_int_list(f, text, var):
     Returns:
         None
     """
-    f.write("{:43}{:3} N={:12d}\n".format(text, "I", len(var)))
+    file.write("{:43}{:3} N={:12d}\n".format(text, "I", len(var)))
     dim = 0
     buff = 6
     if (len(var) < 6):
         buff = len(var)
     for i in range((len(var)-1)//6+1):
         for j in range(buff):
-            f.write("{:12d}".format(var[dim+j]))
-        f.write("\n")
+            file.write("{:12d}".format(var[dim+j]))
+        file.write("\n")
         dim = dim + 6
         if (len(var) - dim) < 6:
             buff = len(var) - dim
 
 
-def write_singlep_list(f, text, var):
+def write_singlep_list(file, text: str, var: List[float]) -> None:
     """Writes a list of single-precision floating-point values to a file object.
 
     Args:
-        f: A file object to write to.
+        file (file object): A file object to write to.
         text (str): The text to be written before the list.
         var (list): The list of single-precision floating-point
             values to write.
@@ -661,21 +740,21 @@ def write_singlep_list(f, text, var):
     Returns:
         None
     """
-    f.write("{:43}{:3} N={:12d}\n".format(text, "R", len(var)))
+    file.write("{:43}{:3} N={:12d}\n".format(text, "R", len(var)))
     dim = 0
     buff = 5
     if (len(var) < 5):
         buff = len(var)
     for i in range((len(var)-1)//5+1):
         for j in range(buff):
-            f.write("{:16.8e}".format(var[dim+j]))
-        f.write("\n")
+            file.write("{:16.8e}".format(var[dim+j]))
+        file.write("\n")
         dim = dim + 5
         if (len(var) - dim) < 5:
             buff = len(var) - dim
 
 
-def write_doublep_list(f, text, var):
+def write_doublep_list(file, text: str, var: List[float]) -> None:
     """Writes a list of double precision floating point numbers to a file.
 
     Args:
@@ -687,37 +766,37 @@ def write_doublep_list(f, text, var):
     Returns:
         None
     """
-    f.write("{:43}{:3} N={:12d}\n".format(text, "R", len(var)))
+    file.write("{:43}{:3} N={:12d}\n".format(text, "R", len(var)))
     dim = 0
     buff = 5
     if (len(var) < 5):
         buff = len(var)
     for i in range((len(var)-1)//5+1):
         for j in range(buff):
-            f.write("{:24.16e}".format(var[dim+j]))
-        f.write("\n")
+            file.write("{:24.16e}".format(var[dim+j]))
+        file.write("\n")
         dim = dim + 5
         if (len(var) - dim) < 5:
             buff = len(var) - dim
 
 
-def read_int(text, f):
+def read_int(text:str, file) -> int:
     """Reads an integer value from a text file.
 
     Args:
         text (str): The text to search for in the file.
-        f (file): The file object to read from.
+        f (file object): The file object to read from.
 
     Returns:
         int: The integer value found in the file.
     """
-    for line in f:
+    for line in file:
         if re.search(text, line):
             var = int(line.rsplit(None, 1)[-1])
             return var
 
 
-def read_real(text, f):
+def read_real(text: str, file) -> float:
     """Reads a floating-point value from a text file.
 
     Args:
@@ -727,28 +806,28 @@ def read_real(text, f):
     Returns:
         float: The floating-point value found in the file.
     """
-    for line in f:
+    for line in file:
         if re.search(text, line):
             var = float(line.rsplit(None, 1)[-1])
             return var
 
 
-def read_real_list(text, f):
+def read_real_list(text: str, file) -> List[float]:
     """Reads a list of floating-point values from a text file.
 
     Args:
         text (str): The text to search for in the file.
-        f (file): The file object to read from.
+        file (file object): The file object to read from.
 
     Returns:
         list: A list of floating-point values found in the file.
     """
-    for line in f:
+    for line in file:
         if re.search(text, line):
             n = int(line.rsplit(None, 1)[-1])
             var = []
             for i in range((n-1)//5+1):
-                line = next(f)
+                line = next(file)
                 for j in line.split():
                     var += [float(j)]
             return var

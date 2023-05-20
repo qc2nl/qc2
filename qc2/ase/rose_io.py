@@ -6,23 +6,23 @@ import numpy as np
 from .rose_dataclass import RoseInputDataClass
 from .rose_dataclass import RoseCalcType, RoseIFOVersion, RoseILMOExponent
 
-def _write_line(file: str, line: str) -> None:
+def _write_line(file, line: str) -> None:
     """
     Writes a line of text to a file.
 
     Args:
-        file (str): The file object to write to.
+        file (file object): The file object to write to.
         line (str): The line of text to write.
     """
     file.write(line + "\n")
 
 
-def _write_section(file: str, section_name: str, value: Optional[Any] = None) -> None:
+def _write_section(file, section_name: str, value: Optional[Any] = None) -> None:
     """
     Writes a section name and an optional value to a file.
 
     Args:
-        file (str): The file object to write to.
+        file (file object): The file object to write to.
         section_name (str): The name of the section.
         value (optional[any]): The value associated with the section (default: None).
     """
@@ -31,12 +31,12 @@ def _write_section(file: str, section_name: str, value: Optional[Any] = None) ->
         _write_line(file, str(value))
 
 
-def _write_key_value_pairs(file: str, section_name: str, items: List[List[int]]) -> None:
+def _write_key_value_pairs(file, section_name: str, items: List[List[int]]) -> None:
     """
     Writes a section name and a list of key-value pairs to a file.
 
     Args:
-        file (str): The file object to write to.
+        file (file object): The file object to write to.
         section_name (str): The name of the section.
         items (list[any]): A list of key-value pairs.
     """
@@ -95,67 +95,3 @@ def write_rose_in(filename: str,
             if inp_data.frag_bias:
                 _write_key_value_pairs(file, "FRAG_BIAS", inp_data.frag_bias)
         _write_line(file, "*END OF INPUT")
-
-
-def save_ibo_pyscf(inp_data: RoseInputDataClass,
-                   nao: int,
-                   alpha_energies: List[float],
-                   alpha_IBO: List[float],
-                   beta_energies: List[float],
-                   beta_IBO: List[float],
-                   output_file: str) -> None:
-
-    from pyscf.scf.chkfile import dump_scf
-
-    mol = inp_data.rose_target.calc.mol
-    mf = inp_data.rose_target.calc.mf
-
-    ibo_wfn = copy.copy(mf)
-
-    nmo = len(alpha_energies)
-    if inp_data.restricted:
-        alpha_IBO_coeff = np.zeros((len(mf.mo_coeff), nao), dtype=float)
-        beta_IBO_coeff = np.zeros((len(mf.mo_coeff), nao), dtype=float)
-    else:
-        alpha_IBO_coeff = np.zeros((len(mf.mo_coeff[0]), nao), dtype=float)
-        beta_IBO_coeff = np.zeros((len(mf.mo_coeff[1]), nao), dtype=float)   
-
-    ij = 0
-    for i in range(nmo):
-        for j in range(nao):
-            alpha_IBO_coeff[j, i] = alpha_IBO[ij]
-            if not inp_data.restricted:
-                 beta_IBO_coeff[j, i] = beta_IBO[ij]
-            ij += 1
-
-    if inp_data.restricted:
-        alpha_energy = np.zeros(len(mf.mo_energy), dtype=float)
-        alpha_energy[:len(alpha_energies)] = alpha_energies
-        ibo_wfn.mo_energy = alpha_energy
-        ibo_wfn.mo_coeff = alpha_IBO_coeff
-    else:
-        alpha_energy = np.zeros(len(mf.mo_energy[0]), dtype=float)
-        alpha_energy[:len(alpha_energies)] = alpha_energies
-        beta_energy = np.zeros(len(mf.mo_energy[1]), dtype=float)
-        beta_energy[:len(beta_energies)] = beta_energies
-        ibo_wfn.mo_energy[0] = alpha_energy
-        ibo_wfn.mo_energy[1] = beta_energy
-        ibo_wfn.mo_coeff[0] = alpha_IBO_coeff
-        ibo_wfn.mo_coeff[1] = beta_IBO_coeff
-
-    e_tot = 0.0
-    dump_scf(mol, output_file,
-             e_tot, ibo_wfn.mo_energy, ibo_wfn.mo_coeff, ibo_wfn.mo_occ)
-    pass
-
-def save_ibo_psi4() -> None:
-    pass
-
-def save_ibo_dirac() -> None:
-    pass
-
-def save_ibo_adf() -> None:
-    pass
-
-def save_ibo_gaussian() -> None:
-    pass

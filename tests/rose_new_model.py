@@ -24,7 +24,7 @@ mol = Atoms('OH2',
                                 )
                )
 mol.get_potential_energy()
-mol.calc.dump_mo_coeff_file_for_rose(output_file='MOLECULE.pyscf')
+mol.calc.dump_mo_file_for_rose(output_file='MOLECULE.pyscf')
 
 # define atomic fragments
 frag1 = Atoms('O',
@@ -37,7 +37,7 @@ frag1 = Atoms('O',
                                )
               )
 frag1.get_potential_energy()
-frag1.calc.dump_mo_coeff_file_for_rose(output_file='008.pyscf')
+frag1.calc.dump_mo_file_for_rose(output_file='008.pyscf')
 
 frag2 = Atoms('H',
               calculator=PySCF(method='scf.ROHF',
@@ -49,7 +49,7 @@ frag2 = Atoms('H',
                                )
               )
 frag2.get_potential_energy()
-frag2.calc.dump_mo_coeff_file_for_rose(output_file='001.pyscf')
+frag2.calc.dump_mo_file_for_rose(output_file='001.pyscf')
 
 # Rose-ASE calculator
 rose_calc = Rose(rose_calc_type='atom_frag',
