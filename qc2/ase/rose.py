@@ -13,9 +13,8 @@ from typing import Optional, List, Union, Sequence
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
 from ase.io import write
-from ase.units import Bohr
+
 from .rose_dataclass import RoseInputDataClass, RoseCalcType
-from .rose_dataclass import RoseInterfaceMOCalculators
 from .rose_io import write_rose_in
 
 import os
@@ -56,7 +55,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
         self.generate_input_genibo()
         self.generate_mol_frags_xyz()
-        self.generate_mo_files()
+        self.generate_input_mo_files()
         self.run_rose()
 
         if self.save:
@@ -73,9 +72,10 @@ class Rose(RoseInputDataClass, FileIOCalculator):
                       self, **self.parameters)
 
     def generate_mol_frags_xyz(self) -> None:
-        """Generates Molecule and Fragment xyz files for Rose.
+        """Generates molecule and fragment xyz files for Rose.
 
-        Note: Cartesian coordinates in angstrom.
+        Notes:
+            Cartesian coordinates in angstrom.
         """
         # generate supermolecule xyz file using ASE write()
         mol_filename = "MOLECULE"
@@ -98,7 +98,7 @@ class Rose(RoseInputDataClass, FileIOCalculator):
             write(frag_filename + ".xyz", frag)
             self.mol_frags_filenames.append(frag_filename)
 
-    def generate_mo_files(self) -> None:
+    def generate_input_mo_files(self) -> None:
         """Generates orbitals input files for Rose."""
         # create a set of calculator file extensions for molecule and fragments
         calculator_file_extensions = [
@@ -132,7 +132,13 @@ class Rose(RoseInputDataClass, FileIOCalculator):
 
         # generate ROSE MO file for each ASE Atoms object
         for filename, atoms in filename_atoms_dict.items():
-            atoms.calc.dump_mo_file_for_rose(filename)
+            try:
+                # check if this method is implemented
+                atoms.calc.dump_mo_input_file_for_rose(filename)
+            except AttributeError as e:
+                print(f"Method 'dump_mo_input_file_for_rose'"
+                      f" not implemented in {atoms.calc.__class__.__name__} calculator.")
+                raise
 
     def run_rose(self) -> None:
         """Runs Rose executable 'genibo.x'."""
@@ -146,4 +152,15 @@ class Rose(RoseInputDataClass, FileIOCalculator):
         ibo_output_filename = "ibo.chk"
         atoms = self.rose_target
         # call a specific method implemented inside each calculator
-        atoms.calc.dump_rose_ibos_to_file(ibo_input_filename, ibo_output_filename)
+        try:
+            atoms.calc.dump_ibos_from_rose_to_chkfile(ibo_input_filename,
+                                                      ibo_output_filename)
+        except AttributeError as e:
+            print(f"Method 'dump_ibos_from_rose_to_chkfile"
+                  f" not implemented in {atoms.calc.__class__.__name__} calculator.")
+            raise
+
+    def dump_data_for_qc2() -> None:
+        """Dumps molecular data to a HDF5 format file for qc2."""
+        # Format to be specified....
+        pass

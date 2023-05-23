@@ -49,7 +49,6 @@ class RoseInputDataClass:
     # calculation type
     rose_calc_type: RoseCalcType = RoseCalcType.ATOM_FRAG.value
 
-
     ### Rose intrinsic options
 
     # exponent used in the localization procedure 

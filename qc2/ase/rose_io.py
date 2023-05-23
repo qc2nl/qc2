@@ -1,7 +1,5 @@
 """Input/Output functions for Rose."""
 from typing import Optional, List, Any
-import copy
-import numpy as np
 
 from .rose_dataclass import RoseInputDataClass
 from .rose_dataclass import RoseCalcType, RoseIFOVersion, RoseILMOExponent

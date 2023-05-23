@@ -1,6 +1,8 @@
 """Rose water input test."""
 from ase import Atoms
 from ase.units import Ha
+from ase.io import read
+
 # from ase.build import molecule
 
 import sys
@@ -10,6 +12,7 @@ from qc2.ase.rose import Rose
 from qc2.ase.pyscf import PySCF
 
 # define target molecule
+
 mol = Atoms('OH2',
             positions=[[0.,  0.00000,  0.59372],
                        [0.,  0.76544, -0.00836],

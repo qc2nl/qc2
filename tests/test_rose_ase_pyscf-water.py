@@ -20,7 +20,8 @@ def run_water_rose_no_avas():
                                 basis='unc-sto-3g',
                                 multiplicity=1,
                                 cart=True,
-                                scf_addons='frac_occ'
+                                scf_addons='frac_occ',
+                                output='water'
                                 )
                )
 
@@ -30,7 +31,8 @@ def run_water_rose_no_avas():
                                basis='unc-sto-3g',
                                multiplicity=1,
                                cart=True,
-                               scf_addons='frac_occ'
+                               scf_addons='frac_occ',
+                               output='O'
                                )
               )
 
@@ -39,7 +41,8 @@ def run_water_rose_no_avas():
                                basis='unc-sto-3g',
                                multiplicity=2,
                                cart=True,
-                               scf_addons='frac_occ'
+                               scf_addons='frac_occ',
+                               output='H'
                                )
               )
 
@@ -53,7 +56,7 @@ def run_water_rose_no_avas():
                      exponent=4,
                      rose_target=mol,
                      rose_frags=[frag1, frag2],
-                     test = True
+                     test=True
                  )
 
     # run the calculator

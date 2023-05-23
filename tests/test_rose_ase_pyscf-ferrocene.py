@@ -6,102 +6,52 @@ from .rose_test_functions import clean_up, extract_number, read_output
 from ase import Atoms
 from qc2.ase.rose import Rose
 from qc2.ase.pyscf import PySCF
+from ase.io import read
 
 
 def run_ferrocene_rose_no_avas():
-    """Ferrocene mol_frag/relativistic example calculation."""
+    """Ferrocene mol_frag/relativistic example calculation.
+    
+    Notes:
+        Input Atoms read from files.
+    """
     # define target molecule
-    mol = Atoms('FeC10H10',
-                positions=[
-                    [ 1.66780866,  0.12282848, -0.27460150],
-                    [ 2.24106869,  2.10024551, -0.33511480],
-                    [ 3.31616817, -1.00607736, -0.77719710],
-                    [ 1.78191728,  1.75217481,  0.97966357],
-                    [ 1.16672810,  1.86346489, -1.25728635],
-                    [ 2.24424364, -1.24911576, -1.70047730],
-                    [ 2.85541376, -1.35028551,  0.53811026],
-                    [ 0.42377202,  1.30026137,  0.87001390],
-                    [ 0.04359901,  1.36901828, -0.51247557],
-                    [ 1.12099915, -1.74357622, -0.95584975],
-                    [ 1.49870213, -1.80608183,  0.42766268],
-                    [ 3.23295333,  2.46614000, -0.58966882],
-                    [ 4.30039797, -0.61794626, -1.02844385],
-                    [ 2.36507558,  1.80777918,  1.89582556],
-                    [ 1.20126378,  2.02039952, -2.33279589],
-                    [ 2.27428727, -1.07886582, -2.77411019],
-                    [ 3.42876748, -1.26708471,  1.45836098],
-                    [-0.20304943,  0.95502659,  1.68878543],
-                    [-0.92220706,  1.08645766, -0.92472956],
-                    [ 0.15065240, -2.01282736, -1.36630431],
-                    [ 0.86407561, -2.12909803,  1.24950292]
-                    ],
-                   calculator=PySCF(method='scf.RHF',
-                                    basis='unc-sto-3g',
-                                    multiplicity=1,
-                                    relativistic='x2c',
-                                    cart=True,
-                                    scf_addons='frac_occ'
-                                    )
-                   )
+    mol = read("data/Ferrocene.xyz")
+    mol.calc = PySCF(method='scf.RHF',
+                     basis='unc-sto-3g',
+                     multiplicity=1,
+                     relativistic=True,
+                     cart=True,
+                     scf_addons='frac_occ'
+                     )
 
     # define atomic/molecular fragments
-    frag1 = Atoms('Fe',
-                  positions=[[1.66780866, 0.12282848, -0.27460150]],
-                  calculator=PySCF(method='scf.RHF',
-                                   basis='unc-sto-3g',
-                                   multiplicity=1,
-                                   cart=True,
-                                   relativistic=True,
-                                   charge=2,
-                                   scf_addons='frac_occ'
-                                   )
-                   )
+    frag1 = read("data/Ferrocene_frag1.xyz")
+    frag1.calc = PySCF(method='scf.RHF',
+                       basis='unc-sto-3g',
+                       multiplicity=1,
+                       cart=True,
+                       relativistic=True,
+                       charge=2,
+                       scf_addons='frac_occ')
 
-    frag2 = Atoms('C5H5',
-                positions=[
-                    [ 2.24106869,  2.10024551, -0.33511480],
-                    [ 1.78191728,  1.75217481,  0.97966357],
-                    [ 1.16672810,  1.86346489, -1.25728635],
-                    [ 0.42377202,  1.30026137,  0.87001390],
-                    [ 0.04359901,  1.36901828, -0.51247557],
-                    [ 2.36507558,  1.80777918,  1.89582556],
-                    [ 1.20126378,  2.02039952, -2.33279589],
-                    [-0.20304943,  0.95502659,  1.68878543],
-                    [-0.92220706,  1.08645766, -0.92472956],
-                    [ 3.23295333,  2.46614000, -0.58966882]
-                    ],
-                  calculator=PySCF(method='scf.RHF',
-                                   basis='unc-sto-3g',
-                                   multiplicity=1,
-                                   cart=True,
-                                   relativistic=True,
-                                   charge=-1,
-                                   scf_addons='frac_occ'
-                                   )
-                  )
+    frag2 = read("data/Ferrocene_frag2.xyz")
+    frag2.calc = PySCF(method='scf.RHF',
+                       basis='unc-sto-3g',
+                       multiplicity=1,
+                       cart=True,
+                       relativistic=True,
+                       charge=-1,
+                       scf_addons='frac_occ')
 
-    frag3 = Atoms('C5H5',
-                  positions=[
-                    [1.49870213, -1.80608183,  0.42766268],
-                    [2.24424364, -1.24911576, -1.70047730],
-                    [3.31616817, -1.00607736, -0.77719710],
-                    [1.12099915, -1.74357622, -0.95584975],
-                    [2.85541376, -1.35028551,  0.53811026],
-                    [4.30039797, -0.61794626, -1.02844385],
-                    [2.27428727, -1.07886582, -2.77411019],
-                    [3.42876748, -1.26708471,  1.45836098],
-                    [0.15065240, -2.01282736, -1.36630431],
-                    [0.86407561, -2.12909803,  1.24950292]
-                    ],
-                  calculator=PySCF(method='scf.RHF',
-                                   basis='unc-sto-3g',
-                                   multiplicity=1,
-                                   cart=True,
-                                   relativistic=True,
-                                   charge=-1,
-                                   scf_addons='frac_occ'
-                                   )
-                  )
+    frag3 = read("data/Ferrocene_frag3.xyz")
+    frag3.calc = PySCF(method='scf.RHF',
+                       basis='unc-sto-3g',
+                       multiplicity=1,
+                       cart=True,
+                       relativistic=True,
+                       charge=-1,
+                       scf_addons='frac_occ')
 
     mol.get_potential_energy()
     frag1.get_potential_energy()
@@ -113,8 +63,8 @@ def run_ferrocene_rose_no_avas():
                      exponent=4,
                      rose_target=mol,
                      rose_frags=[frag1, frag2, frag3],
-                     test = True,
-                     relativistic = True
+                     test=True,
+                     relativistic=True
                      )
     
     # run the calculator
