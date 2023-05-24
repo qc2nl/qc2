@@ -9,6 +9,7 @@ https://gitlab.com/quantum_rose/rose
 Note: see also https://pubs.acs.org/doi/10.1021/ct400687b.
 """
 from typing import Optional, List, Union, Sequence
+import os
 
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
@@ -16,8 +17,6 @@ from ase.io import write
 
 from .rose_dataclass import RoseInputDataClass, RoseCalcType
 from .rose_io import write_rose_in
-
-import os
 
 
 class Rose(RoseInputDataClass, FileIOCalculator):
