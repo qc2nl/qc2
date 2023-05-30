@@ -44,9 +44,6 @@ jobs:
           cmake --install build
           echo `pwd`/bin >> $GITHUB_PATH
           cd ..
-      - name: Path info
-        run: |
-          echo $PATH
       - name: Run unit tests
         run: |
           cd tests/
