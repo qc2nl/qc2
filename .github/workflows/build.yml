@@ -46,7 +46,8 @@ jobs:
           cd ..
       - name: DIRAC install for tests
         run: |
-          git clone https://gitlab.com/dirac/dirac.git
+          git clone --recursive git@gitlab.com:dirac/dirac.git
+          git submodule update --init --recursive
           cd dirac
           ./setup
           cd build
