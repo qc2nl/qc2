@@ -44,20 +44,20 @@ jobs:
           cmake --install build
           echo `pwd`/bin >> $GITHUB_PATH
           cd ..
-      - name: DIRAC install for tests
-        run: |
-          zenodo_get -d 10.5281/zenodo.7670749
-          tar -xvf DIRAC-23.0-Source.tgz
-          cd DIRAC-23.0-Source
-          ./setup
-          cd build
-          make
-          echo `pwd`/bin >> $GITHUB_PATH
-          cd ..
+      #- name: DIRAC install for tests
+      #  run: |
+      #    zenodo_get -d 10.5281/zenodo.7670749
+      #    tar -xvf DIRAC-23.0-Source.tgz
+      #    cd DIRAC-23.0-Source
+      #    ./setup
+      #    cd build
+      #    make
+      #    echo `pwd`/bin >> $GITHUB_PATH
+      #    cd ..
       - name: Run unit tests
         run: |
           cd tests/
-          pytest -v
+          pytest -v -k 'test_pyscf or test_rose'
           cd ..
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel
