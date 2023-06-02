@@ -44,6 +44,15 @@ jobs:
           cmake --install build
           echo `pwd`/bin >> $GITHUB_PATH
           cd ..
+      - name: DIRAC install for tests
+        run: |
+          git clone https://gitlab.com/dirac/dirac.git
+          cd dirac
+          ./setup
+          cd build
+          make
+          echo `pwd`/bin >> $GITHUB_PATH
+          cd ..
       - name: Run unit tests
         run: |
           cd tests/

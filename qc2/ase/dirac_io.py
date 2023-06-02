@@ -9,7 +9,7 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.units import Ha
 
 
-def update_dict(dictionary: Dict[str, Any], key: str, value: Any) -> Dict[str, Any]:
+def _update_dict(dictionary: Dict[str, Any], key: str, value: Any) -> Dict[str, Any]:
     """Updates a dictionary with a new key-value pair and places it at the first position.
 
     Args:
@@ -106,8 +106,8 @@ def write_dirac_in(input_filename: str, **params: Dict[str, Any]) -> None:
         key = 'dirac'
         value = {'.title': 'DIRAC-ASE calculation',
                  '.wave function': ''}
-        # **DIRAC must always come first in the dict/input
-        params = update_dict(params, key, value)
+        # **DIRAC heading must always come first in the dict/input
+        params = _update_dict(params, key, value)
 
     if 'hamiltonian' not in params:
         params.update(hamiltonian={'.nonrel': ''})

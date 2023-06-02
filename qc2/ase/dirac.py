@@ -20,6 +20,16 @@ class DIRAC(FileIOCalculator):
     Args:
         FileIOCalculator (FileIOCalculator): Base class for calculators
             that write/read input/output files.
+
+    Example of a typical ASE-PySCF input:
+
+    >>> from ase import Atoms
+    >>> from ase.build import molecule
+    >>> from qc2.ase.pyscf import PySCF
+    >>>
+    >>> molecule = Atoms(...) or molecule = molecule('...')
+    >>> molecule.calc = PySCF(dirac={},...)
+    >>> energy = molecule.get_potential_energy()
     """
     implemented_properties: List[str] = ['energy']
     label: str = 'dirac'
@@ -33,7 +43,24 @@ class DIRAC(FileIOCalculator):
                  atoms: Optional[Atoms] = None,
                  command: Optional[str] = None,
                  **kwargs) -> None:
-        """ASE-DIRAC Class Constructor to initialize the object."""
+        """ASE-DIRAC Class Constructor to initialize the object.
+        
+        Args:
+            restart (bool, optional): Prefix for restart file.
+                May contain a directory. Defaults to None: don't restart.
+            ignore_bad_restart (bool, optional): Deprecated and will
+                stop working in the future. Defaults to False.
+            label (str, optional): Calculator name. Defaults to 'dirac'.
+            atoms (Atoms, optional): Atoms object to which the calculator
+                will be attached. When restarting, atoms will get its
+                positions and unit-cell updated from file. Defaults to None.
+            command (str, optional): Command used to start calculation.
+                Defaults to None.
+            directory (str, optional): Working directory in which
+                to perform calculations. Defaults to '.'.
+        """
+        # initializing base class Calculator.
+        # see ase/ase/calculators/calculator.py.
         super().__init__(restart, ignore_bad_restart_file,
                          label, atoms, command, **kwargs)
         """Transforms **kwargs into a dictionary with calculation parameters.
@@ -65,7 +92,7 @@ class DIRAC(FileIOCalculator):
         write_dirac_in(inp_file, **self.parameters)
 
     def read_results(self):
-        """Read energy, forces, ... from output file."""
+        """Reads energy from DIRAC output file."""
         out_file = self.prefix + "_" + self.prefix + ".out"
         output = read_dirac_out(out_file)
         self.results = output
