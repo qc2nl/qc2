@@ -30,7 +30,6 @@ def test_DIRAC_energy_rks():
     # run calc and convert electronic energy into atomic units 
     h2_molecule.calc = DIRAC(dirac={'.wave function':''},
                              hamiltonian={'.nonrel': '', '.dft': 'b3lyp'},
-                             wave_function={'.scf': ''},
                              molecule={'*basis': {'.default': 'sto-3g'}}
                              )
     energy_Eh = h2_molecule.get_potential_energy() / Ha
