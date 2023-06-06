@@ -89,7 +89,7 @@ def _write_block(name: str, args: Dict[str, Any]) -> str:
     return '\n'.join(out)
 
 
-def write_dirac_in(input_filename: str, **params: Dict[str, Any]) -> None:
+def write_dirac_in(input_filename: str, **params: Dict[str, Any]):
     """Writes DIRAC input data to a file.
 
     Args:
@@ -99,31 +99,14 @@ def write_dirac_in(input_filename: str, **params: Dict[str, Any]) -> None:
     Returns:
         None.
     """
-    params = deepcopy(params)
-
-    # setting up default parameters
-    if 'dirac' not in params:
-        key = 'dirac'
-        value = {'.title': 'DIRAC-ASE calculation',
-                 '.wave function': ''}
-        # **DIRAC heading must always come first in the dict/input
-        params = _update_dict(params, key, value)
-
-    if 'hamiltonian' not in params:
-        params.update(hamiltonian={'.nonrel': ''})
-
-    if 'wave_function' not in params:
-        params.update(wave_function={'.scf': ''})
-
-    if 'molecule' not in params:
-        params.update(molecule={'*basis': {'.default': 'sto-3g'}})
+    tmp_params = deepcopy(params)
 
     # replace any underscore by a white space
     # important for generating DIRAC input
-    params = _replace_underscores(params)
+    tmp_params = _replace_underscores(tmp_params)
 
     out = []
-    out += [_write_block(*item) for item in params.items()]
+    out += [_write_block(*item) for item in tmp_params.items()]
     out.append('*END OF INPUT')
 
     with open (input_filename, 'w') as file:

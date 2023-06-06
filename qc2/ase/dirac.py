@@ -10,7 +10,7 @@ from typing import Optional, List, Dict, Any
 
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
-from .dirac_io import write_dirac_in, read_dirac_out
+from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from ase.io import write
 
 
@@ -21,14 +21,14 @@ class DIRAC(FileIOCalculator):
         FileIOCalculator (FileIOCalculator): Base class for calculators
             that write/read input/output files.
 
-    Example of a typical ASE-PySCF input:
+    Example of a typical ASE-DIRAC input:
 
     >>> from ase import Atoms
     >>> from ase.build import molecule
-    >>> from qc2.ase.pyscf import PySCF
+    >>> from qc2.ase.dirac import DIRAC
     >>>
     >>> molecule = Atoms(...) or molecule = molecule('...')
-    >>> molecule.calc = PySCF(dirac={},...)
+    >>> molecule.calc = DIRAC(dirac={}, wave_function={}...)
     >>> energy = molecule.get_potential_energy()
     """
     implemented_properties: List[str] = ['energy']
@@ -68,10 +68,44 @@ class DIRAC(FileIOCalculator):
         Starting with (attr1=value1, attr2=value2, ...)
             it creates self.parameters['attr1']=value1, and so on.
         """
-        self.prefix: str = 'DIRAC'
+        self.prefix = self.label
+
+        # Check self.parameters input keys and values
+        self.check_dirac_attributes()
+
+    def check_dirac_attributes(self) -> None:
+        """Checks for any missing and/or mispelling DIRAC input attribute.
+
+        Notes:
+            it can also be used to eventually set specific
+            options in the near future.
+        """
+        # here, we could check any mispelling attribute |
+        #                                               |
+        #                                            <--|
+
+        # setting up default parameters
+        if 'dirac' not in self.parameters:
+            key = 'dirac'
+            value = {'.title': 'DIRAC-ASE calculation',
+                     '.wave function': ''}
+            # **DIRAC heading must always come first in the dict/input
+            self.parameters = _update_dict(self.parameters, key, value)
+
+        if 'hamiltonian' not in self.parameters:
+            self.parameters.update(hamiltonian={'.levy-leblond': ''})
+
+        if 'wave_function' not in self.parameters:
+            self.parameters.update(wave_function={'.scf': ''})
+
+        if 'molecule' not in self.parameters:
+            self.parameters.update(molecule={'*basis': {'.default': 'sto-3g'}})
+
+        if '*charge' not in self.parameters:
+            self.parameters['molecule']['*charge']={'.charge': '0'}
 
     def calculate(self, *args, **kwargs) -> None:
-        """Executes DIRAC workflow."""
+        """Execute DIRAC workflow."""
         super().calculate(*args, **kwargs)
 
     def write_input(
@@ -80,7 +114,7 @@ class DIRAC(FileIOCalculator):
             properties: Optional[List[str]] = None,
             system_changes: Optional[List[str]] = None
             ) -> None:
-        """Generates all necessary inputs for DIRAC."""
+        """Generate all necessary inputs for DIRAC."""
         super().write_input(atoms, properties, system_changes)
 
         # generate xyz geometry file
@@ -92,25 +126,19 @@ class DIRAC(FileIOCalculator):
         write_dirac_in(inp_file, **self.parameters)
 
     def read_results(self):
-        """Reads energy from DIRAC output file."""
+        """Read energy from DIRAC output file."""
         out_file = self.prefix + "_" + self.prefix + ".out"
         output = read_dirac_out(out_file)
         self.results = output
 
-    def dump_data_for_qc2() -> None:
-        """Dumps molecular data to a HDF5 format file for qc2."""
+    def save() -> None:
+        """Dump molecular data to a file in HDF5 format."""
         # Format to be specified....
         pass
 
-    def dump_ibos_from_rose_to_chkfile(self,
-                                       input_file: str = "ibo.pyscf",
-                                       output_file: str = "ibo.chk") -> None:
-        """Saves calculated ROSE IBOs to a checkpoint file."""
+    def load() -> None:
         pass
 
-    def dump_mo_input_file_for_rose(self, output_file: str) -> None:
-        """Writes molecular orbitals input file for ROSE."""
-        pass
 
 if __name__ == '__main__':
     
@@ -122,3 +150,5 @@ if __name__ == '__main__':
                              )
 
     print(h2_molecule.get_potential_energy())
+
+    print(h2_molecule.calc.parameters.molecule)

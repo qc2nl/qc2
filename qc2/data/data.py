@@ -1,7 +1,7 @@
-import h5py 
 from ase import Atoms
 from typing import Optional 
-from .schema import generate_empty_h5 
+from .schema import generate_empty_h5
+import os
 
 class qc2Data:
 
@@ -14,7 +14,8 @@ class qc2Data:
         Args:
             molecule (Optional[str]): _description_
         """
-        self._schema = '<name>'
+        self._schema = os.path.join(
+            os.path.dirname(__file__), 'qc2_schema.json')
         self._filename = filename 
         self._init_data_file()
 
