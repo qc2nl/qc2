@@ -33,7 +33,21 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip setuptools
           python3 -m pip install .[dev,publishing]
+      - name: Setup GNU Fortran
+        uses: modflowpy/install-gfortran-action@v1
+      - name: Rose install for tests
+        run: |
+          git clone https://gitlab.com/quantum_rose/rose.git
+          cd rose
+          cmake -S . -B build
+          cmake --build build
+          cmake --install build
+          echo `pwd`/bin >> $GITHUB_PATH
+          cd ..
       - name: Run unit tests
-        run: pytest -v
+        run: |
+          cd tests/
+          pytest -v
+          cd ..
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel
