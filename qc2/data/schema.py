@@ -13,7 +13,7 @@ def generate_empty_h5(schema: str, h5name: str) -> None:
     # open schema
     text = open(schema).read()
 
-    # parse the json file
+    # parse the json file into a python dictionary
     h5json = json.loads(text)
 
     if "root" not in h5json:

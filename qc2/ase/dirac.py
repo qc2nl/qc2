@@ -6,12 +6,15 @@ https://www.diracprogram.org/
 GitLab repo:
 https://gitlab.com/dirac/dirac
 """
+import h5py
 from typing import Optional, List, Dict, Any
 
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from ase.io import write
+
+
 
 
 class DIRAC(FileIOCalculator):
@@ -131,12 +134,21 @@ class DIRAC(FileIOCalculator):
         output = read_dirac_out(out_file)
         self.results = output
 
-    def save() -> None:
-        """Dump molecular data to a file in HDF5 format."""
-        # Format to be specified....
-        pass
+    def save(self, filename: str) -> None:
+        """Dump molecular data into a HDF5 file."""
+        # Format to be specified
 
-    def load() -> None:
+        print(self.atoms.numbers)
+
+        with h5py.File("{}".format(filename), "w") as f:
+            # Save geometry:
+            d_geom = f.create_group("geometry")
+
+            #data = file["geometry/atoms"]
+            #print(data.keys())
+
+
+    def load(self) -> None:
         pass
 
 
