@@ -11,10 +11,9 @@ from typing import Optional, List, Dict, Any
 
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
+from ase.calculators.calculator import InputError
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from ase.io import write
-
-
 
 
 class DIRAC(FileIOCalculator):
@@ -83,11 +82,19 @@ class DIRAC(FileIOCalculator):
             it can also be used to eventually set specific
             options in the near future.
         """
-        # here, we could check any mispelling attribute |
-        #                                               |
-        #                                            <--|
+        recognized_key_sections: List[str] = [
+            'dirac', 'general', 'molecule',
+            'hamiltonian', 'wave_function', 'analyse', 'properties',
+            'visual', 'integrals', 'grid', 'moltra'
+            ]
 
-        # setting up default parameters
+        # check any mispelling
+        for key, value in self.parameters.items():
+            if key not in recognized_key_sections:
+                raise InputError('Keyword', key,
+                                 ' not recognized. Please check input.')
+
+        # set default parameters
         if 'dirac' not in self.parameters:
             key = 'dirac'
             value = {'.title': 'DIRAC-ASE calculation',
@@ -138,7 +145,7 @@ class DIRAC(FileIOCalculator):
         """Dump molecular data into a HDF5 file."""
         # Format to be specified
 
-        print(self.atoms.numbers)
+        #print(self.atoms.numbers)
 
         with h5py.File("{}".format(filename), "w") as f:
             # Save geometry:
