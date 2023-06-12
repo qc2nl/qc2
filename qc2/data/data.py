@@ -15,7 +15,7 @@ class qc2Data:
             molecule (Optional[str]): _description_
         """
         self._schema = os.path.join(
-            os.path.dirname(__file__), 'qc2_schema.json')
+            os.path.dirname(__file__), 'QC2schema.txt')
         self._filename = filename 
         self._init_data_file()
 

@@ -14,6 +14,9 @@ from ase.calculators.calculator import FileIOCalculator
 from ase.calculators.calculator import InputError
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from ase.io import write
+from ase.units import Bohr
+
+from qc2.data import read_hdf5, write_hdf5, generate_dict_for_qc2_schema
 
 
 class DIRAC(FileIOCalculator):
@@ -35,7 +38,7 @@ class DIRAC(FileIOCalculator):
     """
     implemented_properties: List[str] = ['energy']
     label: str = 'dirac'
-    command: str = "pam --inp=PREFIX.inp --mol=PREFIX.xyz --silent"
+    command: str = "pam --inp=PREFIX.inp --mol=PREFIX.xyz --silent --get='MRCONEE MDCINT'"
 
     def __init__(self,
                  restart: Optional[bool] = None,
@@ -111,6 +114,10 @@ class DIRAC(FileIOCalculator):
         if 'molecule' not in self.parameters:
             self.parameters.update(molecule={'*basis': {'.default': 'sto-3g'}})
 
+        if 'integrals' not in self.parameters:
+            # useful to compare with nonrel calc done with other programs
+            self.parameters.update(integrals={'.nucmod': '1'})
+
         if '*charge' not in self.parameters:
             self.parameters['molecule']['*charge']={'.charge': '0'}
 
@@ -142,32 +149,61 @@ class DIRAC(FileIOCalculator):
         self.results = output
 
     def save(self, filename: str) -> None:
-        """Dump molecular data into a HDF5 file."""
-        # Format to be specified
+        """Dumps molecular data to a HDF5 file using qc2 format."""
+        # read dirac info
+        dirac_hdf5_out_file = self.prefix + "_" + self.prefix + ".h5"
+        data = read_hdf5(dirac_hdf5_out_file)
 
-        #print(self.atoms.numbers)
+        # generate qc2 schema
+        qc2_data = generate_dict_for_qc2_schema()
 
-        with h5py.File("{}".format(filename), "w") as f:
-            # Save geometry:
-            d_geom = f.create_group("geometry")
+        qc2_data['/input/aobasis/1/descriptor']['value']  = 'DIRAC'
+        qc2_data['/result/mobasis/1/descriptor']['value'] = 'DIRAC_scf'
 
-            #data = file["geometry/atoms"]
-            #print(data.keys())
+        for label, item in qc2_data.items():
+            if 'mobasis' in label:
+                diraclabel = label.replace('mobasis/1','wavefunctions/scf/mobasis')
+            else:
+                diraclabel = label
+            if item['use'] == 'required' and item['type'] != 'composite': 
+                try:
+                    qc2_data[label]['value'] = data[diraclabel]['value']
+                except:
+                    print('required data {} not found'.format(label))
 
+        write_hdf5(filename, qc2_data)
 
     def load(self) -> None:
         pass
 
+# functions below still under developments
 
-if __name__ == '__main__':
+    def get_mol_data(self) -> Dict[str, Any]:
+        """Pulls out molecular data from dirac HDF5 output file."""
+
+        #charge = self.mol.charge
+        natom  = self._get_from_dirac_hdf5_file(
+            '/input/molecule/n_atoms')[0]
+        #nelec  = self.mol.nelectron
+        #nalpha = None
+        #nbeta  = None
+        nao    = self._get_from_dirac_hdf5_file(
+            '/input/aobasis/1/n_ao')[0]
+        nshells= self._get_from_dirac_hdf5_file(
+            '/input/aobasis/1/n_shells')
+        #multiplicity = self.mol.spin + 1
+
+        cart_coord = self._get_from_dirac_hdf5_file(
+            '/input/molecule/geometry') / Bohr  #=> in a.u
+
+        print(nao, nshells)
     
-    h2_molecule = Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.7]])
-    
-    h2_molecule.calc = DIRAC(dirac={'.wave function': ''},
-                             wave_function={'.scf': ''},
-                             molecule={'*basis': {'.default': 'sto-3g'}}
-                             )
-
-    print(h2_molecule.get_potential_energy())
-
-    print(h2_molecule.calc.parameters.molecule)
+    def _get_from_dirac_hdf5_file(self, property_name):
+        """Helper routine to open dirac HDF5 output file and take property."""
+        out_hdf5_file = self.prefix + "_" + self.prefix + ".h5"
+        try:
+            with h5py.File("{}".format(out_hdf5_file), "r") as f:
+                data = f[property_name][...]
+        except (KeyError, IOError):
+            data = None
+        return data
