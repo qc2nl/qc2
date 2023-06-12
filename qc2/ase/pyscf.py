@@ -424,7 +424,7 @@ class PySCF(Calculator):
         mol_data = self.get_mol_data()
         basis_data = self.get_basis_set_data()
         mo_data = self.get_mo_data()
-        oei_data = self.get_integrals_data()
+        ei_data = self.get_integrals_data()
 
         method_name = self.mf._method_name()
 
@@ -471,9 +471,9 @@ class PySCF(Calculator):
                                    mo_data['beta_MO'])
 
             f.write("{:43}R{:27.15e}\n".format(
-                "Core Energy", oei_data['E_core']))
+                "Core Energy", ei_data['E_core']))
             write_doublep_list(f, "One electron integrals",
-                               oei_data['one_body_int'])
+                               ei_data['one_body_int'])
 
     def get_mol_data(self) -> Dict[str, Any]:
         """Retrieves molecular data from the PySCF object.
@@ -678,15 +678,15 @@ class PySCF(Calculator):
                     one_body_int.append(h1e_alpha[i-1, j-1])
                     one_body_int.append(h1e_beta[i-1, j-1])
 
-        oei_data = {}
-        oei_data = {'E_core': E_core,
-                    'one_body_int': one_body_int}
+        ei_data = {}
+        ei_data = {'E_core': E_core,
+                   'one_body_int': one_body_int}
         
         if self.mol.output:
             filename = self.mol.output.split(".")
             output_filename = filename[0] + '.chk'
-            lib.chkfile.save(output_filename, 'oei_data', oei_data)
-        return oei_data
+            lib.chkfile.save(output_filename, 'ei_data', ei_data)
+        return ei_data
 
 
 def write_int(file, text: str, var: int) -> None:

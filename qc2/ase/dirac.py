@@ -7,11 +7,13 @@ GitLab repo:
 https://gitlab.com/dirac/dirac
 """
 import h5py
+import subprocess
+import os
 from typing import Optional, List, Dict, Any
 
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
-from ase.calculators.calculator import InputError
+from ase.calculators.calculator import InputError, CalculationFailed
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from ase.io import write
 from ase.units import Bohr
@@ -38,7 +40,7 @@ class DIRAC(FileIOCalculator):
     """
     implemented_properties: List[str] = ['energy']
     label: str = 'dirac'
-    command: str = "pam --inp=PREFIX.inp --mol=PREFIX.xyz --silent --get='MRCONEE MDCINT'"
+    command: str = 'pam --inp=PREFIX.inp --mol=PREFIX.xyz --silent --get="MRCONEE MDCINT"'
 
     def __init__(self,
                  restart: Optional[bool] = None,
@@ -101,6 +103,7 @@ class DIRAC(FileIOCalculator):
         if 'dirac' not in self.parameters:
             key = 'dirac'
             value = {'.title': 'DIRAC-ASE calculation',
+                     '.4index': '',
                      '.wave function': ''}
             # **DIRAC heading must always come first in the dict/input
             self.parameters = _update_dict(self.parameters, key, value)
@@ -120,6 +123,10 @@ class DIRAC(FileIOCalculator):
 
         if '*charge' not in self.parameters:
             self.parameters['molecule']['*charge']={'.charge': '0'}
+
+        if '.4index' not in self.parameters['dirac']:
+            self.parameters['dirac'].update({'.4index': ''})
+
 
     def calculate(self, *args, **kwargs) -> None:
         """Execute DIRAC workflow."""
@@ -175,6 +182,88 @@ class DIRAC(FileIOCalculator):
 
     def load(self) -> None:
         pass
+
+    def get_integrals_data(self) -> Dict[str, Any]:
+        """Retrieve one- and two-electron integrals from DIRAC fcidump file.
+        
+        Notes:
+            Requires MRCONEE MDCINT files obtained using
+            **DIRAC .4INDEX and 'pam ... --get="MRCONEE MDCINT"' options
+        """
+        command = "dirac_mointegral_export.x fcidump"
+        try:
+            proc = subprocess.Popen(command, shell=True, cwd=self.directory)
+        except OSError as err:
+            msg = 'Failed to execute "{}"'.format(command)
+            raise EnvironmentError(msg) from err
+
+        errorcode = proc.wait()
+
+        if errorcode:
+            path = os.path.abspath(self.directory)
+            msg = ('Calculator "{}" failed with command "{}" failed in '
+                   '{} with error code {}'.format(self.name, command,
+                                                  path, errorcode))
+            raise CalculationFailed(msg)
+        
+        if os.path.exists("FCIDUMP"):
+             E_core = 0
+             spinor = {}
+             one_body_int = {}
+             two_body_int = {}
+             num_lines = sum(1 for line in open("FCIDUMP"))
+             with open('FCIDUMP') as f:
+               start_reading=0
+               for line in f:
+                 start_reading+=1
+                 if "&END" in line:
+                   break
+               listed_values = [[token for token in line.split()] for line in f.readlines()] 
+               complex_int = False
+               if (len(listed_values[0]) == 6) : complex_int = True
+               if not complex_int:
+                  for row in range(num_lines-start_reading):
+                    a_1 = int(listed_values[row][1])
+                    a_2 = int(listed_values[row][2])
+                    a_3 = int(listed_values[row][3])
+                    a_4 = int(listed_values[row][4])
+                    if a_4 == 0 and a_3 == 0:
+                      if a_2 == 0:
+                        if a_1 == 0:
+                          E_core = float(listed_values[row][0])
+                        else:
+                          spinor[a_1] = float(listed_values[row][0])
+                      else:
+                        one_body_int[a_1,a_2] = float(listed_values[row][0])
+                    else:
+                      two_body_int[a_1,a_2,a_3,a_4] = float(listed_values[row][0])
+               if complex_int:
+                  for row in range(num_lines-start_reading):
+                    a_1 = int(listed_values[row][2])
+                    a_2 = int(listed_values[row][3])
+                    a_3 = int(listed_values[row][4])
+                    a_4 = int(listed_values[row][5])
+                    if a_4 == 0 and a_3 == 0:
+                      if a_2 == 0:
+                        if a_1 == 0:
+                          E_core = complex(float(listed_values[row][0]),float(listed_values[row][1]))
+                        else:
+                          spinor[a_1] = complex(float(listed_values[row][0]),float(listed_values[row][1]))
+                      else:
+                        one_body_int[a_1,a_2] = complex(float(listed_values[row][0]),float(listed_values[row][1]))
+                    else:
+                      two_body_int[a_1,a_2,a_3,a_4] = complex(float(listed_values[row][0]),float(listed_values[row][1]))
+             # self.n_orbitals = len(self.spinor)
+             # self.n_qubits = len(self.spinor)
+        else:
+             print('FCIDUMP not found.')
+        
+        ei_data = {}
+        ei_data = {'E_core': E_core,
+                   'spinor': spinor,
+                   'one_body_int': one_body_int,
+                   'two_body_int': two_body_int}
+        return ei_data
 
 # functions below still under developments
 

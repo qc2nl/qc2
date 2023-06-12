@@ -17,7 +17,7 @@ import subprocess
 def clean_up_files():
     """Remove DIRAC calculation outputs at the end of each test."""
     yield
-    command = ("rm *.xyz* *.inp* *.out* *.h5* *.tgz*")
+    command = ("rm *.xyz* *.inp* *.out* *.h5* *.tgz* MDCINT* MRCONEE* FCIDUMP*")
     subprocess.run(command, shell=True, capture_output=True)
 
 
