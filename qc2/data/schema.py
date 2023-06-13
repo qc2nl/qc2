@@ -9,6 +9,7 @@ from h5json.jsontoh5.jsontoh5 import Writeh5
 from .process_schema import write_hdf5
 from .process_schema import read_schema, write_schema
 
+# testing Luuks scheme ##################################################
 def generate_empty_h5(schema: str, h5name: str) -> None:
     """Generate an empty HDF5 file from a JSON schema.
 
@@ -43,7 +44,9 @@ def generate_dict_for_qc2_schema() -> Dict[str, Any]:
     qc2_dict_schema = qc2_flatschema.copy()
 
     return qc2_dict_schema
+########################################################################
 
+# this is the original generate_empty_h5
 def old_generate_empty_h5(schema: str, h5name: str) -> None:
     """Generate an empty HDF5 file from a JSON schema.
 
