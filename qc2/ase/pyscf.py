@@ -94,8 +94,8 @@ class PySCF(Calculator):
     """
     implemented_properties: List[str] = ['energy', 'forces']
 
-    default_parameters: Dict[str, Any] = {'method': 'dft.RKS',
-                                          'basis': '6-31g*',
+    default_parameters: Dict[str, Any] = {'method': 'scf.HF',
+                                          'basis': 'sto-3g',
                                           'xc': 'b3lyp',
                                           'multiplicity': 1,
                                           'charge': 0,
@@ -329,7 +329,7 @@ class PySCF(Calculator):
             totalforces = np.array(totalforces)
             self.results['forces'] = totalforces
 
-    def dump_data_for_qc2() -> None:
+    def save() -> None:
         """Dumps molecular data to a HDF5 format file for qc2."""
         # Format to be specified....
         pass
@@ -421,10 +421,10 @@ class PySCF(Calculator):
             "dumpers" and writes an input file to be read by ROSE.
         """
         # extracting relevant info from pyscf "dumpers"
-        mol_data = self.dump_mol_data()
-        basis_data = self.dump_basis_set_data()
-        mo_data = self.dump_mo_data()
-        oei_data = self.dump_oei_data()
+        mol_data = self.get_mol_data()
+        basis_data = self.get_basis_set_data()
+        mo_data = self.get_mo_data()
+        ei_data = self.get_integrals_data()
 
         method_name = self.mf._method_name()
 
@@ -471,12 +471,12 @@ class PySCF(Calculator):
                                    mo_data['beta_MO'])
 
             f.write("{:43}R{:27.15e}\n".format(
-                "Core Energy", oei_data['E_core']))
+                "Core Energy", ei_data['E_core']))
             write_doublep_list(f, "One electron integrals",
-                               oei_data['one_body_int'])
+                               ei_data['one_body_int'])
 
-    def dump_mol_data(self) -> Dict[str, Any]:
-        """Writes molecular data to a chkfile in HDF5 format.
+    def get_mol_data(self) -> Dict[str, Any]:
+        """Retrieves molecular data from the PySCF object.
 
         Returns:
             dict: A dictionary containing the molecular data.
@@ -525,8 +525,8 @@ class PySCF(Calculator):
             lib.chkfile.save(output_filename, 'mol_data', mol_data)
         return mol_data
 
-    def dump_basis_set_data(self) -> Dict[str, Any]:
-        """Writes basis set data to a chkfile in HDF5 format.
+    def get_basis_set_data(self) -> Dict[str, Any]:
+        """Retrieves basis set data from the PySCF object.
 
         Returns:
             dict: A dictionary containing the basis set data.
@@ -587,8 +587,8 @@ class PySCF(Calculator):
             lib.chkfile.save(output_filename, 'basis_data', basis_data)
         return basis_data
 
-    def dump_mo_data(self) -> Dict[str, Any]:
-        """Writes molecular orbital data to a chkfile in HDF5 format.
+    def get_mo_data(self) -> Dict[str, Any]:
+        """Retrieves molecular orbital data from the PySCF object.
 
         Returns:
             dict: A dictionary containing the molecular orbital data.
@@ -638,8 +638,8 @@ class PySCF(Calculator):
             lib.chkfile.save(output_filename, 'mo_data', mo_data)
         return mo_data
 
-    def dump_oei_data(self) -> Dict[str, Any]:
-        """Writes one-electron integrals to a chkfile in HDF5 format.
+    def get_integrals_data(self) -> Dict[str, Any]:
+        """Retrieves one-electron integrals from the PySCF object.
 
         Returns:
             dict: A dictionary containing the one-electron integrals.
@@ -678,15 +678,15 @@ class PySCF(Calculator):
                     one_body_int.append(h1e_alpha[i-1, j-1])
                     one_body_int.append(h1e_beta[i-1, j-1])
 
-        oei_data = {}
-        oei_data = {'E_core': E_core,
-                    'one_body_int': one_body_int}
+        ei_data = {}
+        ei_data = {'E_core': E_core,
+                   'one_body_int': one_body_int}
         
         if self.mol.output:
             filename = self.mol.output.split(".")
             output_filename = filename[0] + '.chk'
-            lib.chkfile.save(output_filename, 'oei_data', oei_data)
-        return oei_data
+            lib.chkfile.save(output_filename, 'ei_data', ei_data)
+        return ei_data
 
 
 def write_int(file, text: str, var: int) -> None:

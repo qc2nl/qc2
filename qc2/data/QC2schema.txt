@@ -1,0 +1,46 @@
+*schema
+input            composite single    required    # definition of the calculation
+result           composite single    required    # results of the calculation
+*end
+
+*input
+molecule         composite single    required    # topology of the molecular system
+aobasis          composite array     required    # atomic orbital basis set descriptions
+*end
+
+*result
+mobasis          composite array     required    # molecular orbitals obtained in this calculation
+*end
+
+*molecule
+n_atoms          integer   single    required    # number of atoms in the systems
+geometry         real      array     required    # xyz-coordinates for each atom
+nuc_charge       real      array     required    # nuclear charges for each atom
+symbols          string    array     required    # atomic symbol for each atom
+*end
+
+*aobasis
+descriptor       integer   single    optional    # text descriptor of the aobasis
+n_ao             integer   single    required    # dimension of this ao-basis
+n_shells         integer   single    required    # number of shells in this basis set
+angular          integer   single    required    # use (1) Cartesian or (2) spherical functions
+center           real      array     required    # for each shell: coordinates of basis function center
+orbmom           integer   array     required    # for each shell: angular momentum (s=0, p=1, d=2, etc.)
+n_prim           integer   array     required    # for each shell: number of primitive functions
+n_cont           integer   array     required    # for each shell: number of contracted functions
+exponents        real      array     required    # exponential parameters of the Gaussian primitive functions (1-d array of length sum(n_prim))
+contractions     real      array     required    # contraction coefficients for the contracted Gaussian functions (length sum(n_prim *_n_cont), stored as 1-d array)
+*end
+
+*mobasis
+descriptor       string    single    optional    # text descriptor of the mobasis
+n_basis          integer   single    required    # size of the basis to which the MO coefficients refer (usually identical to n_ao in the aobasis definition)
+n_mo             integer   single    required    # dimension of the mo-basis (number of orbitals)
+n_po             integer   single    optional    # for 4-component calculation: number of "positronic" orbitals (n_po < n_mo)
+nz               integer   single    optional    # algebra that is used for the coefficients (1:real, 2: complex, 4:quaternion)
+orbitals         real      array     required    # mo-coefficients that define the mo's in the given basis
+eigenvalues      real      array     required    # for each molecular orbital: orbital energy
+occupations      real      array     optional    # for each molecular orbital: orbital occupation (1.0 fully occupied, 0.0 empty)
+shell_id         integer   array     optional    # for each molecular orbital: shell (-1: closed, 0: virtual, 1: open shell #1, 2: open shell #2, etc.)
+aobasis_id       integer   single    optional    # pointer to the explicit definition of the aobasis in which these MOs are expressed
+*end
