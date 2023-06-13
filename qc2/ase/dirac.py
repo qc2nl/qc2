@@ -103,7 +103,6 @@ class DIRAC(FileIOCalculator):
         if 'dirac' not in self.parameters:
             key = 'dirac'
             value = {'.title': 'DIRAC-ASE calculation',
-                     '.4index': '',
                      '.wave function': ''}
             # **DIRAC heading must always come first in the dict/input
             self.parameters = _update_dict(self.parameters, key, value)
@@ -124,8 +123,8 @@ class DIRAC(FileIOCalculator):
         if '*charge' not in self.parameters:
             self.parameters['molecule']['*charge']={'.charge': '0'}
 
-        if '.4index' not in self.parameters['dirac']:
-            self.parameters['dirac'].update({'.4index': ''})
+        #if '.4index' not in self.parameters['dirac']:
+        #    self.parameters['dirac'].update({'.4index': ''})
 
 
     def calculate(self, *args, **kwargs) -> None:
@@ -246,13 +245,17 @@ class DIRAC(FileIOCalculator):
                     if a_4 == 0 and a_3 == 0:
                       if a_2 == 0:
                         if a_1 == 0:
-                          E_core = complex(float(listed_values[row][0]),float(listed_values[row][1]))
+                          E_core = complex(
+                             float(listed_values[row][0]),float(listed_values[row][1]))
                         else:
-                          spinor[a_1] = complex(float(listed_values[row][0]),float(listed_values[row][1]))
+                          spinor[a_1] = complex(
+                             float(listed_values[row][0]),float(listed_values[row][1]))
                       else:
-                        one_body_int[a_1,a_2] = complex(float(listed_values[row][0]),float(listed_values[row][1]))
+                        one_body_int[a_1,a_2] = complex(
+                           float(listed_values[row][0]),float(listed_values[row][1]))
                     else:
-                      two_body_int[a_1,a_2,a_3,a_4] = complex(float(listed_values[row][0]),float(listed_values[row][1]))
+                      two_body_int[a_1,a_2,a_3,a_4] = complex(
+                         float(listed_values[row][0]),float(listed_values[row][1]))
              # self.n_orbitals = len(self.spinor)
              # self.n_qubits = len(self.spinor)
         else:
@@ -263,6 +266,7 @@ class DIRAC(FileIOCalculator):
                    'spinor': spinor,
                    'one_body_int': one_body_int,
                    'two_body_int': two_body_int}
+
         return ei_data
 
 # functions below still under developments
