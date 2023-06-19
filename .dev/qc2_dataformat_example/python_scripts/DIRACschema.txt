@@ -1,0 +1,112 @@
+*schema
+input            composite single    required    # definition of the calculation
+result           composite single    required    # results of the calculation
+*end
+
+*input
+molecule         composite single    required    # topology of the molecular system
+aobasis          composite array     required    # atomic orbital basis set descriptions
+*end
+
+*result
+execution        composite single    required    # information about the run
+operators        composite single    optional    # matrix representations of operators
+wavefunctions    composite single    optional    # results for each wave function that was optimized
+hamiltonian      composite single    optional    # results from hamiltonian transformations
+*end
+
+*molecule
+n_atoms          integer   single    required    # number of atoms in the systems
+geometry         real      array     required    # xyz-coordinates for each atom
+nuc_charge       real      array     required    # nuclear charges for each atom
+symbols          string    array     required    # atomic symbol for each atom
+*end
+
+*aobasis
+aobasis_id       integer   single    required    # unique identifier of the aobasis (we may use multiple basis sets in one calculation)
+n_ao             integer   single    required    # dimension of this ao-basis
+n_shells         integer   single    required    # number of shells in this basis set
+angular          integer   single    required    # use (1) Cartesian or (2) spherical functions
+center           real      array     required    # for each shell: coordinates of basis function center
+orbmom           integer   array     required    # for each shell: angular momentum (s=0, p=1, d=2, etc.)
+n_prim           integer   array     required    # for each shell: number of primitive functions
+n_cont           integer   array     required    # for each shell: number of contracted functions
+exponents        real      array     required    # exponential parameters of the Gaussian primitive functions (1-d array of length sum(n_prim))
+contractions     real      array     required    # contraction coefficients for the contracted Gaussian functions (length sum(n_prim *_n_cont), stored as 1-d array)
+*end
+
+*mobasis
+mobasis_id       integer   single    required    # unique identifier of the mobasis (we may use multiple sets of MO coefficients)
+n_basis          integer   single    required    # size of the basis to which the MO coefficients refer (usually identical to n_ao in the aobasis definition)
+n_mo             integer   single    required    # dimension of the mo-basis (number of orbitals)
+n_po             integer   single    optional    # for 4-component calculation: number of "positronic" orbitals (n_po < n_mo)
+nz               integer   single    required    # algebra that is used for the coefficients (1:real, 2: complex, 4:quaternion)
+n_fsym           integer   single    required    # number of fermion irreps used to block the MO coefficients (1 for no inversion, 2 for inversion)
+orbitals         real      array     required    # mo-coefficients that define the mo's in the given basis
+eigenvalues      real      array     required    # for each molecular orbital: orbital energy
+occupations      real      array     optional    # for each molecular orbital: orbital occupation (1.0 fully occupied, 0.0 empty)
+shell_id         integer   array     optional    # for each molecular orbital: shell (-1: closed, 0: virtual, 1: open shell #1, 2: open shell #2, etc.)
+symmetry         integer   array     optional    # symmetry labels (example: 1 3  for fermion irrep gerade, boson irrep 3)
+aobasis_id       integer   single    optional    # pointer to the explicit definition of the aobasis in which these MOs are expressed
+orbitals_C1      real      array     optional    # mo-coefficients that define the mo's in the given basis converted to C1 format
+eigenvalues_C1   real      array     optional    # for each molecular orbital: orbital energy ordered in C1 format
+occupations_C1   real      array     optional    # for each molecular orbital: orbital occupation (1.0 fully occupied, 0.0 empty) ordered in C1 format
+shell_id_C1      integer   array     optional    # for each molecular orbital: shell (-1: closed, 0: virtual, 1: open shell #1, 2: open shell #2, etc.), C1 order
+*end
+
+*execution
+dirac_hash       integer   single    optional    # version of DIRAC used to run this calculation
+status           integer   single    required    # 0: not started, 1: running, 2: completed
+start_date       string    single    optional    # day the calculation was started
+start_time       string    single    optional    # time the calculation was started
+end_time         string    single    optional    # time the last information was written
+end_date         string    single    optional    # date the last information was written
+*end
+
+*operators
+ao_matrices      composite single    optional    # AO representations of operators
+mo_matrices      composite single    optional    # MO representations of operators
+*end
+
+*wavefunctions
+scf              composite single    optional    # results for Hartree-Fock and KS-DFT type wave functions
+mbpt             composite single    optional    # results for Many-Body Perturbation Theory
+*end
+
+*hamiltonian
+x2c              composite single    optional    # matrices defining or resulting from the X2C transformation
+*end
+
+*ao_matrices
+aobasis_dim      integer   single    optional    # dimension of the matrix representations (should become required when checking routines are improved)
+operator_name    real      single    generic     # matrix representation of operator_name (operator_name is a string of arbitrary length)
+aobasis_id       integer   single    optional    # pointer to the explicit definition of the aobasis
+*end
+
+*mo_matrices
+mobasis_dim      integer   single    optional    # dimension of the matrix representations (should become required when checking routines are improved)
+nz               integer   single    optional    # algebra that is used for the matrices (1:real, 2: complex, 4:quaternion)
+method           string    single    optional    # method used to obtain these MO representations (e.g. CCSD for a CCSD density matrix)
+operator_name    real      single    generic     # matrix representation of operator_name (operator_name is a string of length 8)
+mobasis_id       integer   single    optional    # pointer to the explicit definition of the mobasis
+*end
+
+*scf
+hamiltonian      string    single    optional    # Hamiltonian used to produce final SCF wave function
+xc_functional    string    single    optional    # for DFT the XC-functional description. Omitted implies Hartree-Fock
+energy           real      single    required    # energy of the SCF wave function
+mobasis          composite single    required    # molecular orbitals obtained in this calculation
+convergence      real      array     optional    # convergence information for this wave function (energy and coefficient convergence)
+*end
+
+*mbpt
+method           string    single    required    # Descriptive string of the method used, e.g. MP2
+energy           real      single    required    # total MBPT energy
+e_corr           real      single    required    # correlation energy
+mobasis          composite single    optional    # recanonized natural orbitals
+*end
+
+*x2c
+method           string    single    optional    # Descriptive string of the method used, e.g. molecular X2C
+ao_matrices      composite single    optional    # AO representations of operators
+*end
