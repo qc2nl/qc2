@@ -18,7 +18,7 @@ from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from ase.io import write
 from ase.units import Bohr
 
-from qc2.data import read_hdf5, write_hdf5, generate_dict_for_qc2_schema
+from qc2.data import read_hdf5, write_hdf5, generate_dict_from_text_schema
 
 
 class DIRAC(FileIOCalculator):
@@ -161,7 +161,7 @@ class DIRAC(FileIOCalculator):
         data = read_hdf5(dirac_hdf5_out_file)
 
         # generate qc2 schema
-        qc2_data = generate_dict_for_qc2_schema()
+        qc2_data = generate_dict_from_text_schema()
 
         qc2_data['/input/aobasis/1/descriptor']['value']  = 'DIRAC'
         qc2_data['/result/mobasis/1/descriptor']['value'] = 'DIRAC_scf'

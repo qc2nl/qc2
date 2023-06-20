@@ -9,45 +9,30 @@ from h5json.jsontoh5.jsontoh5 import Writeh5
 from .process_schema import write_hdf5
 from .process_schema import read_schema, write_schema
 
-# testing Luuks scheme ##################################################
-def generate_empty_h5(schema: str, h5name: str) -> None:
-    """Generate an empty HDF5 file from a JSON schema.
-
+def generate_json_schema_file(filename):
+    """Creates JSON qc2 schema.
+    
     Args:
-        schema (str): Path to the txt schema file.
-        h5name (str): Path to the output HDF5 file.
+        filename (str): file in which to write qc2 JSON schema
     """
-    # generate qc2 data schema
-    qc2_schema, qc2_flatschema = read_schema(schema)
+    # generate dictionary from plain text schema in 'QC2schema.txt'
+    schema_dict = generate_dict_from_text_schema()
+    
+    # convert dictionary to JSON schema
+    schema_json = json.dumps(dict, indent=2)
 
-    # generated labels text => more easily processed by Fortran programs
-    write_schema('QC2labels.txt', qc2_flatschema)
+    # save the JSON schema to a file
+    with open("{}".format(filename), "w") as f:
+        f.write(schema_json)
 
-    # create a valid dictionary with all denifitions
-    qc2_data = qc2_flatschema.copy()
+def generate_dict_from_text_schema() -> Dict[str, Any]:
+    """Convert plain text schema into dictionary"""
+    file = os.path.join(os.path.dirname(__file__), 'QC2schema.txt')
+    schema = read_schema(file)[1]
+    schema_dict = schema.copy()
+    return schema_dict
 
-    # create empty file with dummy data
-    write_hdf5(h5name, qc2_data)
-
-def generate_dict_for_qc2_schema() -> Dict[str, Any]:
-    """_summary_
-
-    Returns:
-        Dict[str, Any]: A valid dictionary containg the qc2 data schema.
-    """
-    schema = os.path.join(
-            os.path.dirname(__file__), 'QC2schema.txt')
-
-    qc2_schema, qc2_flatschema = read_schema(schema)
-
-    # create a valid dictionary with all denifitions
-    qc2_dict_schema = qc2_flatschema.copy()
-
-    return qc2_dict_schema
-########################################################################
-
-# this is the original generate_empty_h5
-def old_generate_empty_h5(schema: str, h5name: str) -> None:
+def generate_empty_h5(schema: str, h5name: str) -> None:
     """Generate an empty HDF5 file from a JSON schema.
 
     Args:
@@ -79,3 +64,23 @@ def old_generate_empty_h5(schema: str, h5name: str) -> None:
     if "__db__" in f:
         del f["__db__"]
     f.close()
+
+# testing Luuks scheme ##################################################
+def old_generate_empty_h5(schema: str, h5name: str) -> None:
+    """Generate an empty HDF5 file from a JSON schema.
+
+    Args:
+        schema (str): Path to the txt schema file.
+        h5name (str): Path to the output HDF5 file.
+    """
+    # generate qc2 data schema
+    qc2_schema, qc2_flatschema = read_schema(schema)
+
+    # generated labels text => more easily processed by Fortran programs
+    write_schema('QC2labels.txt', qc2_flatschema)
+
+    # create a valid dictionary with all denifitions
+    qc2_data = qc2_flatschema.copy()
+
+    # create empty file with dummy data
+    write_hdf5(h5name, qc2_data)

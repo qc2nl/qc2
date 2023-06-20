@@ -1,59 +1,190 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "properties": {
-    "qc2_save": {
-      "type": "object",
-      "properties": {
-        "geometry": {
-          "type": "object",
-          "properties": {
-            "atoms": {
-              "type": ["array", "boolean"],
-              "items": { "type": "string" }
-            },
-            "positions": {
-              "type": ["array", "boolean"],
-              "items": {
-                "type": "array",
-                "items": { "type": "number" }
-              }
-            }
-          }
-        },
-        "basis": { "type": "string" },
-        "multiplicity": { "type": "integer" },
-        "charge": { "type": "integer" },
-        "description": { "type": "string" },
-        "name": { "type": "string" },
-        "n_atoms": { "type": "integer" },
-        "atoms": { "type": "string" },
-        "protons": { "type": "integer" },
-        "n_electrons": { "type": "integer" },
-        "n_orbitals": { "type": ["integer", "boolean"] },
-        "n_qubits": { "type": ["integer", "boolean"] },
-        "nuclear_repulsion": { "type": ["number", "boolean"] },
-        "hf_energy": { "type": ["number", "boolean"] },
-        "canonical_orbitals": { "type": ["array", "boolean"] },
-        "overlap_integrals": { "type": ["array", "boolean"] },
-        "orbital_energies": { "type": ["array", "boolean"] },
-        "one_body_integrals": { "type": ["array", "boolean"] },
-        "two_body_integrals": { "type": ["array", "boolean"] }
-      },
-      "required": [
-        "geometry",
-        "basis",
-        "multiplicity",
-        "charge",
-        "description",
-        "name",
-        "n_atoms",
-        "atoms",
-        "protons",
-        "n_electrons"
-      ]
-    }
+  "/input": {
+    "type": "composite",
+    "rank": "single",
+    "use": "required",
+    "description": " definition of the calculation"
   },
-  "required": ["qc2_save"],
-  "root": { "$ref": "#/properties/qc2_save" }
+  "/input/molecule": {
+    "type": "composite",
+    "rank": "single",
+    "use": "required",
+    "description": " topology of the molecular system"
+  },
+  "/input/molecule/n_atoms": {
+    "type": "integer",
+    "rank": "single",
+    "use": "required",
+    "description": " number of atoms in the systems"
+  },
+  "/input/molecule/geometry": {
+    "type": "real",
+    "rank": "array",
+    "use": "required",
+    "description": " xyz-coordinates for each atom"
+  },
+  "/input/molecule/nuc_charge": {
+    "type": "real",
+    "rank": "array",
+    "use": "required",
+    "description": " nuclear charges for each atom"
+  },
+  "/input/molecule/symbols": {
+    "type": "string",
+    "rank": "array",
+    "use": "required",
+    "description": " atomic symbol for each atom"
+  },
+  "/input/aobasis": {
+    "type": "composite",
+    "rank": "array",
+    "use": "required",
+    "description": " atomic orbital basis set descriptions"
+  },
+  "/input/aobasis/1": {
+    "type": "composite",
+    "rank": "single",
+    "use": "required",
+    "description": " atomic orbital basis set descriptions",
+    "label": "/input/aobasis"
+  },
+  "/input/aobasis/1/descriptor": {
+    "type": "integer",
+    "rank": "single",
+    "use": "optional",
+    "description": " text descriptor of the aobasis"
+  },
+  "/input/aobasis/1/n_ao": {
+    "type": "integer",
+    "rank": "single",
+    "use": "required",
+    "description": " dimension of this ao-basis"
+  },
+  "/input/aobasis/1/n_shells": {
+    "type": "integer",
+    "rank": "single",
+    "use": "required",
+    "description": " number of shells in this basis set"
+  },
+  "/input/aobasis/1/angular": {
+    "type": "integer",
+    "rank": "single",
+    "use": "required",
+    "description": " use (1) Cartesian or (2) spherical functions"
+  },
+  "/input/aobasis/1/center": {
+    "type": "real",
+    "rank": "array",
+    "use": "required",
+    "description": " for each shell: coordinates of basis function center"
+  },
+  "/input/aobasis/1/orbmom": {
+    "type": "integer",
+    "rank": "array",
+    "use": "required",
+    "description": " for each shell: angular momentum (s=0, p=1, d=2, etc.)"
+  },
+  "/input/aobasis/1/n_prim": {
+    "type": "integer",
+    "rank": "array",
+    "use": "required",
+    "description": " for each shell: number of primitive functions"
+  },
+  "/input/aobasis/1/n_cont": {
+    "type": "integer",
+    "rank": "array",
+    "use": "required",
+    "description": " for each shell: number of contracted functions"
+  },
+  "/input/aobasis/1/exponents": {
+    "type": "real",
+    "rank": "array",
+    "use": "required",
+    "description": " exponential parameters of the Gaussian primitive functions (1-d array of length sum(n_prim))"
+  },
+  "/input/aobasis/1/contractions": {
+    "type": "real",
+    "rank": "array",
+    "use": "required",
+    "description": " contraction coefficients for the contracted Gaussian functions (length sum(n_prim *_n_cont), stored as 1-d array)"
+  },
+  "/result": {
+    "type": "composite",
+    "rank": "single",
+    "use": "required",
+    "description": " results of the calculation"
+  },
+  "/result/mobasis": {
+    "type": "composite",
+    "rank": "array",
+    "use": "required",
+    "description": " molecular orbitals obtained in this calculation"
+  },
+  "/result/mobasis/1": {
+    "type": "composite",
+    "rank": "single",
+    "use": "required",
+    "description": " molecular orbitals obtained in this calculation",
+    "label": "/result/mobasis"
+  },
+  "/result/mobasis/1/descriptor": {
+    "type": "string",
+    "rank": "single",
+    "use": "optional",
+    "description": " text descriptor of the mobasis"
+  },
+  "/result/mobasis/1/n_basis": {
+    "type": "integer",
+    "rank": "single",
+    "use": "required",
+    "description": " size of the basis to which the MO coefficients refer (usually identical to n_ao in the aobasis definition)"
+  },
+  "/result/mobasis/1/n_mo": {
+    "type": "integer",
+    "rank": "single",
+    "use": "required",
+    "description": " dimension of the mo-basis (number of orbitals)"
+  },
+  "/result/mobasis/1/n_po": {
+    "type": "integer",
+    "rank": "single",
+    "use": "optional",
+    "description": " for 4-component calculation: number of \"positronic\" orbitals (n_po < n_mo)"
+  },
+  "/result/mobasis/1/nz": {
+    "type": "integer",
+    "rank": "single",
+    "use": "optional",
+    "description": " algebra that is used for the coefficients (1:real, 2: complex, 4:quaternion)"
+  },
+  "/result/mobasis/1/orbitals": {
+    "type": "real",
+    "rank": "array",
+    "use": "required",
+    "description": " mo-coefficients that define the mo's in the given basis"
+  },
+  "/result/mobasis/1/eigenvalues": {
+    "type": "real",
+    "rank": "array",
+    "use": "required",
+    "description": " for each molecular orbital: orbital energy"
+  },
+  "/result/mobasis/1/occupations": {
+    "type": "real",
+    "rank": "array",
+    "use": "optional",
+    "description": " for each molecular orbital: orbital occupation (1.0 fully occupied, 0.0 empty)"
+  },
+  "/result/mobasis/1/shell_id": {
+    "type": "integer",
+    "rank": "array",
+    "use": "optional",
+    "description": " for each molecular orbital: shell (-1: closed, 0: virtual, 1: open shell "
+  },
+  "/result/mobasis/1/aobasis_id": {
+    "type": "integer",
+    "rank": "single",
+    "use": "optional",
+    "description": " pointer to the explicit definition of the aobasis in which these MOs are expressed"
+  }
 }

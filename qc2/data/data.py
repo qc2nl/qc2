@@ -1,6 +1,7 @@
 from ase import Atoms
 from typing import Optional 
 from .schema import generate_empty_h5
+from .schema import generate_json_schema_file
 import os
 
 class qc2Data:
@@ -13,14 +14,12 @@ class qc2Data:
 
         Args:
             molecule (Optional[str]): _description_
-        """        
-        #self._schema = os.path.join(
-        #    os.path.dirname(__file__), 'qc2_schema.json')
+        """
+        json_file = os.path.join(os.path.dirname(__file__), 'qc2_schema.json')
+        # generate JSON schema file from QC2schema plain text
+        generate_json_schema_file(json_file)
 
-        # testing Luuks scheme ##############################
-        self._schema = os.path.join(
-            os.path.dirname(__file__), 'QC2schema.txt')
-        #####################################################
+        self._schema = json_file
         self._filename = filename 
         self._init_data_file()
 
