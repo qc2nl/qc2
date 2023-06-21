@@ -18,7 +18,7 @@ from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from ase.io import write
 from ase.units import Bohr
 
-from qc2.data import read_hdf5, write_hdf5, generate_dict_from_text_schema
+# from qc2.data import read_hdf5, write_hdf5, generate_dict_from_text_schema
 
 
 class DIRAC(FileIOCalculator):
@@ -154,30 +154,30 @@ class DIRAC(FileIOCalculator):
         output = read_dirac_out(out_file)
         self.results = output
 
-    def save(self, filename: str) -> None:
-        """Dumps molecular data to a HDF5 file using qc2 format."""
-        # read dirac info
-        dirac_hdf5_out_file = self.prefix + "_" + self.prefix + ".h5"
-        data = read_hdf5(dirac_hdf5_out_file)
-
-        # generate qc2 schema
-        qc2_data = generate_dict_from_text_schema()
-
-        qc2_data['/input/aobasis/1/descriptor']['value']  = 'DIRAC'
-        qc2_data['/result/mobasis/1/descriptor']['value'] = 'DIRAC_scf'
-
-        for label, item in qc2_data.items():
-            if 'mobasis' in label:
-                diraclabel = label.replace('mobasis/1','wavefunctions/scf/mobasis')
-            else:
-                diraclabel = label
-            if item['use'] == 'required' and item['type'] != 'composite': 
-                try:
-                    qc2_data[label]['value'] = data[diraclabel]['value']
-                except:
-                    print('required data {} not found'.format(label))
-
-        write_hdf5(filename, qc2_data)
+    #def save(self, filename: str) -> None:
+    #    """Dumps molecular data to a HDF5 file using qc2 format."""
+    #    # read dirac info
+    #    dirac_hdf5_out_file = self.prefix + "_" + self.prefix + ".h5"
+    #    data = read_hdf5(dirac_hdf5_out_file)
+#
+    #    # generate qc2 schema
+    #    qc2_data = generate_dict_from_text_schema()
+#
+    #    qc2_data['/input/aobasis/1/descriptor']['value']  = 'DIRAC'
+    #    qc2_data['/result/mobasis/1/descriptor']['value'] = 'DIRAC_scf'
+#
+    #    for label, item in qc2_data.items():
+    #        if 'mobasis' in label:
+    #            diraclabel = label.replace('mobasis/1','wavefunctions/scf/mobasis')
+    #        else:
+    #            diraclabel = label
+    #        if item['use'] == 'required' and item['type'] != 'composite': 
+    #            try:
+    #                qc2_data[label]['value'] = data[diraclabel]['value']
+    #            except:
+    #                print('required data {} not found'.format(label))
+#
+    #    write_hdf5(filename, qc2_data)
 
     def load(self) -> None:
         pass

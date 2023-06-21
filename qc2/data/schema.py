@@ -3,36 +3,67 @@ import os
 
 import json
 import h5py
+import jsonschema
 from h5json import Hdf5db
 from h5json.jsontoh5.jsontoh5 import Writeh5
 
-from .process_schema import write_hdf5
-from .process_schema import read_schema, write_schema
 
-def generate_json_schema_file(filename):
-    """Creates JSON qc2 schema.
-    
+def generate_empty_h5(schema_file: str, output_file: str) -> None:
+    """Create an empty HDF5 file following a JSON QCSchema.
+
     Args:
-        filename (str): file in which to write qc2 JSON schema
+        schema_file (str): The path to the JSON schema file.
+        output_file (str): The path to the output HDF5 file.
+
+    Returns:
+        None
     """
-    # generate dictionary from plain text schema in 'QC2schema.txt'
-    schema_dict = generate_dict_from_text_schema()
-    
-    # convert dictionary to JSON schema
-    schema_json = json.dumps(dict, indent=2)
+    with open(schema_file, 'r') as f:
+        schema = json.load(f)
 
-    # save the JSON schema to a file
-    with open("{}".format(filename), "w") as f:
-        f.write(schema_json)
+    jsonschema.Draft4Validator.check_schema(schema)
 
-def generate_dict_from_text_schema() -> Dict[str, Any]:
-    """Convert plain text schema into dictionary"""
-    file = os.path.join(os.path.dirname(__file__), 'QC2schema.txt')
-    schema = read_schema(file)[1]
-    schema_dict = schema.copy()
-    return schema_dict
+    with h5py.File(output_file, 'w') as f:
+        create_datasets(schema, f)
 
-def generate_empty_h5(schema: str, h5name: str) -> None:
+
+def create_datasets(schema: dict, parent_group: h5py.Group) -> None:
+    """Create datasets in the HDF5 file based on the JSON QCSchema.
+
+    Args:
+        schema (dict): The JSON schema.
+        parent_group (h5py.Group): The parent HDF5 group where datasets will be created.
+
+    Returns:
+        None
+    """
+    for property_name, property_schema in schema.get('properties', {}).items():
+        data_type = property_schema.get('type')
+        if data_type == 'array':
+            item_type = property_schema.get('items', {}).get('type')
+            if item_type == 'integer':
+                parent_group.create_dataset(
+                    property_name, shape=(0,), dtype='i'
+                    )
+            elif item_type == 'string':
+                parent_group.create_dataset(
+                    property_name, shape=(0,),
+                    dtype=h5py.string_dtype(encoding='utf-8')
+                    )
+        elif data_type == 'string':
+            parent_group.create_dataset(
+                property_name, shape=(0,),
+                dtype=h5py.string_dtype(encoding='utf-8')
+                )
+        # Add support for other data types as needed
+
+        # Recurse into nested objects if present
+        if 'properties' in property_schema:
+            subgroup = parent_group.create_group(property_name)
+            create_datasets(property_schema, subgroup)
+
+
+def old_generate_empty_h5(schema: str, h5name: str) -> None:
     """Generate an empty HDF5 file from a JSON schema.
 
     Args:
@@ -44,6 +75,8 @@ def generate_empty_h5(schema: str, h5name: str) -> None:
 
     # parse the json file into a python dictionary
     h5json = json.loads(text)
+
+    print(h5json)
 
     if "root" not in h5json:
         raise Exception("No 'root' key in the JSON schema.")
@@ -64,23 +97,3 @@ def generate_empty_h5(schema: str, h5name: str) -> None:
     if "__db__" in f:
         del f["__db__"]
     f.close()
-
-# testing Luuks scheme ##################################################
-def old_generate_empty_h5(schema: str, h5name: str) -> None:
-    """Generate an empty HDF5 file from a JSON schema.
-
-    Args:
-        schema (str): Path to the txt schema file.
-        h5name (str): Path to the output HDF5 file.
-    """
-    # generate qc2 data schema
-    qc2_schema, qc2_flatschema = read_schema(schema)
-
-    # generated labels text => more easily processed by Fortran programs
-    write_schema('QC2labels.txt', qc2_flatschema)
-
-    # create a valid dictionary with all denifitions
-    qc2_data = qc2_flatschema.copy()
-
-    # create empty file with dummy data
-    write_hdf5(h5name, qc2_data)
