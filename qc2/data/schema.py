@@ -4,8 +4,6 @@ import os
 import json
 import h5py
 import jsonschema
-from h5json import Hdf5db
-from h5json.jsontoh5.jsontoh5 import Writeh5
 
 
 def generate_empty_h5(schema_file: str, output_file: str) -> None:
@@ -18,13 +16,13 @@ def generate_empty_h5(schema_file: str, output_file: str) -> None:
     Returns:
         None
     """
-    with open(schema_file, 'r') as f:
-        schema = json.load(f)
+    with open(schema_file, 'r', encoding='UTF-8') as file:
+        schema = json.load(file)
 
     jsonschema.Draft4Validator.check_schema(schema)
 
-    with h5py.File(output_file, 'w') as f:
-        create_datasets(schema, f)
+    with h5py.File(output_file, 'w') as file:
+        create_datasets(schema, file)
 
 
 def create_datasets(schema: dict, parent_group: h5py.Group) -> None:
@@ -62,38 +60,3 @@ def create_datasets(schema: dict, parent_group: h5py.Group) -> None:
             subgroup = parent_group.create_group(property_name)
             create_datasets(property_schema, subgroup)
 
-
-def old_generate_empty_h5(schema: str, h5name: str) -> None:
-    """Generate an empty HDF5 file from a JSON schema.
-
-    Args:
-        schema (str): Path to the JSON schema file.
-        h5name (str): Path to the output HDF5 file.
-    """
-    # open schema
-    text = open(schema).read()
-
-    # parse the json file into a python dictionary
-    h5json = json.loads(text)
-
-    print(h5json)
-
-    if "root" not in h5json:
-        raise Exception("No 'root' key in the JSON schema.")
-    root_uuid = h5json["root"]
-
-    # create the file, will raise IOError if there's a problem
-    Hdf5db.createHDF5File(h5name)
-
-    with Hdf5db(
-        h5name, root_uuid=root_uuid, update_timestamps=False, app_logger=None
-    ) as db:
-        h5writer = Writeh5(db, h5json)
-        h5writer.writeFile()
-
-    # open with h5py and remove the _db_ group
-    # Note: this will delete any anonymous (un-linked) objects
-    f = h5py.File(h5name, "a")
-    if "__db__" in f:
-        del f["__db__"]
-    f.close()

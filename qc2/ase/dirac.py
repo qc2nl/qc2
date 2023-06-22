@@ -6,19 +6,18 @@ https://www.diracprogram.org/
 GitLab repo:
 https://gitlab.com/dirac/dirac
 """
-import h5py
+
 import subprocess
 import os
 from typing import Optional, List, Dict, Any
+import h5py
 
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
 from ase.calculators.calculator import InputError, CalculationFailed
-from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
-from ase.io import write
 from ase.units import Bohr
-
-# from qc2.data import read_hdf5, write_hdf5, generate_dict_from_text_schema
+from ase.io import write
+from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 
 
 class DIRAC(FileIOCalculator):
@@ -40,7 +39,7 @@ class DIRAC(FileIOCalculator):
     """
     implemented_properties: List[str] = ['energy']
     label: str = 'dirac'
-    command: str = 'pam --inp=PREFIX.inp --mol=PREFIX.xyz --silent --get="MRCONEE MDCINT"'
+    command: str = 'pam --inp=PREFIX.inp --mol=PREFIX.xyz --silent --get="AOMOMAT MRCONEE MDCINT"'
 
     def __init__(self,
                  restart: Optional[bool] = None,
@@ -154,30 +153,49 @@ class DIRAC(FileIOCalculator):
         output = read_dirac_out(out_file)
         self.results = output
 
-    #def save(self, filename: str) -> None:
-    #    """Dumps molecular data to a HDF5 file using qc2 format."""
-    #    # read dirac info
-    #    dirac_hdf5_out_file = self.prefix + "_" + self.prefix + ".h5"
-    #    data = read_hdf5(dirac_hdf5_out_file)
-#
-    #    # generate qc2 schema
-    #    qc2_data = generate_dict_from_text_schema()
-#
-    #    qc2_data['/input/aobasis/1/descriptor']['value']  = 'DIRAC'
-    #    qc2_data['/result/mobasis/1/descriptor']['value'] = 'DIRAC_scf'
-#
-    #    for label, item in qc2_data.items():
-    #        if 'mobasis' in label:
-    #            diraclabel = label.replace('mobasis/1','wavefunctions/scf/mobasis')
-    #        else:
-    #            diraclabel = label
-    #        if item['use'] == 'required' and item['type'] != 'composite': 
-    #            try:
-    #                qc2_data[label]['value'] = data[diraclabel]['value']
-    #            except:
-    #                print('required data {} not found'.format(label))
-#
-    #    write_hdf5(filename, qc2_data)
+    def save(self, filename: str) -> None:
+        """Dumps molecular data to an HDF5 file."""
+
+        # Open the HDF5 file in read/write mode
+        file = h5py.File(filename, "w")
+
+        # molecule group
+        molecule = file.create_group("molecule")
+
+        symbols = self._get_from_dirac_hdf5_file(
+           '/input/molecule/symbols'
+           )
+        molecule.create_dataset("symbols", data=symbols)
+
+        geometry = self._get_from_dirac_hdf5_file(
+           '/input/molecule/geometry') / Bohr  # => in a.u
+        molecule.create_dataset("geometry", data=geometry)
+
+        # include here charge/multiplicity ?
+
+        molecule.create_dataset("schema_name", data="qcschema_molecule")
+        molecule.create_dataset("schema_version", data=2)
+
+        # properties group
+        properties = file.create_group("properties")
+
+        nbasis = self._get_from_dirac_hdf5_file(
+            '/input/aobasis/1/n_ao')
+        properties.create_dataset("calcinfo_nbasis", data=nbasis)
+
+        nmo = self._get_from_dirac_hdf5_file(
+           '/result/wavefunctions/scf/mobasis/n_mo')
+        properties.create_dataset("calcinfo_nmo", data=sum(nmo))
+
+        natom = self._get_from_dirac_hdf5_file(
+           '/input/molecule/n_atoms')
+        properties.create_dataset("calcinfo_natom", data=natom)
+
+        energy = self._get_from_dirac_hdf5_file(
+           '/result/wavefunctions/scf/energy')
+        properties.create_dataset("return_energy", data=energy)
+
+        file.close()
 
     def load(self) -> None:
         pass
@@ -204,7 +222,7 @@ class DIRAC(FileIOCalculator):
                    '{} with error code {}'.format(self.name, command,
                                                   path, errorcode))
             raise CalculationFailed(msg)
-        
+    
         if os.path.exists("FCIDUMP"):
              E_core = 0
              spinor = {}
@@ -270,7 +288,32 @@ class DIRAC(FileIOCalculator):
         return ei_data
 
 # functions below still under developments
-
+#
+    #def old_save(self, filename: str) -> None:
+    #    """Dumps molecular data to a HDF5 file using qc2 format."""
+    #    # read dirac info
+    #    dirac_hdf5_out_file = self.prefix + "_" + self.prefix + ".h5"
+    #    data = read_hdf5(dirac_hdf5_out_file)
+#
+    #    # generate qc2 schema
+    #    qc2_data = generate_dict_from_text_schema()
+#
+    #    qc2_data['/input/aobasis/1/descriptor']['value']  = 'DIRAC'
+    #    qc2_data['/result/mobasis/1/descriptor']['value'] = 'DIRAC_scf'
+#
+    #    for label, item in qc2_data.items():
+    #        if 'mobasis' in label:
+    #            diraclabel = label.replace('mobasis/1','wavefunctions/scf/mobasis')
+    #        else:
+    #            diraclabel = label
+    #        if item['use'] == 'required' and item['type'] != 'composite': 
+    #            try:
+    #                qc2_data[label]['value'] = data[diraclabel]['value']
+    #            except:
+    #                print('required data {} not found'.format(label))
+#
+    #    write_hdf5(filename, qc2_data)
+#
     def get_mol_data(self) -> Dict[str, Any]:
         """Pulls out molecular data from dirac HDF5 output file."""
 
@@ -292,7 +335,7 @@ class DIRAC(FileIOCalculator):
         print(nao, nshells)
     
     def _get_from_dirac_hdf5_file(self, property_name):
-        """Helper routine to open dirac HDF5 output file and take property."""
+        """Helper routine to open dirac HDF5 output and extract desired property."""
         out_hdf5_file = self.prefix + "_" + self.prefix + ".h5"
         try:
             with h5py.File("{}".format(out_hdf5_file), "r") as f:
