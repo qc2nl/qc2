@@ -125,7 +125,6 @@ class DIRAC(FileIOCalculator):
         #if '.4index' not in self.parameters['dirac']:
         #    self.parameters['dirac'].update({'.4index': ''})
 
-
     def calculate(self, *args, **kwargs) -> None:
         """Execute DIRAC workflow."""
         super().calculate(*args, **kwargs)
@@ -154,7 +153,11 @@ class DIRAC(FileIOCalculator):
         self.results = output
 
     def save(self, filename: str) -> None:
-        """Dumps molecular data to an HDF5 file."""
+        """Dumps molecular data to an HDF5 file.
+
+        Notes:
+            HDF5 files are written following the QCSchema.
+        """
 
         # Open the HDF5 file in read/write mode
         file = h5py.File(filename, "w")
@@ -165,35 +168,57 @@ class DIRAC(FileIOCalculator):
         symbols = self._get_from_dirac_hdf5_file(
            '/input/molecule/symbols'
            )
-        molecule.create_dataset("symbols", data=symbols)
+        molecule.attrs['symbols'] = symbols
 
         geometry = self._get_from_dirac_hdf5_file(
            '/input/molecule/geometry') / Bohr  # => in a.u
-        molecule.create_dataset("geometry", data=geometry)
-
+        molecule.attrs['geometry'] = geometry
+        
         # include here charge/multiplicity ?
 
-        molecule.create_dataset("schema_name", data="qcschema_molecule")
-        molecule.create_dataset("schema_version", data=2)
+        molecule.attrs['schema_name'] = "qcschema_molecule"
+        molecule.attrs['schema_version'] = 2
 
         # properties group
         properties = file.create_group("properties")
 
         nbasis = self._get_from_dirac_hdf5_file(
             '/input/aobasis/1/n_ao')
-        properties.create_dataset("calcinfo_nbasis", data=nbasis)
+        properties.attrs['calcinfo_nbasis'] = nbasis
 
         nmo = self._get_from_dirac_hdf5_file(
            '/result/wavefunctions/scf/mobasis/n_mo')
-        properties.create_dataset("calcinfo_nmo", data=sum(nmo))
+        properties.attrs['calcinfo_nmo'] = nmo
 
         natom = self._get_from_dirac_hdf5_file(
            '/input/molecule/n_atoms')
-        properties.create_dataset("calcinfo_natom", data=natom)
+        properties.attrs['calcinfo_natom'] = natom
 
         energy = self._get_from_dirac_hdf5_file(
            '/result/wavefunctions/scf/energy')
-        properties.create_dataset("return_energy", data=energy)
+        properties.attrs['return_energy'] = energy
+
+        # model group
+        model = file.create_group("model")
+
+        basis = self.parameters['molecule']['*basis']['.default']
+        model.attrs['basis'] = basis
+
+        method = list(self.parameters['wave_function'].keys())[-1].strip('.')
+        model.attrs['method'] = method
+
+        # provenance group
+        provenance = file.create_group("provenance")
+        provenance.attrs['creator'] = self.name
+        provenance.attrs['version'] = "2"
+        provenance.attrs['routine'] = f"ASE-{self.__class__.__name__}.save()"
+
+        # keywords group
+        provenance = file.create_group("keywords")
+
+        # driver group --- still not working
+        qc_input = file.create_group("qcinput")
+        qc_input.attrs['driver'] = "energy"
 
         file.close()
 
