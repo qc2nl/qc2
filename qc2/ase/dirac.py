@@ -119,8 +119,8 @@ class DIRAC(FileIOCalculator):
             # useful to compare with nonrel calc done with other programs
             self.parameters.update(integrals={'.nucmod': '1'})
 
-        if '*charge' not in self.parameters:
-            self.parameters['molecule']['*charge']={'.charge': '0'}
+        #if '*charge' not in self.parameters:
+        #    self.parameters['molecule']['*charge'] = {'.charge': '0'}
 
         #if '.4index' not in self.parameters['dirac']:
         #    self.parameters['dirac'].update({'.4index': ''})
@@ -153,17 +153,33 @@ class DIRAC(FileIOCalculator):
         self.results = output
 
     def save(self, filename: str) -> None:
-        """Dumps molecular data to an HDF5 file.
+        """Dumps molecular data to a HDF5 file.
 
         Notes:
             HDF5 files are written following the QCSchema.
         """
+        # calculate 1- and 2-body integrals and store them into a dictionary
+        ei_data = self.get_integrals_data()
 
-        # Open the HDF5 file in read/write mode
+        # open the HDF5 file in read/write mode
         file = h5py.File(filename, "w")
 
+        # set up first general definitions for the QCSchema
+        schema_name = "qcschema_molecule"
+        version = 2
+
+        file.attrs['driver'] = "energy"
+        file.attrs['schema_name'] = schema_name
+        file.attrs['schema_version'] = version
+
+        energy = self._get_from_dirac_hdf5_file(
+           '/result/wavefunctions/scf/energy')
+        file.attrs['return_result'] = energy
+
+        file.attrs['success'] = "true"
+
         # molecule group
-        molecule = file.create_group("molecule")
+        molecule = file.require_group("molecule")
 
         symbols = self._get_from_dirac_hdf5_file(
            '/input/molecule/symbols'
@@ -173,14 +189,14 @@ class DIRAC(FileIOCalculator):
         geometry = self._get_from_dirac_hdf5_file(
            '/input/molecule/geometry') / Bohr  # => in a.u
         molecule.attrs['geometry'] = geometry
-        
+
         # include here charge/multiplicity ?
 
         molecule.attrs['schema_name'] = "qcschema_molecule"
-        molecule.attrs['schema_version'] = 2
+        molecule.attrs['schema_version'] = version
 
         # properties group
-        properties = file.create_group("properties")
+        properties = file.require_group("properties")
 
         nbasis = self._get_from_dirac_hdf5_file(
             '/input/aobasis/1/n_ao')
@@ -188,18 +204,18 @@ class DIRAC(FileIOCalculator):
 
         nmo = self._get_from_dirac_hdf5_file(
            '/result/wavefunctions/scf/mobasis/n_mo')
+        nmo = sum(nmo)
         properties.attrs['calcinfo_nmo'] = nmo
 
         natom = self._get_from_dirac_hdf5_file(
            '/input/molecule/n_atoms')
         properties.attrs['calcinfo_natom'] = natom
 
-        energy = self._get_from_dirac_hdf5_file(
-           '/result/wavefunctions/scf/energy')
+        properties.attrs['nuclear_repulsion_energy'] = ei_data['E_core']
         properties.attrs['return_energy'] = energy
 
         # model group
-        model = file.create_group("model")
+        model = file.require_group("model")
 
         basis = self.parameters['molecule']['*basis']['.default']
         model.attrs['basis'] = basis
@@ -208,17 +224,30 @@ class DIRAC(FileIOCalculator):
         model.attrs['method'] = method
 
         # provenance group
-        provenance = file.create_group("provenance")
+        provenance = file.require_group("provenance")
         provenance.attrs['creator'] = self.name
-        provenance.attrs['version'] = "2"
+        provenance.attrs['version'] = version
         provenance.attrs['routine'] = f"ASE-{self.__class__.__name__}.save()"
 
         # keywords group
-        provenance = file.create_group("keywords")
+        provenance = file.require_group("keywords")
 
-        # driver group --- still not working
-        qc_input = file.create_group("qcinput")
-        qc_input.attrs['driver'] = "energy"
+        # wavefunction group
+        wavefunction = file.require_group("wavefunction")
+        wavefunction.attrs['basis'] = basis
+
+        #scf_fock_mo_a => should not be empty
+        print(ei_data['one_body_int'])
+        print(ei_data['spinor'])
+        #print(ei_data['two_body_int'])
+
+        wavefunction.attrs['scf_fock_mo_a'] = [-1.2550254253591242, 0.0, 0.0, -0.4732763494710688] # ei_data['one_body_int'].values()
+        
+        wavefunction.attrs['scf_eri_mo_aa'] = [0.6752967689354992, 0.0, -2.7755575615628914e-17, 0.6642044392432875,
+               3.469446951953614e-17, 0.1810520713689906, 0.18105207136899099,-5.551115123125783e-17,
+               4.85722573273506e-17, 0.18105207136899074, 0.18105207136899115, -1.6653345369377348e-16,
+               0.6642044392432873, 1.1102230246251565e-16, -2.220446049250313e-16, 0.6981738857839892]
+         
 
         file.close()
 
@@ -247,63 +276,62 @@ class DIRAC(FileIOCalculator):
                    '{} with error code {}'.format(self.name, command,
                                                   path, errorcode))
             raise CalculationFailed(msg)
-    
-        if os.path.exists("FCIDUMP"):
-             E_core = 0
-             spinor = {}
-             one_body_int = {}
-             two_body_int = {}
-             num_lines = sum(1 for line in open("FCIDUMP"))
-             with open('FCIDUMP') as f:
-               start_reading=0
-               for line in f:
-                 start_reading+=1
-                 if "&END" in line:
-                   break
-               listed_values = [[token for token in line.split()] for line in f.readlines()] 
-               complex_int = False
-               if (len(listed_values[0]) == 6) : complex_int = True
-               if not complex_int:
-                  for row in range(num_lines-start_reading):
+
+        E_core = 0
+        spinor = {}
+        one_body_int = {}
+        two_body_int = {}
+        num_lines = sum(1 for line in open("FCIDUMP"))
+        with open('FCIDUMP') as f:
+            start_reading=0
+            for line in f:
+                start_reading += 1
+                if "&END" in line:
+                    break
+            listed_values = [[token for token in line.split()] for line in f.readlines()] 
+            complex_int = False
+            if (len(listed_values[0]) == 6):
+                complex_int = True
+            if not complex_int:
+                for row in range(num_lines-start_reading):
                     a_1 = int(listed_values[row][1])
                     a_2 = int(listed_values[row][2])
                     a_3 = int(listed_values[row][3])
                     a_4 = int(listed_values[row][4])
                     if a_4 == 0 and a_3 == 0:
-                      if a_2 == 0:
-                        if a_1 == 0:
-                          E_core = float(listed_values[row][0])
+                        if a_2 == 0:
+                            if a_1 == 0:
+                                E_core = float(listed_values[row][0])
+                            else:
+                                spinor[a_1] = float(listed_values[row][0])
                         else:
-                          spinor[a_1] = float(listed_values[row][0])
-                      else:
-                        one_body_int[a_1,a_2] = float(listed_values[row][0])
+                            one_body_int[a_1, a_2] = float(listed_values[row][0])
                     else:
-                      two_body_int[a_1,a_2,a_3,a_4] = float(listed_values[row][0])
-               if complex_int:
-                  for row in range(num_lines-start_reading):
+                        two_body_int[a_1, a_2, a_3, a_4] = float(listed_values[row][0])
+            if complex_int:
+                for row in range(num_lines-start_reading):
                     a_1 = int(listed_values[row][2])
                     a_2 = int(listed_values[row][3])
                     a_3 = int(listed_values[row][4])
                     a_4 = int(listed_values[row][5])
                     if a_4 == 0 and a_3 == 0:
-                      if a_2 == 0:
-                        if a_1 == 0:
-                          E_core = complex(
-                             float(listed_values[row][0]),float(listed_values[row][1]))
+                        if a_2 == 0:
+                            if a_1 == 0:
+                                E_core = complex(
+                                   float(listed_values[row][0]), float(listed_values[row][1]))
+                            else:
+                                spinor[a_1] = complex(
+                                   float(listed_values[row][0]), float(listed_values[row][1]))
                         else:
-                          spinor[a_1] = complex(
-                             float(listed_values[row][0]),float(listed_values[row][1]))
-                      else:
-                        one_body_int[a_1,a_2] = complex(
-                           float(listed_values[row][0]),float(listed_values[row][1]))
+                            one_body_int[a_1, a_2] = complex(
+                               float(listed_values[row][0]), float(listed_values[row][1]))
                     else:
-                      two_body_int[a_1,a_2,a_3,a_4] = complex(
-                         float(listed_values[row][0]),float(listed_values[row][1]))
-             # self.n_orbitals = len(self.spinor)
-             # self.n_qubits = len(self.spinor)
-        else:
-             print('FCIDUMP not found.')
-        
+                        two_body_int[a_1, a_2, a_3, a_4] = complex(
+                           float(listed_values[row][0]), float(listed_values[row][1]))
+                        
+        # self.n_orbitals = len(self.spinor)
+        # self.n_qubits = len(self.spinor)
+
         ei_data = {}
         ei_data = {'E_core': E_core,
                    'spinor': spinor,
