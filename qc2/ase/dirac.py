@@ -1,4 +1,4 @@
-"""This module defines an ASE interface to DIRAC.
+"""This module defines an ASE interface to DIRAC23.
 
 Official website:
 https://www.diracprogram.org/
@@ -162,8 +162,22 @@ class DIRAC(FileIOCalculator):
     def save(self, filename: str) -> None:
         """Dumps molecular data to a HDF5 file.
 
+        Args:
+            filename (str): HDF5 file to save the data to.
+
         Notes:
             HDF5 files are written following the QCSchema.
+
+        Returns:
+            None
+
+        Example:
+        >>> from ase.build import molecule
+        >>> from qc2.ase.dirac import DIRAC
+        >>>
+        >>> molecule = molecule('H2')
+        >>> molecule.calc = DIRAC(...)
+        >>> molecule.calc.save('h2.hdf5')
         """
         # calculate 1- and 2-body integrals
         integrals = self.get_integrals()
@@ -172,11 +186,11 @@ class DIRAC(FileIOCalculator):
         two_body_integrals = integrals[3]
 
         # open the HDF5 file in read/write mode
-        file = h5py.File(filename, "w")
+        file = h5py.File(filename, "a")
 
         # set up general definitions for the QCSchema
         schema_name = "qcschema_molecule"
-        version = 2
+        version = '1.dev'
         driver = "energy"
 
         file.attrs['driver'] = driver
@@ -386,18 +400,27 @@ class DIRAC(FileIOCalculator):
 
         file.close()
 
-    def load(self) -> None:
+    def load(self, filename: str) -> None:
+        """Loads molecular data from a HDF5 file.
+
+        Args:
+            filename (str): HDF5 file to read the data from.
+
+        Returns:
+            None
+        """
         pass
 
     def get_integrals(self) -> Tuple[Union[float, complex],
                                      Dict[int, Union[float, complex]],
                                      Dict[Tuple[int, int], Union[float, complex]],
                                      Dict[Tuple[int, int, int, int], Union[float, complex]]]:
-        """Get 1- and 2-body integrals in MO basis from DIRAC FCIDUMP file.
+        """Retrieves 1- and 2-body integrals in MO basis from DIRAC FCIDUMP.
  
         Notes:
             Requires MRCONEE MDCINT files obtained using
-            **DIRAC .4INDEX and 'pam ... --get="MRCONEE MDCINT"' options
+            **DIRAC .4INDEX, **MOLTRA .ACTIVE all and 
+            'pam ... --get="MRCONEE MDCINT"' options
  
         Returns:
             A tuple containing the following:

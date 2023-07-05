@@ -1,13 +1,17 @@
+"""This module defines the main qc2 data class."""
 from typing import Optional
 import os
 
 from ase import Atoms
 from .schema import generate_empty_h5
-# from .schema import generate_json_schema_file
 
 
 class qc2Data:
-    """Class docstring."""
+    """Main qc2 class.
+
+    The qc2Data class orchestrates classical qchem programs and
+    python libraries for quantum computing.
+    """
     def __init__(self,
                  filename: str,
                  molecule: Optional[str],
@@ -17,16 +21,16 @@ class qc2Data:
         Args:
             molecule (Optional[str]): _description_
         """
-        # generate JSON schema file from QC2schema plain text
-        # json_file = os.path.join(os.path.dirname(__file__), 'qc2_schema.json')
-        # generate_json_schema_file(json_file)
-
+        # this version uses the JSON schema for quantum chemistry (QCSchema)
+        # for more details, see https://molssi.org/software/qcschema-2/
+        # 'qc_schema_output.schema' taken from
+        # https://github.com/MolSSI/QCSchema/tree/master/qcschema/data/v2
         json_file = os.path.join(
             os.path.dirname(__file__), 'qc_schema_output.schema'
             )
 
         # define attributes
-        self._schema = json_file  # QCSchema
+        self._schema = json_file
         self._filename = filename
         self._init_data_file()
 
@@ -34,7 +38,7 @@ class qc2Data:
         self.molecule = molecule
 
     def _init_data_file(self):
-        """initialize the hdf5 file containing the data."""
+        """Initialize empty hdf5 file following the QCSchema format."""
         generate_empty_h5(self._schema, self._filename)
 
     @property
@@ -42,7 +46,7 @@ class qc2Data:
         """Return the molecule.
 
         Returns:
-            Molecule: molecular data
+            Molecule as an ASE Atoms object.
         """
         return self._molecule
 

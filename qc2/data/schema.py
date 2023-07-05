@@ -1,62 +1,40 @@
+"""This module defines funcs to create empty HDF5 files using QCSchema."""
 from typing import Dict, Any
-import os
-
 import json
 import h5py
-import jsonschema
+from h5py._hl.attrs import AttributeManager
 
 
-def generate_empty_h5(schema_file: str, output_file: str) -> None:
-    """Create an empty HDF5 file following a JSON QCSchema.
+def generate_empty_h5(schema_file: str, file_path: str) -> None:
+    """
+    Creates an empty HDF5 file based on a given schema file.
 
     Args:
-        schema_file (str): The path to the JSON schema file.
-        output_file (str): The path to the output HDF5 file.
-
-    Returns:
-        None
+        schema_file (str): Path to the schema file.
+        file_path (str): Path to the output HDF5 file.
     """
     with open(schema_file, 'r', encoding='UTF-8') as file:
         schema = json.load(file)
 
-    jsonschema.Draft4Validator.check_schema(schema)
-
-    with h5py.File(output_file, 'w') as file:
-        create_datasets(schema, file)
+    with h5py.File(file_path, 'w') as file:
+        create_attributes(schema, file)
 
 
-def create_datasets(schema: dict, parent_group: h5py.Group) -> None:
-    """Create datasets in the HDF5 file based on the JSON QCSchema.
+def create_attributes(schema: Dict[str, Any], group: AttributeManager) -> None:
+    """
+    Creates attributes in the given HDF5 group based on the provided schema.
 
     Args:
-        schema (dict): The JSON schema.
-        parent_group (h5py.Group): The parent HDF5 group where datasets will be created.
-
-    Returns:
-        None
+        schema (Dict[str, Any]): The schema specifying the attributes.
+        group (AttributeManager): The HDF5 group to create attributes in.
     """
-    for property_name, property_schema in schema.get('properties', {}).items():
-        data_type = property_schema.get('type')
-        if data_type == 'array':
-            item_type = property_schema.get('items', {}).get('type')
-            if item_type == 'integer':
-                parent_group.create_dataset(
-                    property_name, shape=(0,), dtype='i'
-                    )
-            elif item_type == 'string':
-                parent_group.create_dataset(
-                    property_name, shape=(0,),
-                    dtype=h5py.string_dtype(encoding='utf-8')
-                    )
-        elif data_type == 'string':
-            parent_group.create_dataset(
-                property_name, shape=(0,),
-                dtype=h5py.string_dtype(encoding='utf-8')
-                )
-        # Add support for other data types as needed
-
-        # Recurse into nested objects if present
-        if 'properties' in property_schema:
-            subgroup = parent_group.create_group(property_name)
-            create_datasets(property_schema, subgroup)
-
+    if 'type' in schema and schema['type'] == 'object':
+        for prop, prop_schema in schema.get('properties', {}).items():
+            if 'type' in prop_schema and prop_schema['type'] == 'object':
+                subgroup = group.create_group(prop)
+                create_attributes(prop_schema, subgroup)
+            elif 'type' in prop_schema and prop_schema['type'] == 'array':
+                group.attrs.create(prop, [],
+                                   dtype=h5py.special_dtype(vlen=str))
+            else:
+                group.attrs.create(prop, None, dtype='f')
