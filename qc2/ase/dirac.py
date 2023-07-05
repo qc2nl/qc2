@@ -9,8 +9,9 @@ https://gitlab.com/dirac/dirac
 
 import subprocess
 import os
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple, Union
 import h5py
+import numpy as np
 
 from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
@@ -50,7 +51,7 @@ class DIRAC(FileIOCalculator):
                  command: Optional[str] = None,
                  **kwargs) -> None:
         """ASE-DIRAC Class Constructor to initialize the object.
-        
+
         Args:
             restart (bool, optional): Prefix for restart file.
                 May contain a directory. Defaults to None: don't restart.
@@ -119,11 +120,17 @@ class DIRAC(FileIOCalculator):
             # useful to compare with nonrel calc done with other programs
             self.parameters.update(integrals={'.nucmod': '1'})
 
-        #if '*charge' not in self.parameters:
-        #    self.parameters['molecule']['*charge'] = {'.charge': '0'}
+        if '*charge' not in self.parameters['molecule']:
+            self.parameters['molecule']['*charge'] = {'.charge': '0'}
 
-        #if '.4index' not in self.parameters['dirac']:
-        #    self.parameters['dirac'].update({'.4index': ''})
+        if '.4index' not in self.parameters['dirac']:
+            # activates the transformation of integrals to MO basis
+            self.parameters['dirac'].update({'.4index': ''})
+
+        if ('.4index' in self.parameters['dirac'] and
+                'moltra' not in self.parameters):
+            # calculates all integrals, including core
+            self.parameters.update(moltra={'.active': 'all'})
 
     def calculate(self, *args, **kwargs) -> None:
         """Execute DIRAC workflow."""
@@ -158,17 +165,21 @@ class DIRAC(FileIOCalculator):
         Notes:
             HDF5 files are written following the QCSchema.
         """
-        # calculate 1- and 2-body integrals and store them into a dictionary
-        ei_data = self.get_integrals_data()
+        # calculate 1- and 2-body integrals
+        integrals = self.get_integrals()
+        e_core = integrals[0]
+        one_body_integrals = integrals[2]
+        two_body_integrals = integrals[3]
 
         # open the HDF5 file in read/write mode
         file = h5py.File(filename, "w")
 
-        # set up first general definitions for the QCSchema
+        # set up general definitions for the QCSchema
         schema_name = "qcschema_molecule"
         version = 2
+        driver = "energy"
 
-        file.attrs['driver'] = "energy"
+        file.attrs['driver'] = driver
         file.attrs['schema_name'] = schema_name
         file.attrs['schema_version'] = version
 
@@ -190,7 +201,12 @@ class DIRAC(FileIOCalculator):
            '/input/molecule/geometry') / Bohr  # => in a.u
         molecule.attrs['geometry'] = geometry
 
-        # include here charge/multiplicity ?
+        molecular_charge = int(
+            self.parameters['molecule']['*charge']['.charge'])
+        molecule.attrs['molecular_charge'] = molecular_charge
+
+        # include here multiplicity ?
+        # Not a good quantum number for relativistic DIRAC?
 
         molecule.attrs['schema_name'] = "qcschema_molecule"
         molecule.attrs['schema_version'] = version
@@ -198,20 +214,30 @@ class DIRAC(FileIOCalculator):
         # properties group
         properties = file.require_group("properties")
 
-        nbasis = self._get_from_dirac_hdf5_file(
+        calcinfo_nbasis = self._get_from_dirac_hdf5_file(
             '/input/aobasis/1/n_ao')
-        properties.attrs['calcinfo_nbasis'] = nbasis
+        properties.attrs['calcinfo_nbasis'] = calcinfo_nbasis
 
         nmo = self._get_from_dirac_hdf5_file(
            '/result/wavefunctions/scf/mobasis/n_mo')
         nmo = sum(nmo)
         properties.attrs['calcinfo_nmo'] = nmo
 
-        natom = self._get_from_dirac_hdf5_file(
-           '/input/molecule/n_atoms')
-        properties.attrs['calcinfo_natom'] = natom
+        # approximate definition of # of alpha and beta electrons
+        # does not work for pure triplet ground states!?
+        nuc_charge = self._get_from_dirac_hdf5_file(
+            '/input/molecule/nuc_charge')
+        nelec = int(sum(nuc_charge)) - molecular_charge
+        calcinfo_nbeta = nelec // 2
+        calcinfo_nalpha = nelec - calcinfo_nbeta
+        properties.attrs['calcinfo_nalpha'] = calcinfo_nalpha
+        properties.attrs['calcinfo_nbeta'] = calcinfo_nbeta
 
-        properties.attrs['nuclear_repulsion_energy'] = ei_data['E_core']
+        calcinfo_natom = self._get_from_dirac_hdf5_file(
+           '/input/molecule/n_atoms')
+        properties.attrs['calcinfo_natom'] = calcinfo_natom
+
+        properties.attrs['nuclear_repulsion_energy'] = e_core
         properties.attrs['return_energy'] = energy
 
         # model group
@@ -236,17 +262,126 @@ class DIRAC(FileIOCalculator):
         wavefunction = file.require_group("wavefunction")
         wavefunction.attrs['basis'] = basis
 
-        #scf_fock_mo_a => should not be empty
-        print(ei_data['one_body_int'])
-        print(ei_data['spinor'])
-        #print(ei_data['two_body_int'])
+        print(one_body_integrals)
+        print(two_body_integrals)
 
-        wavefunction.attrs['scf_fock_mo_a'] = [-1.2550254253591242, 0.0, 0.0, -0.4732763494710688] # ei_data['one_body_int'].values()
+        # slipt 1-body integrals into alpha and beta contributions
+        one_body_coefficients_a = np.zeros((nmo, nmo), dtype=np.float64)
+        one_body_coefficients_b = np.zeros((nmo, nmo), dtype=np.float64)
+
+        for p in range(nmo):
+            for q in range(nmo):
+
+                # alpha indexes
+                alpha_p = 2 * p + 1
+                alpha_q = 2 * q + 1
+
+                # beta indexes
+                beta_p = 2 * p + 2
+                beta_q = 2 * q + 2
+
+                # alpha and beta 1-body integral subsets
+                one_body_coefficients_a[p, q] = one_body_integrals[
+                    (alpha_p, alpha_q)]
+                one_body_coefficients_b[p, q] = one_body_integrals[
+                    (beta_p, beta_q)]
+
+        # transform alpha and beta 1-body integrals into QCSchema format
+        # 'scf_fock_mo_a/b' takes the form of flattened nmo by nmo matrices.
+        # E.g., for H2 [r(H-H) = 0.737166 angs] at RHF/sto-3g level,
+        # scf_fock_mo_a = [-1.2550254253591242, 0.0, 0.0, -0.4732763494710688].
+        wavefunction.attrs['scf_fock_mo_a'] = one_body_coefficients_a.flatten()
+        # wavefunction.attrs['scf_fock_mo_b'] = one_body_coefficients_b.flatten()
+
+        # slipt 2-body integrals into alpha-alpha, beta-beta,
+        # alpha-beta and beta-alpha contributions
+        two_body_coefficients_aa = np.zeros(
+            (nmo, nmo, nmo, nmo), dtype=np.float64)
+        two_body_coefficients_bb = np.zeros(
+            (nmo, nmo, nmo, nmo), dtype=np.float64)
+        two_body_coefficients_ab = np.zeros(
+            (nmo, nmo, nmo, nmo), dtype=np.float64)
+        two_body_coefficients_ba = np.zeros(
+            (nmo, nmo, nmo, nmo), dtype=np.float64)
+
+        for p in range(nmo):
+            for q in range(nmo):
+                for r in range(nmo):
+                    for s in range(nmo):
+
+                        alpha_p = 2 * p + 1
+                        alpha_q = 2 * q + 1
+                        alpha_r = 2 * r + 1
+                        alpha_s = 2 * s + 1
+
+                        beta_p = 2 * p + 2
+                        beta_q = 2 * q + 2
+                        beta_r = 2 * r + 2
+                        beta_s = 2 * s + 2
+
+                        if (alpha_p, alpha_q, alpha_r, alpha_s) in two_body_integrals:
+
+                            # alpha-alpha unique matrix element
+                            aa_term = two_body_integrals[
+                                (alpha_p, alpha_q, alpha_r, alpha_s)]
+
+                            # exploiting perm symm of 2-body integrals
+                            two_body_coefficients_aa[p, q, r, s] = aa_term
+                            two_body_coefficients_aa[q, p, s, r] = aa_term
+                            two_body_coefficients_aa[r, s, p, q] = np.conj(aa_term)
+                            two_body_coefficients_aa[s, r, q, p] = np.conj(aa_term)
+
+                        if (beta_p, beta_q, beta_r, beta_s) in two_body_integrals:
+
+                            # beta-beta unique matrix element
+                            bb_term = two_body_integrals[
+                                (beta_p, beta_q, beta_r, beta_s)]
+
+                            two_body_coefficients_bb[p, q, r, s] = bb_term
+                            two_body_coefficients_bb[q, p, s, r] = bb_term
+                            two_body_coefficients_bb[r, s, p, q] = np.conj(bb_term)
+                            two_body_coefficients_bb[s, r, q, p] = np.conj(bb_term)
+
+                        if (alpha_p, beta_q, alpha_r, beta_s) in two_body_integrals:
+
+                            # alpha-beta unique matrix element
+                            ab_term = two_body_integrals[
+                                (alpha_p, beta_q, alpha_r, beta_s)]
+
+                            two_body_coefficients_ab[p, q, r, s] = ab_term
+                            two_body_coefficients_ab[q, p, s, r] = ab_term
+                            two_body_coefficients_ab[r, s, p, q] = np.conj(ab_term)
+                            two_body_coefficients_ab[s, r, q, p] = np.conj(ab_term)
+
+                        if (beta_p, alpha_q, beta_r, alpha_s) in two_body_integrals:
+
+                            # beta-alpha unique matrix element
+                            ba_term = two_body_integrals[
+                                (beta_p, alpha_q, beta_r, alpha_s)]
+                            
+                            two_body_coefficients_ba[p, q, r, s] = ba_term
+                            two_body_coefficients_ba[q, p, s, r] = ba_term
+                            two_body_coefficients_ba[r, s, p, q] = np.conj(ba_term)
+                            two_body_coefficients_ba[s, r, q, p] = np.conj(ba_term)
         
-        wavefunction.attrs['scf_eri_mo_aa'] = [0.6752967689354992, 0.0, -2.7755575615628914e-17, 0.6642044392432875,
-               3.469446951953614e-17, 0.1810520713689906, 0.18105207136899099,-5.551115123125783e-17,
-               4.85722573273506e-17, 0.18105207136899074, 0.18105207136899115, -1.6653345369377348e-16,
-               0.6642044392432873, 1.1102230246251565e-16, -2.220446049250313e-16, 0.6981738857839892]
+        #print(two_body_coefficients_ba.flatten())
+ 
+        wavefunction.attrs[
+            'scf_eri_mo_aa'] = two_body_coefficients_aa.flatten()
+
+        #wavefunction.attrs[
+        #    'scf_eri_mo_bb'] = two_body_coefficients_bb.flatten()
+        
+        #wavefunction.attrs[
+        #    'scf_eri_mo_ba'] = two_body_coefficients_ba.flatten()
+        
+        #wavefunction.attrs[
+        #    'scf_eri_mo_ab'] = two_body_coefficients_ab.flatten()
+        
+        #[0.6752967689354992, 0.0, -2.7755575615628914e-17, 0.6642044392432875,
+        #       3.469446951953614e-17, 0.1810520713689906, 0.18105207136899099,-5.551115123125783e-17,
+        #       4.85722573273506e-17, 0.18105207136899074, 0.18105207136899115, -1.6653345369377348e-16,
+        #       0.6642044392432873, 1.1102230246251565e-16, -2.220446049250313e-16, 0.6981738857839892]
          
 
         file.close()
@@ -254,12 +389,32 @@ class DIRAC(FileIOCalculator):
     def load(self) -> None:
         pass
 
-    def get_integrals_data(self) -> Dict[str, Any]:
-        """Retrieve one- and two-electron integrals from DIRAC fcidump file.
-        
+    def get_integrals(self) -> Tuple[Union[float, complex],
+                                     Dict[int, Union[float, complex]],
+                                     Dict[Tuple[int, int], Union[float, complex]],
+                                     Dict[Tuple[int, int, int, int], Union[float, complex]]]:
+        """Get 1- and 2-body integrals in MO basis from DIRAC FCIDUMP file.
+ 
         Notes:
             Requires MRCONEE MDCINT files obtained using
             **DIRAC .4INDEX and 'pam ... --get="MRCONEE MDCINT"' options
+ 
+        Returns:
+            A tuple containing the following:
+                - E_core (Union[float, complex]): The core energy.
+                - spinor (Dict[int, Union[float, complex]]): Dictionary of
+                    spinor values with their corresponding indices.
+                - one_body_int (Dict[Tuple[int, int], Union[float, complex]]):
+                    Dictionary of one-body integrals with their corresponding
+                    indices as tuples.
+                - two_body_int (Dict[Tuple[int, int, int, int],
+                    Union[float, complex]]): Dictionary of two-body integrals
+                    with their corresponding indices as tuples.
+
+        Raises:
+            EnvironmentError: If the command execution fails.
+            CalculationFailed: If the calculator fails with
+                a non-zero error code.
         """
         command = "dirac_mointegral_export.x fcidump"
         try:
@@ -277,18 +432,19 @@ class DIRAC(FileIOCalculator):
                                                   path, errorcode))
             raise CalculationFailed(msg)
 
-        E_core = 0
+        e_core = 0
         spinor = {}
         one_body_int = {}
         two_body_int = {}
         num_lines = sum(1 for line in open("FCIDUMP"))
         with open('FCIDUMP') as f:
-            start_reading=0
+            start_reading = 0
             for line in f:
                 start_reading += 1
                 if "&END" in line:
                     break
-            listed_values = [[token for token in line.split()] for line in f.readlines()] 
+            listed_values = [
+                [token for token in line.split()] for line in f.readlines()]
             complex_int = False
             if (len(listed_values[0]) == 6):
                 complex_int = True
@@ -301,13 +457,15 @@ class DIRAC(FileIOCalculator):
                     if a_4 == 0 and a_3 == 0:
                         if a_2 == 0:
                             if a_1 == 0:
-                                E_core = float(listed_values[row][0])
+                                e_core = float(listed_values[row][0])
                             else:
                                 spinor[a_1] = float(listed_values[row][0])
                         else:
-                            one_body_int[a_1, a_2] = float(listed_values[row][0])
+                            one_body_int[a_1, a_2] = float(
+                                listed_values[row][0])
                     else:
-                        two_body_int[a_1, a_2, a_3, a_4] = float(listed_values[row][0])
+                        two_body_int[a_1, a_2, a_3, a_4] = float(
+                            listed_values[row][0])
             if complex_int:
                 for row in range(num_lines-start_reading):
                     a_1 = int(listed_values[row][2])
@@ -317,28 +475,23 @@ class DIRAC(FileIOCalculator):
                     if a_4 == 0 and a_3 == 0:
                         if a_2 == 0:
                             if a_1 == 0:
-                                E_core = complex(
-                                   float(listed_values[row][0]), float(listed_values[row][1]))
+                                e_core = complex(
+                                   float(listed_values[row][0]),
+                                   float(listed_values[row][1]))
                             else:
                                 spinor[a_1] = complex(
-                                   float(listed_values[row][0]), float(listed_values[row][1]))
+                                   float(listed_values[row][0]),
+                                   float(listed_values[row][1]))
                         else:
                             one_body_int[a_1, a_2] = complex(
-                               float(listed_values[row][0]), float(listed_values[row][1]))
+                               float(listed_values[row][0]),
+                               float(listed_values[row][1]))
                     else:
                         two_body_int[a_1, a_2, a_3, a_4] = complex(
-                           float(listed_values[row][0]), float(listed_values[row][1]))
-                        
-        # self.n_orbitals = len(self.spinor)
-        # self.n_qubits = len(self.spinor)
+                           float(listed_values[row][0]),
+                           float(listed_values[row][1]))
 
-        ei_data = {}
-        ei_data = {'E_core': E_core,
-                   'spinor': spinor,
-                   'one_body_int': one_body_int,
-                   'two_body_int': two_body_int}
-
-        return ei_data
+        return e_core, spinor, one_body_int, two_body_int
 
 # functions below still under developments
 #
@@ -386,9 +539,9 @@ class DIRAC(FileIOCalculator):
             '/input/molecule/geometry') / Bohr  #=> in a.u
 
         print(nao, nshells)
-    
+
     def _get_from_dirac_hdf5_file(self, property_name):
-        """Helper routine to open dirac HDF5 output and extract desired property."""
+        """Helper routine to open dirac HDF5 output and extract property."""
         out_hdf5_file = self.prefix + "_" + self.prefix + ".h5"
         try:
             with h5py.File("{}".format(out_hdf5_file), "r") as f:
