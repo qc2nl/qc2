@@ -90,3 +90,26 @@ def test_DIRAC_energy_ccsdt():
 
     # compare with the energy retrieved from DIRAC test set results.
     assert energy_Eh == pytest.approx(-75.05762412870262, 1e-6)
+
+def test_DIRAC_energy_open_shell():
+    """Test case # 5 - open shell HF/STO-3G Relativistic C.
+
+    Notes:
+        Adapted from the original DIRAC open-shell test set.
+    """
+
+    c_atom = Atoms('C')
+
+    c_atom.calc = DIRAC(hamiltonian={'.x2c': ''},
+                        integrals={'*readin': {'.uncontracted': "#"}},
+                        molecule={'*basis': {'.default': 'sto-3g'},
+                                  '*charge': {'.charge': '0'}},  # '*symmetry': {'.nosym': '#'}},
+                        wave_function={'.scf': '',
+                                       '*scf': {'.closed shell': '4 0',
+                                                '.open shell': '2\n1/0,2\n1/0,4',
+                                                '.kpsele': '3\n-1 1 -2\n4 0 0\n0 2 0\n0 0 4'}}
+    )
+    energy_Eh = c_atom.get_potential_energy() / Ha
+
+    # compare with the energy obtained using dirac alone => assuming convergence up to ~1e-6
+    assert energy_Eh == pytest.approx(-37.253756513429018, 1e-6)
