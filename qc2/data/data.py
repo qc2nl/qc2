@@ -9,7 +9,7 @@ from .schema import generate_empty_h5
 class qc2Data:
     """Main qc2 class.
 
-    The qc2Data class orchestrates classical qchem programs and
+    It orchestrates classical qchem programs and
     python libraries for quantum computing.
     """
     def __init__(self,

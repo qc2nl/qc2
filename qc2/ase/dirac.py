@@ -19,14 +19,17 @@ from ase.calculators.calculator import InputError, CalculationFailed
 from ase.units import Bohr
 from ase.io import write
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
+from .qc2_ase_base_class import BaseQc2ASECalculator
 
 
-class DIRAC(FileIOCalculator):
+class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
     """A general ASE calculator for the relativistic qchem DIRAC code.
 
     Args:
         FileIOCalculator (FileIOCalculator): Base class for calculators
             that write/read input/output files.
+        BaseQc2ASECalculator (BaseQc2ASECalculator): Base class for
+            ase calculartors in qc2
 
     Example of a typical ASE-DIRAC input:
 
@@ -66,19 +69,19 @@ class DIRAC(FileIOCalculator):
             directory (str, optional): Working directory in which
                 to perform calculations. Defaults to '.'.
         """
-        # initializing base class Calculator.
+        # initialize ASE base class Calculator.
         # see ase/ase/calculators/calculator.py.
-        super().__init__(restart, ignore_bad_restart_file,
-                         label, atoms, command, **kwargs)
-        """Transforms **kwargs into a dictionary with calculation parameters.
+        FileIOCalculator.__init__(self, restart, ignore_bad_restart_file,
+                                  label, atoms, command, **kwargs)
 
-        Starting with (attr1=value1, attr2=value2, ...)
-            it creates self.parameters['attr1']=value1, and so on.
-        """
         self.prefix = self.label
 
         # Check self.parameters input keys and values
         self.check_dirac_attributes()
+
+        # initialize qc2 base class for ASE calculators.
+        # see .qc2_ase_base_class.py
+        BaseQc2ASECalculator.__init__(self)
 
     def check_dirac_attributes(self) -> None:
         """Checks for any missing and/or mispelling DIRAC input attribute.
@@ -159,11 +162,11 @@ class DIRAC(FileIOCalculator):
         output = read_dirac_out(out_file)
         self.results = output
 
-    def save(self, filename: str) -> None:
-        """Dumps molecular data to a HDF5 file.
+    def save(self, hdf5_filename: str) -> None:
+        """Dumps electronic structure data to a HDF5 file.
 
         Args:
-            filename (str): HDF5 file to save the data to.
+            hdf5_filename (str): HDF5 file to save the data to.
 
         Notes:
             HDF5 files are written following the QCSchema.
@@ -177,6 +180,7 @@ class DIRAC(FileIOCalculator):
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = DIRAC()  # => RHF/STO-3G
+        >>> molecule.calc.get_potential_energy()
         >>> molecule.calc.save('h2.h5')
         """
         # calculate 1- and 2-electron integrals in MO basis
@@ -185,8 +189,8 @@ class DIRAC(FileIOCalculator):
         one_body_integrals = integrals[2]
         two_body_integrals = integrals[3]
 
-        # open the HDF5 file in read/write mode
-        file = h5py.File(filename, "w")
+        # open the HDF5 file in write mode
+        file = h5py.File(hdf5_filename, "w")
 
         # set up general definitions for the QCSchema
         # 1 => general initial attributes
@@ -194,7 +198,7 @@ class DIRAC(FileIOCalculator):
         version = '1.dev'
         driver = "energy"
         energy = self._get_from_dirac_hdf5_file(
-           '/result/wavefunctions/scf/energy')
+           '/result/wavefunctions/scf/energy')[0]
         # final status of the calculation
         status = self._get_from_dirac_hdf5_file(
             '/result/execution/status')[0]
@@ -217,19 +221,24 @@ class DIRAC(FileIOCalculator):
            '/input/molecule/geometry') / Bohr  # => in a.u
         molecular_charge = int(
             self.parameters['molecule']['*charge']['.charge'])
+        atomic_numbers = self._get_from_dirac_hdf5_file(
+            '/input/molecule/nuc_charge')
         # include here multiplicity ?
         # Not a good quantum number for relativistic DIRAC?
+        molecular_multiplicity = ''
 
         molecule = file.require_group("molecule")
         molecule.attrs['symbols'] = symbols
         molecule.attrs['geometry'] = geometry
         molecule.attrs['molecular_charge'] = molecular_charge
+        molecule.attrs['molecular_multiplicity'] = molecular_multiplicity
+        molecule.attrs['atomic_numbers'] = atomic_numbers
         molecule.attrs['schema_name'] = "qcschema_molecule"
         molecule.attrs['schema_version'] = version
 
         # 3 => properties group
         calcinfo_nbasis = self._get_from_dirac_hdf5_file(
-            '/input/aobasis/1/n_ao')
+            '/input/aobasis/1/n_ao')[0]
         # of molecular orbitals
         nmo = self._get_from_dirac_hdf5_file(
            '/result/wavefunctions/scf/mobasis/n_mo')
@@ -246,8 +255,8 @@ class DIRAC(FileIOCalculator):
         calcinfo_nbeta = nelec // 2
         calcinfo_nalpha = nelec - calcinfo_nbeta
         calcinfo_natom = self._get_from_dirac_hdf5_file(
-           '/input/molecule/n_atoms')
-        
+           '/input/molecule/n_atoms')[0]
+
         properties = file.require_group("properties")
         properties.attrs['calcinfo_nbasis'] = calcinfo_nbasis
         properties.attrs['calcinfo_nmo'] = nmo
@@ -428,7 +437,7 @@ class DIRAC(FileIOCalculator):
         wavefunction.create_dataset("scf_fock_mo_b",
                                     data=one_body_coefficients_b.flatten())
 
-        # 'scf_eri_mo_aa/bb/ba/ab' take the form of flattened (nmo, nmo, nmo, nmo) matrices.
+        # 'scf_eri_mo_aa/bb/ba/ab' take the form of flattened (nmo,nmo,nmo,nmo) matrices.
         # E.g., for H2 [r(H-H) = 0.737166 angs] at RHF/sto-3g level,
         # scf_fock_mo_aa = [0.6752967689354992, 0, 0, 0.6642044392432875,
         #                   0, 0.1810520713689906, 0.18105207136899099, 0,
@@ -445,18 +454,85 @@ class DIRAC(FileIOCalculator):
         wavefunction.create_dataset("scf_eri_mo_ab",
                                     data=two_body_coefficients_ab.flatten())
 
+        # possible future additions:
+        # mo coefficients in AO basis
+        wavefunction.create_dataset("scf_orbitals_a", data='') 
+        wavefunction.create_dataset("scf_orbitals_b", data='')
+        # scf orbital energies
+        wavefunction.create_dataset("scf_eigenvalues_a", data='')
+        wavefunction.create_dataset("scf_eigenvalues_b", data='')
+        # ROSE localized orbitals? 
+        wavefunction.create_dataset("localized_orbitals_a", data='')
+        wavefunction.create_dataset("localized_orbitals_b", data='')
+
         file.close()
 
-    def load(self, filename: str) -> None:
-        """Loads molecular data from a HDF5 file.
+    def load(self, hdf5_filename: str) -> None:
+        """Loads electronic structure data from a HDF5 file.
 
         Args:
-            filename (str): HDF5 file to read the data from.
+            hdf5_filename (str): HDF5 file to read the data from.
 
         Returns:
             None
+
+        Example:
+        >>> from ase.build import molecule
+        >>> from qc2.ase.dirac import DIRAC
+        >>>
+        >>> molecule = molecule('H2')
+        >>> molecule.calc = DIRAC()  # => RHF/STO-3G
+        >>> molecule.calc.get_potential_energy()
+        >>> molecule.calc.save('h2.h5')
         """
-        pass
+        # first check if the file exists
+        if not os.path.exists(hdf5_filename):
+            raise FileNotFoundError(f"{hdf5_filename} file not found")
+
+        # open the HDF5 file in read mode
+        file = h5py.File(hdf5_filename, "r")
+
+        # => molecule group
+        self.symbols = file['/molecule'].attrs['symbols']
+        self.geometry = file['/molecule'].attrs['geometry']
+        self.molecular_charge = file['/molecule'].attrs['molecular_charge']
+        self.molecular_multiplicity = file['/molecule'].attrs[
+            'molecular_multiplicity']
+        self.atomic_numbers = file['/molecule'].attrs['atomic_numbers']
+
+        # => properties group
+        self.calcinfo_nbasis = file['/properties'].attrs['calcinfo_nbasis']
+        self.calcinfo_nmo = file['/properties'].attrs['calcinfo_nmo']
+        self.calcinfo_nalpha = file['/properties'].attrs['calcinfo_nalpha']
+        self.calcinfo_nbeta = file['/properties'].attrs['calcinfo_nbeta']
+        self.calcinfo_natom = file['/properties'].attrs['calcinfo_natom']
+        self.nuclear_repulsion_energy = file['/properties'].attrs[
+            'nuclear_repulsion_energy']
+        self.return_energy = file['/properties'].attrs['return_energy']
+
+        # => model group
+        self.basis = file['/model'].attrs['basis']
+        self.method = file['/model'].attrs['method']
+
+        # => wavefunction group
+        # one-body coefficients (MO basis)
+        self.scf_fock_mo_a = file['/wavefunction/scf_fock_mo_a'][...]
+        self.scf_fock_mo_b = file['/wavefunction/scf_fock_mo_b'][...]
+        # two-body coefficients (MO basis)
+        self.scf_eri_mo_aa = file['/wavefunction/scf_eri_mo_aa'][...]
+        self.scf_eri_mo_bb = file['/wavefunction/scf_eri_mo_bb'][...]
+        self.scf_eri_mo_ab = file['/wavefunction/scf_eri_mo_ab'][...]
+        self.scf_eri_mo_ba = file['/wavefunction/scf_eri_mo_ba'][...]
+        # mo coefficients in AO basis
+        self.scf_orbitals_a = file['/wavefunction/scf_orbitals_a'][...]
+        self.scf_orbitals_b = file['/wavefunction/scf_orbitals_b'][...]
+        # scf orbital energies
+        self.scf_eigenvalues_a = file['/wavefunction/scf_eigenvalues_a'][...]
+        self.scf_eigenvalues_b = file['/wavefunction/scf_eigenvalues_b'][...]
+        self.localized_orbitals_a = file['/wavefunction/localized_orbitals_a'][...]
+        self.localized_orbitals_b = file['/wavefunction/localized_orbitals_b'][...]
+
+        file.close()
 
     def get_integrals(self) -> Tuple[Union[float, complex],
                                      Dict[int, Union[float, complex]],
@@ -490,16 +566,16 @@ class DIRAC(FileIOCalculator):
         try:
             proc = subprocess.Popen(command, shell=True, cwd=self.directory)
         except OSError as err:
-            msg = 'Failed to execute "{}"'.format(command)
+            msg = f"Failed to execute {command}"
             raise EnvironmentError(msg) from err
 
         errorcode = proc.wait()
 
         if errorcode:
             path = os.path.abspath(self.directory)
-            msg = ('Calculator "{}" failed with command "{}" failed in '
-                   '{} with error code {}'.format(self.name, command,
-                                                  path, errorcode))
+            msg = (f"Calculator {self.name} failed with "
+                   f"command {command} failed in {path} "
+                   f"with error code {errorcode}")
             raise CalculationFailed(msg)
 
         e_core = 0
@@ -567,7 +643,7 @@ class DIRAC(FileIOCalculator):
         """Helper routine to open dirac HDF5 output and extract property."""
         out_hdf5_file = self.prefix + "_" + self.prefix + ".h5"
         try:
-            with h5py.File("{}".format(out_hdf5_file), "r") as f:
+            with h5py.File(out_hdf5_file, "r") as f:
                 data = f[property_name][...]
         except (KeyError, IOError):
             data = None
