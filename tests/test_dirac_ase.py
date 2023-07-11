@@ -1,23 +1,35 @@
 """Tests for the ASE-PySCF interface"""
 
+import os
+import subprocess
 import pytest
 
 from ase import Atoms
 from ase.build import molecule
-from ase.optimize import BFGS
 from ase.units import Ha
-from ase.calculators.calculator import InputError
-from ase.calculators.calculator import CalculatorSetupError
+import numpy as np
+import h5py
 from qc2.ase.dirac import DIRAC
 
-import subprocess
+
+def create_test_atoms():
+    """Create a test ASE Atoms object."""
+    return Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.74]])
+
+@pytest.fixture
+def dirac_calculator():
+    """Fixture to set up a test instance of the DIRAC calculator attached to a test Atoms object."""
+    atoms = create_test_atoms()
+    calc = DIRAC(molecule={'*basis': {'.default': '6-31g'}})
+    atoms.calc = calc
+    return atoms
 
 
 @pytest.fixture(scope="session", autouse=True)
 def clean_up_files():
     """Remove DIRAC calculation outputs at the end of each test."""
     yield
-    command = ("rm *.xyz* *.inp* *.out* *.h5* *.tgz* MDCINT* MRCONEE* FCIDUMP* AOMOMAT*")
+    command = "rm *.xyz* *.inp* *.out* *.h5* *.tgz* MDCINT* MRCONEE* FCIDUMP* AOMOMAT* FCI*"
     subprocess.run(command, shell=True, capture_output=True)
 
 
@@ -48,6 +60,7 @@ def test_DIRAC_energy_hf():
 
     # compare with the energy obtained using dirac alone => assuming convergence up to ~1e-6
     assert energy_Eh == pytest.approx(-0.466581849557275, 1e-6)
+
 
 def test_DIRAC_energy_mp2():
     """Test case # 3 - MP2/STO-3G Relativistic H2O.
@@ -91,6 +104,7 @@ def test_DIRAC_energy_ccsdt():
     # compare with the energy retrieved from DIRAC test set results.
     assert energy_Eh == pytest.approx(-75.05762412870262, 1e-6)
 
+
 def test_DIRAC_energy_open_shell():
     """Test case # 5 - open shell HF/STO-3G Relativistic C.
 
@@ -113,3 +127,71 @@ def test_DIRAC_energy_open_shell():
 
     # compare with the energy obtained using dirac alone => assuming convergence up to ~1e-6
     assert energy_Eh == pytest.approx(-37.253756513429018, 1e-6)
+
+
+def test_DIRAC_save_function(dirac_calculator):
+    """Test case # 6 - tesing the save method of the DIRAC calculator."""
+
+    # Perform calculation to generate results
+    energy = dirac_calculator.get_potential_energy()/Ha
+
+    # Save results to HDF5 file
+    hdf5_filename = str('test_save.h5')
+    dirac_calculator.calc.save(hdf5_filename)
+
+    # Check if the HDF5 file exists
+    assert os.path.isfile(hdf5_filename)
+
+    # Verify the content of the HDF5 file
+    with h5py.File(hdf5_filename, 'r') as f:
+        # Check if required datasets exist
+        assert 'wavefunction/scf_fock_mo_a' in f
+        assert 'wavefunction/scf_fock_mo_b' in f
+        assert 'wavefunction/scf_eri_mo_aa' in f
+        assert 'wavefunction/scf_eri_mo_bb' in f
+        assert 'wavefunction/scf_eri_mo_ba' in f
+        assert 'wavefunction/scf_eri_mo_ab' in f
+        # Check if energy is stored correctly
+        assert np.isclose(f.attrs['return_result'], energy)
+
+
+def test_DIRAC_load_function(dirac_calculator, tmpdir):
+    """Test case # 7 - testing the load method of the DIRAC calculator."""
+
+    # Perform calculation to generate results
+    energy = dirac_calculator.get_potential_energy()/Ha
+
+    # Save results to HDF5 file
+    hdf5_filename = str('test_load.h5')
+    dirac_calculator.calc.save(hdf5_filename)
+
+    # Create a new atoms object
+    atoms_new = create_test_atoms()
+
+    # Load results from the HDF5 file
+    atoms_new.calc = DIRAC()
+    atoms_new.calc.load(hdf5_filename)
+
+    # Check if the energy kept in 'return_energy'
+    # is equal to the expected energy
+    energy_new = atoms_new.calc.return_energy
+    assert np.isclose(energy_new, energy)
+
+
+def test_DIRAC_get_integrals_function(dirac_calculator):
+    """Test the get_integrals method of the DIRAC calculator."""
+
+    # Perform calculation to generate results
+    energy = dirac_calculator.get_potential_energy()/Ha
+
+    # Calculate integrals
+    e_core, spinor, one_body_int, two_body_int = dirac_calculator.calc.get_integrals()
+
+    # Check the type and content of the integrals
+    assert isinstance(e_core, (float, complex))
+    assert isinstance(spinor, dict)
+    assert isinstance(one_body_int, dict)
+    assert isinstance(two_body_int, dict)
+    assert len(spinor) > 0
+    assert len(one_body_int) > 0
+    assert len(two_body_int) > 0

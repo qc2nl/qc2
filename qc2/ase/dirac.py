@@ -9,7 +9,7 @@ https://gitlab.com/dirac/dirac
 
 import subprocess
 import os
-from typing import Optional, List, Dict, Any, Tuple, Union
+from typing import Optional, List, Dict, Tuple, Union
 import h5py
 import numpy as np
 
@@ -137,7 +137,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
     def calculate(self, *args, **kwargs) -> None:
         """Execute DIRAC workflow."""
-        super().calculate(*args, **kwargs)
+        FileIOCalculator.calculate(self, *args, **kwargs)
 
     def write_input(
             self,
@@ -146,7 +146,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             system_changes: Optional[List[str]] = None
             ) -> None:
         """Generate all necessary inputs for DIRAC."""
-        super().write_input(atoms, properties, system_changes)
+        FileIOCalculator.write_input(self, atoms, properties, system_changes)
 
         # generate xyz geometry file
         xyz_file = self.prefix + ".xyz"
@@ -274,7 +274,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             basis = 'special'
         # electronic structure method used
         method = list(self.parameters['wave_function'].keys())[-1].strip('.')
-        
+
         model = file.require_group("model")
         model.attrs['basis'] = basis
         model.attrs['method'] = method
@@ -461,7 +461,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         # scf orbital energies
         wavefunction.create_dataset("scf_eigenvalues_a", data='')
         wavefunction.create_dataset("scf_eigenvalues_b", data='')
-        # ROSE localized orbitals? 
+        # ROSE localized orbitals?
         wavefunction.create_dataset("localized_orbitals_a", data='')
         wavefunction.create_dataset("localized_orbitals_b", data='')
 
@@ -470,69 +470,15 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
     def load(self, hdf5_filename: str) -> None:
         """Loads electronic structure data from a HDF5 file.
 
-        Args:
-            hdf5_filename (str): HDF5 file to read the data from.
-
-        Returns:
-            None
-
         Example:
         >>> from ase.build import molecule
         >>> from qc2.ase.dirac import DIRAC
         >>>
         >>> molecule = molecule('H2')
-        >>> molecule.calc = DIRAC()  # => RHF/STO-3G
-        >>> molecule.calc.get_potential_energy()
-        >>> molecule.calc.save('h2.h5')
+        >>> molecule.calc = DIRAC()     # => RHF/STO-3G
+        >>> molecule.calc.load('h2.h5') # => instead of 'molecule.calc.get_potential_energy()'
         """
-        # first check if the file exists
-        if not os.path.exists(hdf5_filename):
-            raise FileNotFoundError(f"{hdf5_filename} file not found")
-
-        # open the HDF5 file in read mode
-        file = h5py.File(hdf5_filename, "r")
-
-        # => molecule group
-        self.symbols = file['/molecule'].attrs['symbols']
-        self.geometry = file['/molecule'].attrs['geometry']
-        self.molecular_charge = file['/molecule'].attrs['molecular_charge']
-        self.molecular_multiplicity = file['/molecule'].attrs[
-            'molecular_multiplicity']
-        self.atomic_numbers = file['/molecule'].attrs['atomic_numbers']
-
-        # => properties group
-        self.calcinfo_nbasis = file['/properties'].attrs['calcinfo_nbasis']
-        self.calcinfo_nmo = file['/properties'].attrs['calcinfo_nmo']
-        self.calcinfo_nalpha = file['/properties'].attrs['calcinfo_nalpha']
-        self.calcinfo_nbeta = file['/properties'].attrs['calcinfo_nbeta']
-        self.calcinfo_natom = file['/properties'].attrs['calcinfo_natom']
-        self.nuclear_repulsion_energy = file['/properties'].attrs[
-            'nuclear_repulsion_energy']
-        self.return_energy = file['/properties'].attrs['return_energy']
-
-        # => model group
-        self.basis = file['/model'].attrs['basis']
-        self.method = file['/model'].attrs['method']
-
-        # => wavefunction group
-        # one-body coefficients (MO basis)
-        self.scf_fock_mo_a = file['/wavefunction/scf_fock_mo_a'][...]
-        self.scf_fock_mo_b = file['/wavefunction/scf_fock_mo_b'][...]
-        # two-body coefficients (MO basis)
-        self.scf_eri_mo_aa = file['/wavefunction/scf_eri_mo_aa'][...]
-        self.scf_eri_mo_bb = file['/wavefunction/scf_eri_mo_bb'][...]
-        self.scf_eri_mo_ab = file['/wavefunction/scf_eri_mo_ab'][...]
-        self.scf_eri_mo_ba = file['/wavefunction/scf_eri_mo_ba'][...]
-        # mo coefficients in AO basis
-        self.scf_orbitals_a = file['/wavefunction/scf_orbitals_a'][...]
-        self.scf_orbitals_b = file['/wavefunction/scf_orbitals_b'][...]
-        # scf orbital energies
-        self.scf_eigenvalues_a = file['/wavefunction/scf_eigenvalues_a'][...]
-        self.scf_eigenvalues_b = file['/wavefunction/scf_eigenvalues_b'][...]
-        self.localized_orbitals_a = file['/wavefunction/localized_orbitals_a'][...]
-        self.localized_orbitals_b = file['/wavefunction/localized_orbitals_b'][...]
-
-        file.close()
+        BaseQc2ASECalculator.load(self, hdf5_filename)
 
     def get_integrals(self) -> Tuple[Union[float, complex],
                                      Dict[int, Union[float, complex]],
@@ -547,7 +493,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         Returns:
             A tuple containing the following:
-                - E_core (Union[float, complex]): The core energy.
+                - e_core (Union[float, complex]): The core energy.
                 - spinor (Dict[int, Union[float, complex]]): Dictionary of
                     spinor values with their corresponding indices.
                 - one_body_int (Dict[Tuple[int, int], Union[float, complex]]):
@@ -592,7 +538,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             listed_values = [
                 [token for token in line.split()] for line in f.readlines()]
             complex_int = False
-            if (len(listed_values[0]) == 6):
+            if len(listed_values[0]) == 6:
                 complex_int = True
             if not complex_int:
                 for row in range(num_lines-start_reading):

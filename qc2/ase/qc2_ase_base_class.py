@@ -4,10 +4,10 @@ This module implements the abstract base class for qc2 ase calculators.
 
 from abc import ABC, abstractmethod
 from typing import Tuple, Any, Sequence, Optional
-from dataclasses import dataclass
+import os
+import h5py
 
 
-@dataclass
 class BaseQc2ASECalculator(ABC):
     """
     Abstract base class for the qc2 ASE calculators.
@@ -93,12 +93,68 @@ class BaseQc2ASECalculator(ABC):
 
     @abstractmethod
     def save(self, hdf5_filename: str) -> None:
-        """Dumps electronic structure data to a HDF5 file."""
+        """Dumps qchem data to a HDF5 file following QCSchema."""
 
-    @abstractmethod
     def load(self, hdf5_filename: str) -> None:
-        """Reads electronic structure data from a HDF5 file."""
+        """Loads qchem data from a QCSchema-formatted HDF5 file.
+
+        Args:
+            hdf5_filename (str): HDF5 file to read the data from.
+
+        Returns:
+            None
+        """
+        # first check if the file exists
+        if not os.path.exists(hdf5_filename):
+            raise FileNotFoundError(f"{hdf5_filename} file not found!")
+
+        # open the HDF5 file in read mode
+        with h5py.File(hdf5_filename, "r") as file:
+
+            # => molecule group
+            self.symbols = file['/molecule'].attrs['symbols']
+            self.geometry = file['/molecule'].attrs['geometry']
+            self.molecular_charge = file['/molecule'].attrs['molecular_charge']
+            self.molecular_multiplicity = file['/molecule'].attrs[
+                'molecular_multiplicity']
+            self.atomic_numbers = file['/molecule'].attrs['atomic_numbers']
+
+            # => properties group
+            self.calcinfo_nbasis = file['/properties'].attrs['calcinfo_nbasis']
+            self.calcinfo_nmo = file['/properties'].attrs['calcinfo_nmo']
+            self.calcinfo_nalpha = file['/properties'].attrs['calcinfo_nalpha']
+            self.calcinfo_nbeta = file['/properties'].attrs['calcinfo_nbeta']
+            self.calcinfo_natom = file['/properties'].attrs['calcinfo_natom']
+            self.nuclear_repulsion_energy = file['/properties'].attrs[
+                'nuclear_repulsion_energy']
+            self.return_energy = file['/properties'].attrs['return_energy']
+
+            # => model group
+            self.basis = file['/model'].attrs['basis']
+            self.method = file['/model'].attrs['method']
+
+            # => wavefunction group
+            # one-body coefficients (MO basis)
+            self.scf_fock_mo_a = file['/wavefunction/scf_fock_mo_a'][...]
+            self.scf_fock_mo_b = file['/wavefunction/scf_fock_mo_b'][...]
+            # two-body coefficients (MO basis)
+            self.scf_eri_mo_aa = file['/wavefunction/scf_eri_mo_aa'][...]
+            self.scf_eri_mo_bb = file['/wavefunction/scf_eri_mo_bb'][...]
+            self.scf_eri_mo_ab = file['/wavefunction/scf_eri_mo_ab'][...]
+            self.scf_eri_mo_ba = file['/wavefunction/scf_eri_mo_ba'][...]
+            # mo coefficients in AO basis
+            self.scf_orbitals_a = file['/wavefunction/scf_orbitals_a'][...]
+            self.scf_orbitals_b = file['/wavefunction/scf_orbitals_b'][...]
+            # scf orbital energies
+            self.scf_eigenvalues_a = file[
+                '/wavefunction/scf_eigenvalues_a'][...]
+            self.scf_eigenvalues_b = file[
+                '/wavefunction/scf_eigenvalues_b'][...]
+            self.localized_orbitals_a = file[
+                '/wavefunction/localized_orbitals_a'][...]
+            self.localized_orbitals_b = file[
+                '/wavefunction/localized_orbitals_b'][...]
 
     @abstractmethod
     def get_integrals(self) -> Tuple[Any, ...]:
-        """Calculates core energy, and one- and two-body integrals."""
+        """Calculates core energy, one- and two-body integrals."""
