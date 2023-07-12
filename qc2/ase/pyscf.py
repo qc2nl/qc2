@@ -564,7 +564,8 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
     def _expand_mo_object(
         self,
-        mo_object: Tuple[np.ndarray | None, np.ndarray | None] | np.ndarray,
+        mo_object: Union[Tuple[Optional[np.ndarray], Optional[np.ndarray]],
+                         np.ndarray],
         array_dimension: int = 2,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Expands the mo object into alpha- and beta-spin components.
