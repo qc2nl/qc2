@@ -29,7 +29,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         FileIOCalculator (FileIOCalculator): Base class for calculators
             that write/read input/output files.
         BaseQc2ASECalculator (BaseQc2ASECalculator): Base class for
-            ase calculartors in qc2
+            ase calculartors in qc2.
 
     Example of a typical ASE-DIRAC input:
 
@@ -43,7 +43,8 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
     """
     implemented_properties: List[str] = ['energy']
     label: str = 'dirac'
-    command: str = 'pam --inp=PREFIX.inp --mol=PREFIX.xyz --silent --get="AOMOMAT MRCONEE MDCINT"'
+    command: str = 'pam --inp=PREFIX.inp --mol=PREFIX.xyz --silent ' \
+        '--get="AOMOMAT MRCONEE MDCINT"'
 
     def __init__(self,
                  restart: Optional[bool] = None,
@@ -286,10 +287,10 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         provenance.attrs['routine'] = f"ASE-{self.__class__.__name__}.save()"
 
         # 6 => keywords group
-        provenance = file.require_group("keywords")
+        file.require_group("keywords")
 
         # 7 => wavefunction group
-        # Tolerance to consider number zero.
+        # tolerance to consider number zero.
         EQ_TOLERANCE = 1e-8
 
         # slipt 1-body integrals into alpha and beta contributions
@@ -315,10 +316,10 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
                     (beta_p, beta_q)]
 
         # truncate numbers lower than EQ_TOLERANCE
-        one_body_coefficients_a[
-            np.absolute(one_body_coefficients_a) < EQ_TOLERANCE] = 0.
-        one_body_coefficients_b[
-            np.absolute(one_body_coefficients_b) < EQ_TOLERANCE] = 0.
+        one_body_coefficients_a[np.abs(
+            one_body_coefficients_a) < EQ_TOLERANCE] = 0.
+        one_body_coefficients_b[np.abs(
+            one_body_coefficients_b) < EQ_TOLERANCE] = 0.
 
         # slipt 2-body coeffs into alpha-alpha, beta-beta,
         # alpha-beta and beta-alpha contributions
@@ -417,14 +418,14 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
                             two_body_coefficients_ba[s, r, q, p] = np.conj(ba_term)
 
         # truncate numbers lower than EQ_TOLERANCE
-        two_body_coefficients_aa[
-            np.absolute(two_body_coefficients_aa) < EQ_TOLERANCE] = 0.
-        two_body_coefficients_bb[
-            np.absolute(two_body_coefficients_bb) < EQ_TOLERANCE] = 0.
-        two_body_coefficients_ba[
-            np.absolute(two_body_coefficients_ba) < EQ_TOLERANCE] = 0.
-        two_body_coefficients_ab[
-            np.absolute(two_body_coefficients_ab) < EQ_TOLERANCE] = 0.
+        two_body_coefficients_aa[np.abs(
+            two_body_coefficients_aa) < EQ_TOLERANCE] = 0.
+        two_body_coefficients_bb[np.abs(
+            two_body_coefficients_bb) < EQ_TOLERANCE] = 0.
+        two_body_coefficients_ab[np.abs(
+            two_body_coefficients_ab) < EQ_TOLERANCE] = 0.
+        two_body_coefficients_ba[np.abs(
+            two_body_coefficients_ba) < EQ_TOLERANCE] = 0.
 
         wavefunction = file.require_group("wavefunction")
         wavefunction.attrs['basis'] = basis
@@ -456,7 +457,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         # possible future additions:
         # mo coefficients in AO basis
-        wavefunction.create_dataset("scf_orbitals_a", data='') 
+        wavefunction.create_dataset("scf_orbitals_a", data='')
         wavefunction.create_dataset("scf_orbitals_b", data='')
         # scf orbital energies
         wavefunction.create_dataset("scf_eigenvalues_a", data='')
@@ -489,11 +490,14 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         Notes:
             Requires MRCONEE MDCINT files obtained using
             **DIRAC .4INDEX, **MOLTRA .ACTIVE all and 
-            'pam ... --get="MRCONEE MDCINT"' options
+            'pam ... --get="MRCONEE MDCINT"' options.
+
+            Adapted from Openfermion-Dirac:
+            see: https://github.com/bsenjean/Openfermion-Dirac.
 
         Returns:
             A tuple containing the following:
-                - e_core (Union[float, complex]): The core energy.
+                - e_core (Union[float, complex]): Nuclear repulsion energy.
                 - spinor (Dict[int, Union[float, complex]]): Dictionary of
                     spinor values with their corresponding indices.
                 - one_body_int (Dict[Tuple[int, int], Union[float, complex]]):

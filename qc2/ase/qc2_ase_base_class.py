@@ -150,6 +150,7 @@ class BaseQc2ASECalculator(ABC):
                 '/wavefunction/scf_eigenvalues_a'][...]
             self.scf_eigenvalues_b = file[
                 '/wavefunction/scf_eigenvalues_b'][...]
+            # localized orbitals
             self.localized_orbitals_a = file[
                 '/wavefunction/localized_orbitals_a'][...]
             self.localized_orbitals_b = file[
@@ -157,4 +158,4 @@ class BaseQc2ASECalculator(ABC):
 
     @abstractmethod
     def get_integrals(self) -> Tuple[Any, ...]:
-        """Calculates core energy, one- and two-body integrals."""
+        """Calculates core energy, one- and two-body integrals in MO basis."""

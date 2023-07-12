@@ -16,9 +16,10 @@ def create_test_atoms():
     """Create a test ASE Atoms object."""
     return Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.74]])
 
+
 @pytest.fixture
 def dirac_calculator():
-    """Fixture to set up a test instance of the DIRAC calculator attached to a test Atoms object."""
+    """Fixture to set up a test instance of the DIRAC calculator."""
     atoms = create_test_atoms()
     calc = DIRAC(molecule={'*basis': {'.default': '6-31g'}})
     atoms.calc = calc
@@ -29,7 +30,8 @@ def dirac_calculator():
 def clean_up_files():
     """Remove DIRAC calculation outputs at the end of each test."""
     yield
-    command = "rm *.xyz* *.inp* *.out* *.h5* *.tgz* MDCINT* MRCONEE* FCIDUMP* AOMOMAT* FCI*"
+    command = "rm *.xyz* *.inp* *.out* *.h5* *.tgz* MDCINT* " \
+        "MRCONEE* FCIDUMP* AOMOMAT* FCI*"
     subprocess.run(command, shell=True, capture_output=True)
 
 
@@ -39,44 +41,48 @@ def test_DIRAC_energy_rks():
     # define molecule geometry
     h2_molecule = Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.7284]])
 
-    # run calc and convert electronic energy into atomic units 
-    h2_molecule.calc = DIRAC(dirac={'.wave function':''},
+    # run calc and convert electronic energy into atomic units
+    h2_molecule.calc = DIRAC(dirac={'.wave function': ''},
                              hamiltonian={'.nonrel': '', '.dft': 'b3lyp'},
                              molecule={'*basis': {'.default': 'sto-3g'}}
                              )
     energy_Eh = h2_molecule.get_potential_energy() / Ha
 
-    # compare with the energy obtained using dirac alone => assuming convergence up to ~1e-6
+    # compare with the energy obtained using dirac alone
+    # => assuming convergence up to ~1e-6
     assert energy_Eh == pytest.approx(-1.1587324754260060, 1e-6)
 
 
 def test_DIRAC_energy_hf():
     """Test case # 2 - Testing ASE-DIRAC default parameters - HF/sto-3g."""
-    
+
     h_atom = Atoms('H')
 
     h_atom.calc = DIRAC()
     energy_Eh = h_atom.get_potential_energy() / Ha
 
-    # compare with the energy obtained using dirac alone => assuming convergence up to ~1e-6
+    # compare with the energy obtained using dirac alone
+    # => assuming convergence up to ~1e-6
     assert energy_Eh == pytest.approx(-0.466581849557275, 1e-6)
 
 
 def test_DIRAC_energy_mp2():
     """Test case # 3 - MP2/STO-3G Relativistic H2O.
-    
+
     Notes:
-        Adapted from the original DIRAC test set.    
+        Adapted from the original DIRAC test set.
     """
 
     h2o_molecule = molecule('H2O')
 
-    h2o_molecule.calc = DIRAC(hamiltonian={'.lvcorr':''},
-                              wave_function={'.scf':'', '.mp2':'',
-                                             '*scf': {'.itrint': '5 50', '.maxitr': '25'},
-                                             '*mp2cal': {'.occup': '2..5', '.virtual': 'all', '.virthr': '2.0D00'}},
-                              molecule={'*basis': {'.default': 'sto-3g'}}
-                                             )
+    h2o_molecule.calc = DIRAC(hamiltonian={'.lvcorr': ''},
+                              wave_function={'.scf': '', '.mp2': '',
+                                             '*scf': {'.itrint': '5 50',
+                                                      '.maxitr': '25'},
+                                             '*mp2cal': {'.occup': '2..5',
+                                                         '.virtual': 'all',
+                                                         '.virthr': '2.0D00'}},
+                              molecule={'*basis': {'.default': 'sto-3g'}})
     energy_Eh = h2o_molecule.get_potential_energy() / Ha
 
     # compare with the energy retrieved from DIRAC test set results.
@@ -85,7 +91,7 @@ def test_DIRAC_energy_mp2():
 
 def test_DIRAC_energy_ccsdt():
     """Test case # 4 - CCSD(T)/STO-3G Relativistic H2O.
-    
+
     Notes:
         Adapted from the original DIRAC test set.
         Uses integral transformation option **MOLTRA.
@@ -94,8 +100,8 @@ def test_DIRAC_energy_ccsdt():
     h2o_molecule = molecule('H2O')
 
     h2o_molecule.calc = DIRAC(dirac={'.wave function': '', '.4index': ''},
-                              hamiltonian={'.lvcorr':''},
-                              wave_function={'.scf':'', '.relccsd':'',
+                              hamiltonian={'.lvcorr': ''},
+                              wave_function={'.scf': '', '.relccsd': '',
                                              '*scf': {'.evccnv': '1.0E-8'}},
                               moltra={'.active': 'all'}
                               )
@@ -117,7 +123,8 @@ def test_DIRAC_energy_open_shell():
     c_atom.calc = DIRAC(hamiltonian={'.x2c': ''},
                         integrals={'*readin': {'.uncontracted': "#"}},
                         molecule={'*basis': {'.default': 'sto-3g'},
-                                  '*charge': {'.charge': '0'}},  # '*symmetry': {'.nosym': '#'}},
+                                  '*charge': {'.charge': '0'}},
+                                  # '*symmetry': {'.nosym': '#'}},
                         wave_function={'.scf': '',
                                        '*scf': {'.closed shell': '4 0',
                                                 '.open shell': '2\n1/0,2\n1/0,4',
@@ -125,7 +132,8 @@ def test_DIRAC_energy_open_shell():
     )
     energy_Eh = c_atom.get_potential_energy() / Ha
 
-    # compare with the energy obtained using dirac alone => assuming convergence up to ~1e-6
+    # compare with the energy obtained using dirac alone
+    # => assuming convergence up to ~1e-6
     assert energy_Eh == pytest.approx(-37.253756513429018, 1e-6)
 
 
@@ -155,7 +163,7 @@ def test_DIRAC_save_function(dirac_calculator):
         assert np.isclose(f.attrs['return_result'], energy)
 
 
-def test_DIRAC_load_function(dirac_calculator, tmpdir):
+def test_DIRAC_load_function(dirac_calculator):
     """Test case # 7 - testing the load method of the DIRAC calculator."""
 
     # Perform calculation to generate results
@@ -179,13 +187,14 @@ def test_DIRAC_load_function(dirac_calculator, tmpdir):
 
 
 def test_DIRAC_get_integrals_function(dirac_calculator):
-    """Test the get_integrals method of the DIRAC calculator."""
+    """Test case # 8 - testing the get_integrals method of the ASE-DIRAC."""
 
     # Perform calculation to generate results
-    energy = dirac_calculator.get_potential_energy()/Ha
+    dirac_calculator.get_potential_energy()/Ha
 
     # Calculate integrals
-    e_core, spinor, one_body_int, two_body_int = dirac_calculator.calc.get_integrals()
+    (e_core, spinor,
+     one_body_int, two_body_int) = dirac_calculator.calc.get_integrals()
 
     # Check the type and content of the integrals
     assert isinstance(e_core, (float, complex))
