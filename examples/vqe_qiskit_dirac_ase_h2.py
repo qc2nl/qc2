@@ -5,12 +5,14 @@ Standard restricted calculation H2 example.
 Notes:
     Requires the installation of qc2, ase, qiskit and h5py.
 """
+import subprocess
+import h5py
+
 from ase.build import molecule
 from ase.units import Ha
 from qc2.ase import DIRAC
 from qc2.data import qc2Data
 
-import h5py
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature.second_q.formats import qcschema_to_problem
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
@@ -20,11 +22,18 @@ from qiskit.algorithms.minimum_eigensolvers import VQE
 from qiskit.algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 
+
+def clean_up_DIRAC_files():
+    """Remove DIRAC calculation outputs."""
+    command = "rm dirac* MDCINT* MRCONEE* FCIDUMP* AOMOMAT* FCI*"
+    subprocess.run(command, shell=True, capture_output=True)
+
+
 # set Atoms object
 mol = molecule('H2')
 
 # file to save data
-hdf5_file = 'h2.hdf5'
+hdf5_file = 'h2_ase_dirac.hdf5'
 
 # init the hdf5 file
 qc2data = qc2Data(hdf5_file, mol)
@@ -49,8 +58,6 @@ file.close()
 # convert QCSchema into an instance of ElectronicStructureProblem;
 # see qiskit_nature/second_q/formats/qcschema_translator.py
 es_problem = qcschema_to_problem(qcschema, include_dipole=False)
-
-print(es_problem.reference_energy)
 
 # convert ElectronicStructureProblem into an instance of ElectronicEnergy
 # hamiltonian in second quantization;
@@ -87,3 +94,5 @@ calc = GroundStateEigensolver(mapper, vqe_solver)
 
 res = calc.solve(es_problem)
 print(res)
+
+clean_up_DIRAC_files()
