@@ -10,6 +10,7 @@ https://gitlab.com/dirac/dirac
 import subprocess
 import os
 from typing import Optional, List, Dict, Tuple, Union
+import warnings
 import h5py
 import numpy as np
 
@@ -248,6 +249,9 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         if ('.nonrel' not in self.parameters['hamiltonian'] and
                 '.levy-leblond' not in self.parameters['hamiltonian']):
             nmo = nmo // 2
+            warnings.warn('At the moment, DIRAC-ASE relativistic calculations'
+                          ' may not work properly with'
+                          ' Qiskit and/or Pennylane...')
         # approximate definition of # of alpha and beta electrons
         # does not work for pure triplet ground states!?
         nuc_charge = self._get_from_dirac_hdf5_file(
@@ -257,6 +261,8 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         calcinfo_nalpha = nelec - calcinfo_nbeta
         calcinfo_natom = self._get_from_dirac_hdf5_file(
            '/input/molecule/n_atoms')[0]
+        #warnings.warn('VQEs with triplet ground state molecules '
+        #              'not supported by DIRAC-ASE...')
 
         properties = file.require_group("properties")
         properties.attrs['calcinfo_nbasis'] = calcinfo_nbasis
