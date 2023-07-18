@@ -13,6 +13,7 @@ from ase.units import Ha
 from qc2.ase import PySCF
 from qc2.data import qc2Data
 
+import qiskit_nature
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature.second_q.formats import qcschema_to_problem
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
@@ -21,6 +22,9 @@ from qiskit_nature.second_q.algorithms import GroundStateEigensolver
 from qiskit.algorithms.minimum_eigensolvers import VQE
 from qiskit.algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
+
+# Avoid using the deprecated `PauliSumOp` object
+qiskit_nature.settings.use_pauli_sum_op = False
 
 
 # set Atoms object
