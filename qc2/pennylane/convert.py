@@ -64,7 +64,7 @@ def _qiskit_to_pennylane(qubit_operator, wires=None):
         if len(term) == n_wires:
 
             # The Pauli term '...XYZ' in Qiskit is equivalent to [Z0 Y1 X2 ...] in Pennylane
-            # So, invert the string... 
+            # So, invert the string...
             term = term[::-1]
 
             # Wires in Qiskit are grouped by separated blocks of alpha and beta wires,
