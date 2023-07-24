@@ -14,10 +14,8 @@ from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.hamiltonians import ElectronicEnergy
 from qiskit.quantum_info import SparsePauliOp
 
-import pennylane as qml
 from pennylane.operation import Operator
-
-from qc2.pennylane.convert import import_operator
+from ..pennylane.convert import import_operator
 
 from .schema import generate_empty_h5
 
@@ -96,7 +94,6 @@ class qc2Data:
         """Builds the electronic Hamiltonian in second-quantization."""
         # open the HDF5 file
         with h5py.File(self._filename, 'r') as file:
-
             # read data and store it in a `QCSchema` instance;
             # see qiskit_nature/second_q/formats/qcschema/qc_schema.py
             qcschema = QCSchema._from_hdf5_group(file)
@@ -121,14 +118,14 @@ class qc2Data:
     def get_qubit_hamiltonian(self, mapper: QubitMapper = JordanWignerMapper(),
                               format: str = "qiskit") -> Union[SparsePauliOp,
                                                                Operator]:
-        """Generate the qubit Hamiltonian of a target molecule."""
+        """Generates the qubit Hamiltonian of a target molecule."""
 
         if format not in ["qiskit", "pennylane"]:
             raise TypeError(f"Format {format} not yet suported.")
 
         second_q_op = self.get_fermionic_hamiltonian()[1]
 
-        # build fermionic-to-qubit `SparsePauliOp` qiskit hamiltonian 
+        # build fermionic-to-qubit `SparsePauliOp` qiskit hamiltonian
         qubit_op = mapper.map(second_q_op)
 
         if format == "pennylane":
@@ -137,3 +134,8 @@ class qc2Data:
             qubit_op = import_operator(qubit_op, "qiskit")
 
         return qubit_op
+
+    def _get_active_space(self) -> None:
+        """Defines active space for given # of active elec and active orb."""
+        # see https://github.com/PennyLaneAI/pennylane/blob/master/pennylane/qchem/structure.py#L72
+        pass

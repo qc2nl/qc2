@@ -41,7 +41,7 @@ es_problem, second_q_op = qc2data.get_fermionic_hamiltonian()
 # define the type of fermionic-to-qubit transformation
 mapper = JordanWignerMapper()
 
-print(qc2data.get_qubit_hamiltonian(mapper=mapper, format='qiskit'))
+print(qc2data.get_qubit_hamiltonian(mapper=mapper, format='pennylane'))
 
 H2_reference_state = HartreeFock(
     num_spatial_orbitals=es_problem.num_spatial_orbitals,
