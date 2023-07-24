@@ -1,5 +1,5 @@
 """This module defines the main qc2 data class."""
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, List
 import os
 import h5py
 
@@ -9,10 +9,15 @@ from ase.units import Ha
 import qiskit_nature
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature.second_q.formats import qcschema_to_problem
-from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
+from qiskit_nature.second_q.mappers import (
+    QubitMapper, 
+    JordanWignerMapper,
+    BravyiKitaevMapper
+    )
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.hamiltonians import ElectronicEnergy
 from qiskit.quantum_info import SparsePauliOp
+from qiskit_nature.second_q.transformers import ActiveSpaceTransformer
 
 from pennylane.operation import Operator
 from ..pennylane.convert import import_operator
@@ -89,9 +94,35 @@ class qc2Data:
         self._molecule.calc.save(self._filename)
         print(f"Saving qchem data in {self._filename}")
 
-    def get_fermionic_hamiltonian(self) -> Tuple[ElectronicEnergy,
-                                                 FermionicOp]:
-        """Builds the electronic Hamiltonian in second-quantization."""
+    def get_fermionic_hamiltonian(self,
+                                  num_electrons: Union[int, Tuple[int, int]],
+                                  num_spatial_orbitals: int,
+                                  *,
+                                  active_orbitals: Optional[List[int]] = None
+                                  ) -> Tuple[float, ElectronicEnergy, FermionicOp]:
+        """Builds the electronic Hamiltonian in second-quantization.
+
+        Args:
+            num_electrons: The number of active electrons. If this is a tuple,
+                it represents the number of alpha- and beta-spin electrons,
+                respectively. If this is a number, it is interpreted as the
+                total number of active electrons, should be even, and implies
+                that the number of alpha and beta electrons equals half of
+                this value, respectively.
+            num_spatial_orbitals: The number of active orbitals.
+            active_orbitals: A list of indices specifying the spatial orbitals
+                of the active space. This argument must match with the
+                remaining arguments and should only be used to enforce an
+                active space that is not chosen purely around the Fermi level.
+
+        Return:
+            XXXXXXXXX
+
+        Notes:
+            Based on the qiskit-nature modules:
+            qiskit_nature/second_q/problems/electronic_structure_problem.py
+            qiskit_nature/second_q/transformers/active_space_transformer.py
+        """
         # open the HDF5 file
         with h5py.File(self._filename, 'r') as file:
             # read data and store it in a `QCSchema` instance;
@@ -107,23 +138,46 @@ class qc2Data:
         # see qiskit_nature/second_q/problems/electronic_structure_problem.py
         hamiltonian = es_problem.hamiltonian
 
-        # now convert the `ElectronicEnergy` hamiltonian to a `FermionicOp`
-        # instance
+        # in case of space selection, reduce the space extent of the
+        # fermionic Hamiltonian based on the number of active electrons
+        # and orbitals
+        transformer = ActiveSpaceTransformer(num_electrons,
+                                             num_spatial_orbitals)
+
+        transformer.prepare_active_space(es_problem.num_particles,
+                                         es_problem.num_spatial_orbitals)
+
+        # after preparation, transform hamiltonian
+        reduced_hamiltonian = transformer.transform_hamiltonian(hamiltonian)
+
+        # set up core energy after transformation
+        nuclear_repulsion_energy = reduced_hamiltonian.constants[
+            'nuclear_repulsion_energy']
+        inactive_space_energy = reduced_hamiltonian.constants[
+            'ActiveSpaceTransformer']
+        core_energy = nuclear_repulsion_energy + inactive_space_energy
+
+        # now convert the reduced Hamiltonian (`Hamiltonian` instance)
+        # into a `FermionicOp` instance
         # see qiskit_nature/second_q/hamiltonians/electronic_energy.py
         # and qiskit_nature/second_q/operators/fermionic_op.py
-        second_q_op = hamiltonian.second_q_op()
+        second_q_op = reduced_hamiltonian.second_q_op()
 
-        return es_problem, second_q_op
+        return core_energy, es_problem, second_q_op
 
-    def get_qubit_hamiltonian(self, mapper: QubitMapper = JordanWignerMapper(),
-                              format: str = "qiskit") -> Union[SparsePauliOp,
-                                                               Operator]:
+    def get_qubit_hamiltonian(self,
+                              num_electrons: Union[int, Tuple[int, int]],
+                              num_spatial_orbitals: int,
+                              mapper: QubitMapper = JordanWignerMapper(),
+                              format: str = "qiskit"
+                              ) -> Tuple[float, Union[SparsePauliOp, Operator]]:
         """Generates the qubit Hamiltonian of a target molecule."""
 
         if format not in ["qiskit", "pennylane"]:
             raise TypeError(f"Format {format} not yet suported.")
 
-        second_q_op = self.get_fermionic_hamiltonian()[1]
+        core_energy, _, second_q_op = self.get_fermionic_hamiltonian(
+            num_electrons, num_spatial_orbitals)
 
         # build fermionic-to-qubit `SparsePauliOp` qiskit hamiltonian
         qubit_op = mapper.map(second_q_op)
@@ -133,9 +187,5 @@ class qc2Data:
             # from qiskit `SparsePauliOp`
             qubit_op = import_operator(qubit_op, "qiskit")
 
-        return qubit_op
+        return core_energy, qubit_op
 
-    def _get_active_space(self) -> None:
-        """Defines active space for given # of active elec and active orb."""
-        # see https://github.com/PennyLaneAI/pennylane/blob/master/pennylane/qchem/structure.py#L72
-        pass

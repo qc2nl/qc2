@@ -36,24 +36,27 @@ qc2data.molecule.calc = PySCF()
 # run calculation and save calc data in the hdf5 file
 qc2data.run()
 
-es_problem, second_q_op = qc2data.get_fermionic_hamiltonian()
+n_active_electrons = (1, 1)
+n_active_spatial_orbitals = 2
 
 # define the type of fermionic-to-qubit transformation
 mapper = JordanWignerMapper()
 
-print(qc2data.get_qubit_hamiltonian(mapper=mapper, format='pennylane'))
+core, qubit_op = qc2data.get_qubit_hamiltonian(n_active_electrons,
+                                               n_active_spatial_orbitals,
+                                               mapper=mapper, format='qiskit')
 
 H2_reference_state = HartreeFock(
-    num_spatial_orbitals=es_problem.num_spatial_orbitals,
-    num_particles=es_problem.num_particles,
+    num_spatial_orbitals=n_active_spatial_orbitals,
+    num_particles=n_active_electrons,
     qubit_mapper=mapper,
 )
 
 # print(H2_reference_state.draw())
 
 ansatz = UCCSD(
-    num_spatial_orbitals=es_problem.num_spatial_orbitals,
-    num_particles=es_problem.num_particles,
+    num_spatial_orbitals=n_active_spatial_orbitals,
+    num_particles=n_active_electrons,
     qubit_mapper=mapper,
     initial_state=H2_reference_state,
 )
@@ -62,8 +65,11 @@ ansatz = UCCSD(
 
 vqe_solver = VQE(Estimator(), ansatz, SLSQP())
 vqe_solver.initial_point = [0.0] * ansatz.num_parameters
+result = vqe_solver.compute_minimum_eigenvalue(qubit_op)
 
-calc = GroundStateEigensolver(mapper, vqe_solver)
+print(result.eigenvalue+core)
 
-res = calc.solve(es_problem)
-print(res)
+#calc = GroundStateEigensolver(mapper, vqe_solver)
+
+#res = calc.solve(es_problem)
+#print(res)
