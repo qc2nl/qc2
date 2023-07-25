@@ -54,7 +54,7 @@ class qc2Data:
             filename (str): The path to the HDF5 file to save qchem and
                 quantum computing data.
             molecule (Optional[Atoms]): An optional `ase.atoms.Atoms` instance
-                representing the molecular structure.
+                representing the molecular electronic structure.
         """
         json_file = os.path.join(
             os.path.dirname(__file__), 'qc_schema_output.schema'
@@ -105,8 +105,9 @@ class qc2Data:
     def get_fermionic_hamiltonian(self,
                                   num_electrons: Union[int, Tuple[int, int]],
                                   num_spatial_orbitals: int
-                                  ) -> Tuple[float, ElectronicEnergy, FermionicOp]:
-        """Builds the electronic Hamiltonian in second-quantization.
+                                  ) -> Tuple[float,
+                                             ElectronicEnergy, FermionicOp]:
+        """Builds the fermionic Hamiltonian of a target molecule.
 
         This method constructs the electronic Hamiltonian in 2nd-quantization
         based on the provided parameters.
@@ -199,11 +200,12 @@ class qc2Data:
                               mapper: QubitMapper = JordanWignerMapper(),
                               *,
                               format: str = "qiskit"
-                              ) -> Tuple[float, Union[SparsePauliOp, Operator]]:
+                              ) -> Tuple[float,
+                                         Union[SparsePauliOp, Operator]]:
         """Generates the qubit Hamiltonian of a target molecule.
 
-        This method generates the qubit Hamiltonian representation of a target molecule,
-        which is essential for quantum algorithms related to quantum chemistry.
+        This method generates the qubit Hamiltonian representation of a target
+        molecule, which is essential for quantum algorithms related to qchem.
 
         Args:
             num_electrons (Union[int, Tuple[int, int]]):
