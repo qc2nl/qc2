@@ -1,5 +1,5 @@
 """This module defines the main qc2 data class."""
-from typing import Optional, Tuple, Union, List
+from typing import Optional, Tuple, Union
 import os
 import h5py
 
@@ -7,16 +7,13 @@ from ase import Atoms
 from ase.units import Ha
 
 import qiskit_nature
+from qiskit.quantum_info import SparsePauliOp
+
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature.second_q.formats import qcschema_to_problem
-from qiskit_nature.second_q.mappers import (
-    QubitMapper, 
-    JordanWignerMapper,
-    BravyiKitaevMapper
-    )
+from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.hamiltonians import ElectronicEnergy
-from qiskit.quantum_info import SparsePauliOp
 from qiskit_nature.second_q.transformers import ActiveSpaceTransformer
 
 from pennylane.operation import Operator
@@ -33,21 +30,32 @@ class qc2Data:
 
     This class orchestrates classical qchem programs and
     python libraries for quantum computing.
+
+    Attributes:
+        _schema (str): The path to the JSON schema file for quantum chemistry
+            (QCSchema).
+            For more details, see https://molssi.org/software/qcschema-2/.
+            The 'qc_schema_output.schema' is taken from
+            https://github.com/MolSSI/QCSchema/tree/master/qcschema/data/v2.
+
+        _filename (str): The path to the HDF5 file used to save qchem and
+            quantum computing data.
+
+        _molecule (Optional[Atoms]): An optional attribute representing the
+            molecular structure as an `ase.atoms.Atoms` instance.
     """
     def __init__(self,
                  filename: str,
                  molecule: Optional[Atoms],
                  ):
-        """_summary_
+        """Initializes the qc2Data instance.
 
         Args:
-            filename (str): hdf5 file to save qchem and qc data.
-            molecule (Optional[str]): `ase.atoms.Atoms` instance. 
+            filename (str): The path to the HDF5 file to save qchem and
+                quantum computing data.
+            molecule (Optional[Atoms]): An optional `ase.atoms.Atoms` instance
+                representing the molecular structure.
         """
-        # this version uses the JSON schema for quantum chemistry (QCSchema)
-        # for more details, see https://molssi.org/software/qcschema-2/
-        # 'qc_schema_output.schema' taken from
-        # https://github.com/MolSSI/QCSchema/tree/master/qcschema/data/v2
         json_file = os.path.join(
             os.path.dirname(__file__), 'qc_schema_output.schema'
             )
@@ -88,41 +96,61 @@ class qc2Data:
 
         # run ase calculator
         reference_energy = self._molecule.get_potential_energy()/Ha
-        print(f"Reference energy in Hartrees is: {reference_energy}")
+        print(f"* Reference energy (Hartree): {reference_energy}")
 
         # dump required data to the hdf5 file
         self._molecule.calc.save(self._filename)
-        print(f"Saving qchem data in {self._filename}")
+        print(f"* Saving qchem data in {self._filename}\n")
 
     def get_fermionic_hamiltonian(self,
                                   num_electrons: Union[int, Tuple[int, int]],
-                                  num_spatial_orbitals: int,
-                                  *,
-                                  active_orbitals: Optional[List[int]] = None
+                                  num_spatial_orbitals: int
                                   ) -> Tuple[float, ElectronicEnergy, FermionicOp]:
         """Builds the electronic Hamiltonian in second-quantization.
 
+        This method constructs the electronic Hamiltonian in 2nd-quantization
+        based on the provided parameters.
+
         Args:
-            num_electrons: The number of active electrons. If this is a tuple,
+            num_electrons (Union[int, Tuple[int, int]]):
+                The number of active electrons. If this is a tuple,
                 it represents the number of alpha- and beta-spin electrons,
                 respectively. If this is a number, it is interpreted as the
                 total number of active electrons, should be even, and implies
                 that the number of alpha and beta electrons equals half of
                 this value, respectively.
-            num_spatial_orbitals: The number of active orbitals.
-            active_orbitals: A list of indices specifying the spatial orbitals
-                of the active space. This argument must match with the
-                remaining arguments and should only be used to enforce an
-                active space that is not chosen purely around the Fermi level.
+            num_spatial_orbitals (int):
+                The number of active orbitals. If not provided, it should be
+                set as an attribute of the class.
 
-        Return:
-            XXXXXXXXX
+        Returns:
+            Tuple[float, ElectronicStructureProblem, FermionicOp]:
+                A tuple containing the following elements:
+                - core_energy (float): The core energy after active space
+                    transformation.
+                - es_problem (ElectronicStructureProblem): An instance of the
+                    `ElectronicStructureProblem`.
+                - second_q_op (FermionicOp): An instance of `FermionicOp`
+                    representing the ferm. Hamiltonian in 2nd quantization.
+
+        Raises:
+            ValueError: If `num_electrons` or `num_spatial_orbitals` is None.
 
         Notes:
             Based on the qiskit-nature modules:
             qiskit_nature/second_q/problems/electronic_structure_problem.py
             qiskit_nature/second_q/transformers/active_space_transformer.py
         """
+        if num_electrons is None:
+            raise ValueError(
+                "Number of active electrons cannot be 'None'."
+                "Please, set the attribute 'num_electrons'.")
+
+        if num_spatial_orbitals is None:
+            raise ValueError(
+                "Number of active orbitals cannot be 'None'."
+                "Please, set the attribute 'num_spatial_orbitals'.")
+
         # open the HDF5 file
         with h5py.File(self._filename, 'r') as file:
             # read data and store it in a `QCSchema` instance;
@@ -169,9 +197,48 @@ class qc2Data:
                               num_electrons: Union[int, Tuple[int, int]],
                               num_spatial_orbitals: int,
                               mapper: QubitMapper = JordanWignerMapper(),
+                              *,
                               format: str = "qiskit"
                               ) -> Tuple[float, Union[SparsePauliOp, Operator]]:
-        """Generates the qubit Hamiltonian of a target molecule."""
+        """Generates the qubit Hamiltonian of a target molecule.
+
+        This method generates the qubit Hamiltonian representation of a target molecule,
+        which is essential for quantum algorithms related to quantum chemistry.
+
+        Args:
+            num_electrons (Union[int, Tuple[int, int]]):
+                The number of active electrons. If this is a tuple,
+                it represents the number of alpha- and beta-spin electrons,
+                respectively. If this is a number, it is interpreted as the
+                total number of active electrons, should be even, and implies
+                that the number of alpha and beta electrons equals half of
+                this value, respectively.
+            num_spatial_orbitals (int):
+                The number of active orbitals.
+            mapper (QubitMapper, optional):
+                The qubit mapping strategy to convert fermionic operators to
+                qubit operators. Defaults to `JordanWignerMapper()`.
+            format (str, optional):
+                The format in which to return the qubit Hamiltonian.
+                Supported formats are "qiskit" and "pennylane".
+                Defaults to "qiskit".
+
+        Returns:
+            Tuple[float, Union[SparsePauliOp, Operator]]:
+                A tuple containing the following elements:
+                - core_energy (float): The core energy after after active
+                    space transformation.
+                - qubit_op (Union[SparsePauliOp, Operator]):
+                  - If the format is "qiskit", it returns a `SparsePauliOp`
+                  representing the qubit Hamiltonian in the qiskit format.
+                  - If the format is "pennylane", it returns a `Operator`
+                  instance representing the qubit Hamiltonian in the
+                  PennyLane format.
+
+        Raises:
+            TypeError: If the provided `format` is not supported (not "qiskit"
+            or "pennylane").
+        """
 
         if format not in ["qiskit", "pennylane"]:
             raise TypeError(f"Format {format} not yet suported.")
@@ -188,4 +255,3 @@ class qc2Data:
             qubit_op = import_operator(qubit_op, "qiskit")
 
         return core_energy, qubit_op
-
