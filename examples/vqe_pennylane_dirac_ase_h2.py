@@ -1,38 +1,45 @@
-"""Example of a VQE calc using Qiskit-Nature and PYSCF-ASE calculator.
+"""Example of a VQE calc using Qiskit-Nature and DIRAC-ASE calculator.
 
-Standard restricted calculation => H2O example.
+Standard restricted calculation => H2 example.
 
 Notes:
     Requires the installation of qc2, ase, qiskit and h5py.
 """
+import subprocess
 from ase.build import molecule
 
 from qiskit_nature.second_q.mappers import JordanWignerMapper
 import pennylane as qml
 from pennylane import numpy as np
 
-from qc2.ase import PySCF
+from qc2.ase import DIRAC
 from qc2.data import qc2Data
 
 
+def clean_up_DIRAC_files():
+    """Remove DIRAC calculation outputs."""
+    command = "rm dirac* MDCINT* MRCONEE* FCIDUMP* AOMOMAT* FCI*"
+    subprocess.run(command, shell=True, capture_output=True)
+
+
 # set Atoms object
-mol = molecule('H2O')
+mol = molecule('H2')
 
 # file to save data
-hdf5_file = 'h2o_ase_pyscf_pennylane.hdf5'
+hdf5_file = 'h2_ase_dirac_pennylane.hdf5'
 
 # init the hdf5 file
 qc2data = qc2Data(hdf5_file, mol)
 
 # specify the qchem calculator
-qc2data.molecule.calc = PySCF()  # default => RHF/STO-3G
+qc2data.molecule.calc = DIRAC()  # default => RHF/STO-3G
 
 # run calculation and save qchem data in the hdf5 file
 qc2data.run()
 
 # define activate space
-n_active_electrons = (2, 2)  # => (n_alpha, n_beta)
-n_active_spatial_orbitals = 3
+n_active_electrons = (1, 1)  # => (n_alpha, n_beta)
+n_active_spatial_orbitals = 2
 
 # define the type of fermionic-to-qubit transformation
 mapper = JordanWignerMapper()
@@ -85,3 +92,5 @@ print(f"* Inactive core energy (Hartree): {e_core}")
 print(f">>> Total ground state energy (Hartree): {energy+e_core}\n")
 
 # print(f"+++ Final parameters:{params}")
+
+clean_up_DIRAC_files()
