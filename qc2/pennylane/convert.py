@@ -76,7 +76,6 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
             # the Pauli term '...XYZ' in Qiskit is equivalent to [Z0 Y1 X2 ..]
             # in Pennylane. So, invert the string..
             term = term[::-1]
-
             # wires in Qiskit-Nature are grouped by separated alpha and beta
             # blocks, e.g., for H2 the circuit is represented by:
             #      ┌───┐
@@ -90,7 +89,7 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
             #
             # However, in Pennylane they are represented by alpha-beta
             # sequences. So, organize the term accordingly...
-            n = len(term)//2
+            n = len(term)//2  # => valid for closed shell singlet systems only
             term = ''.join([term[i::n] for i in range(n)])
             # this could also be done by using the `_process_wires` function.
 
@@ -111,7 +110,36 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
 
 
 def _pennylane_to_qiskit_nature(coeffs, ops, wires=None):
-    """XXX"""
+    """Convert a 2-tuple of complex coefficients and PennyLane operations to
+    Qiskit ``SparsePauliOp``.
+
+    Args:
+        coeffs (array[complex]):
+            coefficients for each observable, same length as ops
+        ops (Iterable[pennylane.operation.Operations]): list of PennyLane
+            operations that have a valid PauliSentence representation.
+        wires (Wires, list, tuple, dict): Full wire mapping used to convert
+            to qubit operator from an observable terms measurable in a
+            PennyLane ansatz. For types Wires/list/tuple, each item in the
+            iterable represents a wire label corresponding to the qubit number
+            equal to its index. For type dict, only consecutive-int-valued
+            dict (for wire-to-qubit conversion) is accepted.
+
+    Returns:
+        SparsePauliOp: an instance of Qiskit's ``SparsePauliOp``.
+
+    **Example**
+
+    >>> coeffs = np.array([0.1, 0.2, 0.3])
+    >>>> ops = [
+    ...     qml.operation.Tensor(qml.PauliX(wires=[0])),
+    ...     qml.operation.Tensor(qml.PauliY(wires=[0]), qml.PauliZ(wires=[2])),
+    ...     qml.prod(qml.PauliX(wires=[0]), qml.PauliZ(wires=[3]))
+    ... ]
+    >>> _pennylane_to_qiskit_nature(coeffs, ops, wires=[0, 1, 2, 3])
+    SparsePauliOp(['IIIX', 'IZIY', 'ZIIX'],
+                  coeffs=[0.1+0.j, 0.2+0.j, 0.3+0.j])
+    """
     try:
         from qiskit.quantum_info import SparsePauliOp
     except ImportError as Error:
@@ -130,26 +158,28 @@ def _pennylane_to_qiskit_nature(coeffs, ops, wires=None):
             raise ValueError("Supplied `wires` does not cover all wires"
                              " defined in `ops`.")
     else:
-        qubit_indexed_wires = all_wires
+        raise ValueError(
+            "Please, provide the full sequence of wires "
+            "so that a complete Pauli term is generated " 
+            "for Qiskit.")
 
     n_wires = len(qubit_indexed_wires)
-    wire_map = {qubit_indexed_wires[x]: y for x, y in zip(range(n_wires), range(n_wires))}
-    print(n_wires, qubit_indexed_wires, wire_map)
+    wire_map = {qubit_indexed_wires[x]: y for x, y in zip(range(n_wires),
+                                                          range(n_wires))}
 
     q_op_list = []
     for coeff, op in zip(coeffs, ops):
         if isinstance(op, (Tensor, Prod, SProd, Hamiltonian)):
             string = qml.pauli.pauli_word_to_string(op, wire_map=wire_map)
-            string = string[::-1]
-            n = len(string)//2
+            n = len(string)//3  # => valid for closed shell singlets only
             string = ''.join([string[i::n] for i in range(n)])
+            string = string[::-1]
             q_op_list.append((string, coeff.unwrap()))
         if isinstance(op, Sum):
-            #string = qml.pauli.pauli_word_to_string(op, wire_map=wire_map)
-            print(coeff, op.simplify(), op._build_pauli_rep(), op.terms())
-            #raise ValueError(
-            #        f"Expected a Pennylane operator with a valid Pauli word "
-            #        f"representation, but got {op}.")
+            # print(coeff, op.simplify(), op._build_pauli_rep(), op.terms())
+            raise ValueError(
+                    "Pauli operators representing :class:`.Sum` "
+                    "not accepted in the current implementation.")
 
     return SparsePauliOp.from_list(q_op_list)
 
@@ -157,8 +187,26 @@ def _pennylane_to_qiskit_nature(coeffs, ops, wires=None):
 def _qiskit_nature_pennylane_equivalent(
     qiskit_qubit_operator, pennylane_qubit_operator, wires=None
 ):
-    """Check"""
-    print(type(pennylane_qubit_operator))
+    """Check equivalence between Qiskit :class:`~.SparsePauliOp` and Pennylane
+    VQE ``Hamiltonian`` (Tensor product of Pauli matrices).
+
+    Equality is based on Qiskit :class:`~.SparsePauliOp`'s equality.
+
+    Args:
+        qiskit_qubit_operator (SparsePauliOp): Qiskit-Natuire qubit operator
+            represented as a Pauli summation
+        pennylane_qubit_operator (pennylane.Hamiltonian): PennyLane
+            Hamiltonian object
+        wires (Wires, list, tuple, dict): Full wire mapping used to convert
+            to qubit operator from an observable terms measurable in a
+            PennyLane ansatz. For types Wires/list/tuple, each item in the
+            iterable represents a wire label corresponding to the qubit number
+            equal to its index. For type dict, only consecutive-int-valued
+            dict (for wire-to-qubit conversion) is accepted.
+
+    Returns:
+        (bool): True if equivalent
+    """
     coeffs, ops = pennylane_qubit_operator.terms()
     return qiskit_qubit_operator == _pennylane_to_qiskit_nature(
         coeffs, ops, wires=wires)
