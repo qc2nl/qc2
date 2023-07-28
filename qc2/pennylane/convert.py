@@ -1,13 +1,13 @@
 """"
-Module containing utils for converting Qiskit operators to Pennylane format.
+Module containing utils for converting Qiskit-Nature operators to Pennylane format.
 
 Notes:
     It representes a major extension of pennylane/qchem/convert.py module.
     See https://github.com/PennyLaneAI/pennylane/blob/master/pennylane/qchem/convert.py
 
-    The implemented conversion may only be valid for Fermionic-to-qubit
-    transformed hamiltonians since it accounts for the distinct alpha and beta
-    qubit (wire) distribution between VQE anzatses in Qiskit and Pennylane.
+    The implemented functions may only be valid to fermionic-to-qubit
+    transformed hamiltonians as it accounts for the distinct alpha and beta
+    qubit (wire) distribution between VQE anzatses in Qiskit-Nature and Pennylane.
 """
 try:
 
@@ -89,7 +89,7 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
             #
             # However, in Pennylane they are represented by alpha-beta
             # sequences. So, organize the term accordingly...
-            n = len(term)//2  # => valid for closed shell singlet systems only
+            n = len(term)//2  # => valid for closed shell singlet systems only ?
             term = ''.join([term[i::n] for i in range(n)])
             # this could also be done by using the `_process_wires` function.
 
@@ -109,7 +109,7 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
     return np.real(np.array(coeffs, requires_grad=False)), list(ops)
 
 
-def _pennylane_to_qiskit_nature(coeffs, ops, wires=None):
+def _pennylane_to_qiskit_nature(coeffs, ops, wires):
     """Convert a 2-tuple of complex coefficients and PennyLane operations to
     Qiskit ``SparsePauliOp``.
 
@@ -127,6 +127,16 @@ def _pennylane_to_qiskit_nature(coeffs, ops, wires=None):
 
     Returns:
         SparsePauliOp: an instance of Qiskit's ``SparsePauliOp``.
+
+    Notes:
+        Instead of having to provide the full list of wires,
+        e.g., wires=[0, 1, 2, 3, ..., n_wires],
+        this function could be alternativelly implemented using
+        ``SparsePauliOp.from_sparse_list()`` in place of
+        ``SparsePauliOp.from_list()``,
+        e.g., op = SparsePauliOp.from_sparse_list(
+                    [("ZX", [1, 4], 1), ("YY", [0, 3], 2)], num_qubits=5),
+        with the requirement that users provide the total number of qubits.
 
     **Example**
 
@@ -160,7 +170,7 @@ def _pennylane_to_qiskit_nature(coeffs, ops, wires=None):
     else:
         raise ValueError(
             "Please, provide the full sequence of wires "
-            "so that a complete Pauli term is generated " 
+            "so that a complete Pauli term is generated "
             "for Qiskit.")
 
     n_wires = len(qubit_indexed_wires)
@@ -238,7 +248,8 @@ def import_operator(qubit_observable, format="openfermion",
         (.Operator): PennyLane operator representing any operator expressed as
         linear comb of Pauli words, e.g., :math:`\sum_{k=0}^{N-1} c_k O_k`
 
-    Example:
+    **Example**
+
     >>> from openfermion import QubitOperator
     >>> h_of = QubitOperator('X0 X1 Y2 Y3', -0.0548)
     + QubitOperator('Z0 Z1', 0.14297)
