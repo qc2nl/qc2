@@ -48,13 +48,21 @@ class qc2Data:
                  filename: str,
                  molecule: Optional[Atoms],
                  ):
-        """Initializes the qc2Data instance.
+        """Initializes the `qc2Data` instance.
 
         Args:
             filename (str): The path to the HDF5 file to save qchem and
                 quantum computing data.
             molecule (Optional[Atoms]): An optional `ase.atoms.Atoms` instance
-                representing the molecular electronic structure.
+                representing the target molecule.
+
+        Example:
+        >>> from qc2.data import qc2Data
+        >>> from ase.build import molecule
+        >>>
+        >>> mol = molecule('H2')
+        >>> hdf5_file = 'h2.hdf5'
+        >>> qc2data = qc2Data(hdf5_file, mol)
         """
         json_file = os.path.join(
             os.path.dirname(__file__), 'qc_schema_output.schema'
@@ -87,8 +95,19 @@ class qc2Data:
         self._molecule = Atoms(*args, **kwargs)
 
     def run(self) -> None:
-        """Runs ASE qchem calculator and save the data into hdf5 file."""
-        if self._molecule is None or not isinstance(self._molecule, Atoms):
+        """Runs ASE qchem calculator and saves the data into hdf5 file.
+
+        Example:
+        >>> from qc2.data import qc2Data
+        >>> from ase.build import molecule
+        >>>
+        >>> mol = molecule('H2')
+        >>> hdf5_file = 'h2.hdf5'
+        >>> qc2data = qc2Data(hdf5_file, mol)
+        >>> qc2data.molecule.calc = DIRAC(...)  # => specify the qchem calculator
+        >>> qc2data.run()
+        """
+        if self._molecule is None:
             raise ValueError(
                 "No molecule is available for calculation."
                 "Please, set this attribute as an"
@@ -120,9 +139,7 @@ class qc2Data:
                 total number of active electrons, should be even, and implies
                 that the number of alpha and beta electrons equals half of
                 this value, respectively.
-            num_spatial_orbitals (int):
-                The number of active orbitals. If not provided, it should be
-                set as an attribute of the class.
+            num_spatial_orbitals (int): The number of active orbitals.
 
         Returns:
             Tuple[float, ElectronicStructureProblem, FermionicOp]:
@@ -141,6 +158,21 @@ class qc2Data:
             Based on the qiskit-nature modules:
             qiskit_nature/second_q/problems/electronic_structure_problem.py
             qiskit_nature/second_q/transformers/active_space_transformer.py
+
+        Example:
+        >>> from qc2.data import qc2Data
+        >>> from ase.build import molecule
+        >>>
+        >>> mol = molecule('H2')
+        >>> hdf5_file = 'h2.hdf5'
+        >>> qc2data = qc2Data(hdf5_file, mol)
+        >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
+        >>> qc2data.run()
+        >>> n_electrons = (1, 1)
+        >>> n_spatial_orbitals = 2
+        >>> (e_core, es_prob, op) = qc2data.get_fermionic_hamiltonian(
+        ...     n_electrons, n_spatial_orbitals
+        ... )
         """
         if num_electrons is None:
             raise ValueError(
@@ -215,8 +247,7 @@ class qc2Data:
                 total number of active electrons, should be even, and implies
                 that the number of alpha and beta electrons equals half of
                 this value, respectively.
-            num_spatial_orbitals (int):
-                The number of active orbitals.
+            num_spatial_orbitals (int): The number of active orbitals.
             mapper (QubitMapper, optional):
                 The qubit mapping strategy to convert fermionic operators to
                 qubit operators. Defaults to `JordanWignerMapper()`.
@@ -239,21 +270,40 @@ class qc2Data:
 
         Raises:
             TypeError: If the provided `format` is not supported (not "qiskit"
-            or "pennylane").
+            nor "pennylane").
+
+        Example:
+        >>> from qc2.data import qc2Data
+        >>> from ase.build import molecule
+        >>>
+        >>> mol = molecule('H2')
+        >>> hdf5_file = 'h2.hdf5'
+        >>> qc2data = qc2Data(hdf5_file, mol)
+        >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
+        >>> qc2data.run()
+        >>> n_electrons = (1, 1)
+        >>> n_spatial_orbitals = 2
+        >>> mapper = BravyiKitaevMapper()
+        >>> (e_core, qubit_op) = qc2data.get_qubit_hamiltonian(
+        ...     n_electrons, n_spatial_orbitals, mapper, format='qiskit'
+        ... )
         """
 
         if format not in ["qiskit", "pennylane"]:
             raise TypeError(f"Format {format} not yet suported.")
 
+        # get fermionic hamiltonian
         core_energy, _, second_q_op = self.get_fermionic_hamiltonian(
             num_electrons, num_spatial_orbitals)
 
-        # build fermionic-to-qubit `SparsePauliOp` qiskit hamiltonian
+        # perform fermionic-to-qubit transformation using the given mapper
+        # and obtain `SparsePauliOp` qiskit qubit hamiltonian
         qubit_op = mapper.map(second_q_op)
 
         if format == "pennylane":
             # generate pennylane qubit hamiltonian `Operator` instance
             # from qiskit `SparsePauliOp`
-            qubit_op = import_operator(qubit_op, "qiskit")
+            # see qc2/pennylane/convert.py
+            qubit_op = import_operator(qubit_op, format="qiskit")
 
         return core_energy, qubit_op

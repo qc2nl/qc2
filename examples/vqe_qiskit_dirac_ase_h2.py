@@ -10,7 +10,7 @@ from ase.build import molecule
 
 import qiskit_nature
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
-from qiskit_nature.second_q.mappers import JordanWignerMapper
+from qiskit_nature.second_q.mappers import BravyiKitaevMapper
 from qiskit.algorithms.minimum_eigensolvers import VQE
 from qiskit.algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
@@ -48,7 +48,7 @@ n_active_electrons = (1, 1)  # => (n_alpha, n_beta)
 n_active_spatial_orbitals = 2
 
 # define the type of fermionic-to-qubit transformation
-mapper = JordanWignerMapper()
+mapper = BravyiKitaevMapper()
 
 # set up qubit Hamiltonian and core energy based on given activate space
 e_core, qubit_op = qc2data.get_qubit_hamiltonian(n_active_electrons,
