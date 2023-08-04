@@ -30,7 +30,7 @@ hdf5_file = 'h2o_ase_pyscf_qiskit.hdf5'
 qc2data = qc2Data(hdf5_file, mol)
 
 # specify the qchem calculator
-qc2data.molecule.calc = PySCF()  # default => RH/STO-3G
+qc2data.molecule.calc = PySCF()  # default => RHF/STO-3G
 
 # run calculation and save qchem data in the hdf5 file
 qc2data.run()

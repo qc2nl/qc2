@@ -104,7 +104,7 @@ class qc2Data:
         >>> mol = molecule('H2')
         >>> hdf5_file = 'h2.hdf5'
         >>> qc2data = qc2Data(hdf5_file, mol)
-        >>> qc2data.molecule.calc = DIRAC(...)  # => specify the qchem calculator
+        >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
         >>> qc2data.run()
         """
         if self._molecule is None:
