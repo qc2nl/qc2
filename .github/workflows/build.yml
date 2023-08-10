@@ -56,6 +56,6 @@ jobs:
       #    cd ..
       - name: Run unit tests
         run: |
-          pytest -v -k 'test_my_module or test_pyscf'
+          pytest -v -k 'test_my_module or test_pyscf or test_qc2data'
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel
