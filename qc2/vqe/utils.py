@@ -21,20 +21,17 @@ def vector_to_skew_symmetric(vector):
     """
     size = int(np.sqrt(8 * np.shape(vector)[0] + 1) + 1) // 2
     matrix = np.zeros((size, size))
-    # matrix = np.convert_like(np.zeros((size, size)), vector)
     tril_indices = np.tril_indices(size, k=-1)
     matrix[tril_indices[0], tril_indices[1]] = vector
     matrix[tril_indices[1], tril_indices[0]] = -vector
-    #matrix = np.set_index(
-    #    matrix, (tril_indices[0], tril_indices[1]), vector)
-    #matrix = np.set_index(
-    #    matrix, (tril_indices[1], tril_indices[0]), -vector)
     return matrix
 
 
-def get_active_space_idx(nao, nelectron,
-                          n_active_orbitals,
-                          n_active_electrons):
+def get_active_space_idx(
+        nao, nelectron,
+        n_active_orbitals,
+        n_active_electrons
+):
     """Calculates active space indices given active orbitals and electrons."""
     # Set active space parameters
     nelecore = sum(nelectron) - sum(n_active_electrons)
@@ -50,7 +47,7 @@ def get_active_space_idx(nao, nelectron,
     return occ_idx, act_idx, virt_idx
 
 
-def non_redundant_indices(occ_idx, act_idx, virt_idx, freeze_active):
+def get_non_redundant_indices(occ_idx, act_idx, virt_idx, freeze_active):
     """Calculate non-redundant indices for indexing kappa vectors
     for a given active space"""
     no, na, nv = len(occ_idx), len(act_idx), len(virt_idx)
@@ -64,8 +61,8 @@ def non_redundant_indices(occ_idx, act_idx, virt_idx, freeze_active):
     for l_idx, r_idx in zip(*np.tril_indices(nao, -1)):
         if not (
             ((l_idx in act_idx and r_idx in act_idx) and freeze_active)
-            or (l_idx in occ_idx and r_idx in occ_idx)
-            or (l_idx in virt_idx and r_idx in virt_idx)):
+                or (l_idx in occ_idx and r_idx in occ_idx)
+                or (l_idx in virt_idx and r_idx in virt_idx)):
             params_idx = np.append(params_idx, [num])
         num += 1
     assert n_kappa == len(params_idx)

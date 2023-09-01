@@ -1,2 +1,2 @@
 """qc2 VQE package"""
-from .oo_energy import oo_energy
+from .orbital_optimization import OrbitalOptimization

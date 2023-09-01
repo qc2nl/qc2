@@ -6,15 +6,21 @@ from scipy.linalg import expm
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature.second_q.hamiltonians import ElectronicEnergy
 
+# provisory imports
+from qiskit_nature.second_q.problems import ElectronicBasis
+from qiskit_nature.second_q.formats import qcschema_to_problem
+from qiskit_nature.second_q.operators import ElectronicIntegrals
+from qiskit_nature.second_q.transformers import BasisTransformer
+
 from .utils import (
     reshape_2, reshape_4,
     vector_to_skew_symmetric,
     get_active_space_idx,
-    non_redundant_indices
+    get_non_redundant_indices
 )
 
 
-class oo_energy:
+class OrbitalOptimization:
     """Docstring."""
 
     def __init__(
@@ -30,7 +36,8 @@ class oo_energy:
 
         # molecular integrals
         self.int1e_mo_a, self.int1e_mo_b = self._get_onebody_integrals()
-        (self.int2e_mo_aa, self.int2e_mo_bb,
+        (self.int2e_mo_aa,
+         self.int2e_mo_bb,
          self.int2e_mo_ba) = self._get_twobody_integrals()
 
         # active space parameters
@@ -43,7 +50,8 @@ class oo_energy:
         )
         self.nao = self.qcschema.properties.calcinfo_nmo
 
-        (self.occ_idx, self.act_idx,
+        (self.occ_idx,
+         self.act_idx,
          self.virt_idx) = get_active_space_idx(
             self.nao, self.n_electrons,
             self.n_active_orbitals,
@@ -51,21 +59,42 @@ class oo_energy:
          )
 
         # Calculate non-redundant orbital rotations
-        self.params_idx = non_redundant_indices(
+        self.params_idx = get_non_redundant_indices(
             self.occ_idx, self.act_idx,
             self.virt_idx, freeze_active
         )
 
         self.n_kappa = len(self.params_idx)
+        self.es_problem = None
+
+    def test_problem_transform(self, kappa) -> ElectronicEnergy:
+        """Docstring."""
+
+        es_problem = qcschema_to_problem(self.qcschema, include_dipole=False)
+
+        coeffs_a = self.get_rotation_matrix(kappa)
+        # restricted case constraint
+        coeffs_b = coeffs_a
+
+        transformer = BasisTransformer(
+            ElectronicBasis.MO,
+            ElectronicBasis.MO,
+            ElectronicIntegrals.from_raw_integrals(coeffs_a, h1_b=coeffs_b),
+        )
+
+        rotated_es_problem = transformer.transform(es_problem)
+
+        return rotated_es_problem.hamiltonian
 
     def get_rotated_hamiltonian(self, kappa) -> ElectronicEnergy:
-        """Docstring."""
+        """Constructs a fermionic hamiltonian from raw rotated integrals."""
         (h1_a, h1_b) = self.get_rotated_onebody_integrals(kappa)
         (h2_aa, h2_bb, h2_ba) = self.get_rotated_twobody_integrals(kappa)
         return ElectronicEnergy.from_raw_integrals(
             h1_a, h2_aa,
             h1_b, h2_bb, h2_ba,
-            auto_index_order=False
+            validate=True,
+            auto_index_order=True
         )
 
     def get_rotated_onebody_integrals(self, kappa) -> tuple[np.ndarray,
@@ -98,7 +127,7 @@ class oo_energy:
 
         # restricted case constraint
         rot_mat_b = rot_mat_a
-        print(rot_mat_a)
+
         einsum_subscripts = 'pi,qj,pqrs,rk,sl->pqrs'
         hijkl_rot = np.einsum(einsum_subscripts,
                               rot_mat_a.T,
