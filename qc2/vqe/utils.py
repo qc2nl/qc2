@@ -68,12 +68,3 @@ def get_non_redundant_indices(occ_idx, act_idx, virt_idx, freeze_active):
     assert n_kappa == len(params_idx)
     return params_idx
 
-
-def reshape_2(arr, dim, dim_2=None):
-    """Docstring."""
-    return np.asarray(arr).reshape((dim, dim_2 if dim_2 is not None else dim))
-
-
-def reshape_4(arr, dim):
-    """Docstring."""
-    return np.asarray(arr).reshape((dim,) * 4)
