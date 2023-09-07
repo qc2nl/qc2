@@ -65,8 +65,7 @@ class OrbitalOptimization:
         # set dimension of the kappa vector
         self.n_kappa = len(self.params_idx)
 
-    def get_transformed_hamiltonian(
-            self, kappa
+    def get_transformed_hamiltonian(self, kappa
     ) -> Tuple[float, ElectronicEnergy]:
         """Docstring."""
         # create a instance of `ElectronicStructureProblem`

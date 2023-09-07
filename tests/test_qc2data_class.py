@@ -48,7 +48,7 @@ def test_get_fermionic_hamiltonian(qc2_data_instance):
     num_electrons = (1, 1)
     num_spatial_orbitals = 2
     qc2_data_instance.run()
-    (core_energy, es_problem,
+    (es_problem, core_energy,
      second_q_op) = qc2_data_instance.get_fermionic_hamiltonian(
         num_electrons=num_electrons, num_spatial_orbitals=num_spatial_orbitals
     )

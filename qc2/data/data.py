@@ -136,7 +136,7 @@ class qc2Data:
             self,
             num_electrons: Union[int, Tuple[int, int]],
             num_spatial_orbitals: int
-    ) -> Tuple[float, ElectronicStructureProblem, ElectronicEnergy]:
+    ) -> Tuple[ElectronicStructureProblem, float, ElectronicEnergy]:
         """Docstring"""
         # read data and store it in a `QCSchema` instance
         qcschema = self.read_qcschema()
@@ -145,7 +145,7 @@ class qc2Data:
         # see qiskit_nature/second_q/formats/qcschema_translator.py
         es_problem = qcschema_to_problem(qcschema, include_dipole=False)
 
-        # convert `ElectronicStructureProblem`` into an instance of
+        # convert `ElectronicStructureProblem` into an instance of
         # `ElectronicEnergy` hamiltonian in second quantization;
         # see qiskit_nature/second_q/problems/electronic_structure_problem.py
         hamiltonian = es_problem.hamiltonian
@@ -160,22 +160,26 @@ class qc2Data:
                                          es_problem.num_spatial_orbitals)
 
         # after preparation, transform hamiltonian
-        reduced_hamiltonian = transformer.transform_hamiltonian(hamiltonian)
+        active_space_hamiltonian = transformer.transform_hamiltonian(
+            hamiltonian)
+
+        # just in case also generate a tranformed `ElectronicStructureProblem`
+        # active_space_es_problem = transformer.transform(es_problem)
 
         # set up core energy after transformation
-        nuclear_repulsion_energy = reduced_hamiltonian.constants[
+        nuclear_repulsion_energy = active_space_hamiltonian.constants[
             'nuclear_repulsion_energy']
-        inactive_space_energy = reduced_hamiltonian.constants[
+        inactive_space_energy = active_space_hamiltonian.constants[
             'ActiveSpaceTransformer']
         core_energy = nuclear_repulsion_energy + inactive_space_energy
 
-        return core_energy, es_problem, hamiltonian
+        return es_problem, core_energy, active_space_hamiltonian
 
     def get_fermionic_hamiltonian(
             self,
             num_electrons: Union[int, Tuple[int, int]],
             num_spatial_orbitals: int
-    ) -> Tuple[float, ElectronicStructureProblem, FermionicOp]:
+    ) -> Tuple[ElectronicStructureProblem, float, FermionicOp]:
         """Builds the fermionic Hamiltonian of a target molecule.
 
         This method constructs the electronic Hamiltonian in 2nd-quantization
@@ -220,7 +224,7 @@ class qc2Data:
         >>> qc2data.run()
         >>> n_electrons = (1, 1)
         >>> n_spatial_orbitals = 2
-        >>> (e_core, es_prob, op) = qc2data.get_fermionic_hamiltonian(
+        >>> (es_prob, e_core, op) = qc2data.get_fermionic_hamiltonian(
         ...     n_electrons, n_spatial_orbitals
         ... )
         """
@@ -235,7 +239,7 @@ class qc2Data:
                 "Please, set the attribute 'num_spatial_orbitals'.")
 
         # calculate active space `ElectronicEnergy` hamiltonian
-        (core_energy, es_problem,
+        (es_problem, core_energy,
          reduced_hamiltonian) = self.get_active_space_hamiltonian(
              num_electrons, num_spatial_orbitals
          )
@@ -246,16 +250,16 @@ class qc2Data:
         # and qiskit_nature/second_q/operators/fermionic_op.py
         second_q_op = reduced_hamiltonian.second_q_op()
 
-        return core_energy, es_problem, second_q_op
+        return es_problem, core_energy, second_q_op
 
-    def get_qubit_hamiltonian(self,
-                              num_electrons: Union[int, Tuple[int, int]],
-                              num_spatial_orbitals: int,
-                              mapper: QubitMapper = JordanWignerMapper(),
-                              *,
-                              format: str = "qiskit"
-                              ) -> Tuple[float,
-                                         Union[SparsePauliOp, Operator]]:
+    def get_qubit_hamiltonian(
+            self,
+            num_electrons: Union[int, Tuple[int, int]],
+            num_spatial_orbitals: int,
+            mapper: QubitMapper = JordanWignerMapper(),
+            *,
+            format: str = "qiskit"
+    ) -> Tuple[float, Union[SparsePauliOp, Operator]]:
         """Generates the qubit Hamiltonian of a target molecule.
 
         This method generates the qubit Hamiltonian representation of a target
@@ -280,7 +284,7 @@ class qc2Data:
 
         Returns:
             Tuple[float, Union[SparsePauliOp, Operator]]:
-            A tuple containing the following elements:
+                A tuple containing the following elements:
                 - core_energy (float): The core energy after after active
                     space transformation.
                 - qubit_op (Union[SparsePauliOp, Operator]):
@@ -315,9 +319,8 @@ class qc2Data:
             raise TypeError(f"Format {format} not yet suported.")
 
         # get fermionic hamiltonian
-        core_energy, _, second_q_op = self.get_fermionic_hamiltonian(
-            num_electrons, num_spatial_orbitals
-        )
+        _, core_energy, second_q_op = self.get_fermionic_hamiltonian(
+            num_electrons, num_spatial_orbitals)
 
         # perform fermionic-to-qubit transformation using the given mapper
         # and obtain `SparsePauliOp` qiskit qubit hamiltonian
@@ -325,8 +328,9 @@ class qc2Data:
 
         if format == "pennylane":
             # generate pennylane qubit hamiltonian `Operator` instance
-            # from qiskit `SparsePauliOp`
+            # from qiskit `SparsePauliOp`;
             # see qc2/pennylane/convert.py
             qubit_op = import_operator(qubit_op, format="qiskit")
 
         return core_energy, qubit_op
+
