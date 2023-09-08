@@ -137,7 +137,7 @@ class qc2Data:
             num_electrons: Union[int, Tuple[int, int]],
             num_spatial_orbitals: int
     ) -> Tuple[ElectronicStructureProblem, float, ElectronicEnergy]:
-        """Docstring"""
+        """Builds the active-space reduced Hamiltonian."""
         # read data and store it in a `QCSchema` instance
         qcschema = self.read_qcschema()
 
