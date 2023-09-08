@@ -6,7 +6,9 @@ from ase import Atoms
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.problems import ElectronicStructureProblem
+from qiskit_nature.second_q.hamiltonians import ElectronicEnergy
 from pennylane.operation import Operator
+from qiskit_nature.second_q.formats.qcschema import QCSchema
 
 from qc2.data.data import qc2Data
 from qc2.ase.pyscf import PySCF
@@ -43,12 +45,35 @@ def test_run(qc2_data_instance, capsys):
     assert f"Saving qchem data in {qc2_data_instance._filename}" in captured.out
 
 
-def test_get_fermionic_hamiltonian(qc2_data_instance):
-    """Test case # 3 - Building fermionic Hamiltonian."""
+def test_read_qcschema(qc2_data_instance):
+    """Test case # 3 - Populating QCSchema dataclass."""
+    qc2_data_instance.run()
+    qcschema = qc2_data_instance.read_qcschema()
+    assert qcschema is not None
+    assert isinstance(qcschema, QCSchema)
+
+
+def test_get_active_space_hamiltonian(qc2_data_instance):
+    """Test case # 4 - Building Active-space reduced Hamiltonian."""
     num_electrons = (1, 1)
     num_spatial_orbitals = 2
     qc2_data_instance.run()
-    (core_energy, es_problem,
+    (es_problem, core_energy, active_space_hamiltonian
+     ) = qc2_data_instance.get_active_space_hamiltonian(
+        num_electrons, num_spatial_orbitals
+    )
+    assert isinstance(core_energy, float)
+    assert isinstance(es_problem, ElectronicStructureProblem)
+    assert isinstance(active_space_hamiltonian, ElectronicEnergy)
+    assert core_energy == pytest.approx(0.7151043390810812, 1e-6)
+
+
+def test_get_fermionic_hamiltonian(qc2_data_instance):
+    """Test case # 5 - Building fermionic Hamiltonian."""
+    num_electrons = (1, 1)
+    num_spatial_orbitals = 2
+    qc2_data_instance.run()
+    (es_problem, core_energy,
      second_q_op) = qc2_data_instance.get_fermionic_hamiltonian(
         num_electrons=num_electrons, num_spatial_orbitals=num_spatial_orbitals
     )
@@ -58,7 +83,7 @@ def test_get_fermionic_hamiltonian(qc2_data_instance):
 
 
 def test_get_qubit_hamiltonian_qiskit(qc2_data_instance):
-    """Test case # 4 - Building qubit Hamiltonian using qiskit format."""
+    """Test case # 6 - Building qubit Hamiltonian using qiskit format."""
     num_electrons = (1, 1)
     num_spatial_orbitals = 2
     qc2_data_instance.run()
@@ -71,7 +96,7 @@ def test_get_qubit_hamiltonian_qiskit(qc2_data_instance):
 
 
 def test_get_qubit_hamiltonian_pennylane(qc2_data_instance):
-    """Test case # 5 - Building qubit Hamiltonian using pennylane format."""
+    """Test case # 7 - Building qubit Hamiltonian using pennylane format."""
     num_electrons = (1, 1)
     num_spatial_orbitals = 2
     qc2_data_instance.run()
