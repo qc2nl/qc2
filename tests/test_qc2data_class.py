@@ -58,8 +58,8 @@ def test_get_active_space_hamiltonian(qc2_data_instance):
     num_electrons = (1, 1)
     num_spatial_orbitals = 2
     qc2_data_instance.run()
-    (es_problem, core_energy,
-     active_space_hamiltonian) = qc2_data_instance.get_active_space_hamiltonian(
+    (es_problem, core_energy, active_space_hamiltonian
+     ) = qc2_data_instance.get_active_space_hamiltonian(
         num_electrons, num_spatial_orbitals
     )
     assert isinstance(core_energy, float)
