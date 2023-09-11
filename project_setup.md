@@ -40,7 +40,7 @@ help you decide which tool to use for packaging.
 
 - Tests should be put in the `tests` folder.
 - The `tests` folder contains:
-  - Example tests that you should replace with your own meaningful tests (file: `test_my_module.py`)
+  - Example tests that you should replace with your own meaningful tests
 - The testing framework used is [PyTest](https://pytest.org)
   - [PyTest introduction](https://pythontest.com/pytest-book/)
   - PyTest is listed as a development dependency
