@@ -10,8 +10,9 @@ from ase import Atoms
 from ase.calculators.calculator import FileIOCalculator
 from ase.io import write
 import numpy as np 
+from .qc2_ase_base_class import BaseQc2ASECalculator
 
-class AMS(AMSCalculator):
+class AMS(AMSCalculator, BaseQc2ASECalculator):
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)

@@ -95,6 +95,10 @@ class BaseQc2ASECalculator(ABC):
     def save(self, hdf5_filename: str) -> None:
         """Dumps qchem data to a HDF5 file following QCSchema."""
 
+    @abstractmethod
+    def calculate(self, *args, **kwargs) -> None:
+        """Perform he scf calculation"""
+
     def load(self, hdf5_filename: str) -> None:
         """Loads qchem data from a QCSchema-formatted HDF5 file.
 
