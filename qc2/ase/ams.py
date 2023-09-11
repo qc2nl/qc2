@@ -38,3 +38,5 @@ class AMS(AMSCalculator):
         order = [o-1 for o in order]
 
         return energy[order], mo_coeffs[:, order]
+    
+    
