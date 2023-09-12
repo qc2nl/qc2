@@ -1,0 +1,14 @@
+Task SinglePoint
+
+system
+  Atoms
+              H       0.0000000000       0.0000000000       0.3685830000 
+              H       0.0000000000       0.0000000000      -0.3685830000 
+  End
+  Charge 0.0
+End
+
+Engine ADF
+  AOMat2File
+EndEngine
+

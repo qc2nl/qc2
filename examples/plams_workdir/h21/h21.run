@@ -1,0 +1,6 @@
+#!/bin/sh
+
+unset AMS_SWITCH_LOGFILE_AND_STDOUT
+unset SCM_LOGFILE
+AMS_JOBNAME="h21" AMS_RESULTSDIR=. $AMSBIN/ams --input="h21.in" < /dev/null
+
