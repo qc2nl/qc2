@@ -157,5 +157,5 @@ class BaseQc2ASECalculator(ABC):
                 '/wavefunction/localized_orbitals_b'][...]
 
     @abstractmethod
-    def get_integrals(self) -> Tuple[Any, ...]:
+    def get_integrals_mo_basis(self) -> Tuple[Any, ...]:
         """Calculates core energy, one- and two-body integrals in MO basis."""

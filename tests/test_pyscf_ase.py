@@ -196,7 +196,7 @@ def test_PySCF_get_integrals_function(pyscf_calculator):
     # Calculate integrals
     (e_core, one_body_int_a, one_body_int_b,
      two_body_int_aa, two_body_int_bb,
-     two_body_int_ab, two_body_int_ba) = pyscf_calculator.calc.get_integrals()
+     two_body_int_ab, two_body_int_ba) = pyscf_calculator.calc.get_integrals_mo_basis()
 
     # Check the type and content of the integrals
     assert isinstance(e_core, float)

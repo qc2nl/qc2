@@ -361,8 +361,14 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         >>> molecule.calc.get_potential_energy()
         >>> molecule.calc.save('h2.h5')
         """
-        # calculate 1- and 2-electron integrals in MO basis
-        integrals = self.get_integrals()
+        # get 1- and 2-electron integrals in AO basis
+        one_e_int_ao, two_e_int_ao = self.get_integrals_ao_basis()
+
+        # get mo coefficients in AO basis
+        alpha_coeff, beta_coeff = self.get_mo_coeffs()
+
+        # get 1- and 2-electron integrals in MO basis
+        integrals = self.get_integrals_mo_basis()
         e_core = integrals[0]
         one_body_coefficients_a = integrals[1]
         one_body_coefficients_b = integrals[2]
@@ -426,6 +432,10 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         EQ_TOLERANCE = 1e-8
 
         # truncate numbers lower than EQ_TOLERANCE
+        one_e_int_ao[
+            np.absolute(one_e_int_ao) < EQ_TOLERANCE] = 0.
+        two_e_int_ao[
+            np.absolute(two_e_int_ao) < EQ_TOLERANCE] = 0.
         one_body_coefficients_a[
             np.absolute(one_body_coefficients_a) < EQ_TOLERANCE] = 0.
         one_body_coefficients_b[
@@ -438,6 +448,12 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             np.absolute(two_body_coefficients_ba) < EQ_TOLERANCE] = 0.
         two_body_coefficients_ab[
             np.absolute(two_body_coefficients_ab) < EQ_TOLERANCE] = 0.
+
+    #    # 1-electron integrals in ao basis using QCSchema format
+    #    wavefunction.create_dataset("scf_fock_a",
+    #                                data=one_body_coefficients_a.flatten())
+    #    wavefunction.create_dataset("scf_fock_b",
+    #                                data=one_body_coefficients_b.flatten())
 
         # 1-body coeffs in QCSchema format
         wavefunction.create_dataset("scf_fock_mo_a",
@@ -456,9 +472,6 @@ class PySCF(Calculator, BaseQc2ASECalculator):
                                     data=two_body_coefficients_ab.flatten())
 
         # mo coefficients in AO basis
-        alpha_coeff, beta_coeff = self._expand_mo_object(
-            self.mf.mo_coeff, array_dimension=3
-        )
         if beta_coeff is None:
             beta_coeff = alpha_coeff
         wavefunction.create_dataset("scf_orbitals_a",
@@ -473,6 +486,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             beta_mo = alpha_mo
         wavefunction.create_dataset("scf_eigenvalues_a", data=alpha_mo.flatten())
         wavefunction.create_dataset("scf_eigenvalues_b", data=beta_mo.flatten())
+        
         # ROSE localized orbitals?
         wavefunction.create_dataset("localized_orbitals_a", data='')
         wavefunction.create_dataset("localized_orbitals_b", data='')
@@ -492,11 +506,12 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         """
         BaseQc2ASECalculator.load(self, hdf5_filename)
 
-    def get_integrals(self) -> Tuple[float, np.ndarray,
-                                     np.ndarray, np.ndarray,
-                                     np.ndarray, np.ndarray, np.ndarray]:
+    def get_integrals_mo_basis(self) -> Tuple[
+        float, np.ndarray, np.ndarray, np.ndarray,
+        np.ndarray, np.ndarray, np.ndarray
+    ]:
         """Retrieves 1- & 2-body integrals in MO basis from PySCF routines.
-        
+
         Returns:
             A tuple containing the following:
                 - e_core (float): The nuclear repulsion energy.
@@ -511,61 +526,73 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         e_core = self.mf.energy_nuc()
 
         # define alpha and beta MO coeffients
-        alpha_coeff, beta_coeff = self._expand_mo_object(
-            self.mf.mo_coeff, array_dimension=3
-        )
-        # fock matrix in AO basis
-        hcore = self.mf.get_hcore()
+        alpha_coeff, beta_coeff = self.get_mo_coeffs()
+
+        # get 1- and 2-electron integral in AO basis
+        one_e_int_ao, two_e_int_ao = self.get_integrals_ao_basis()
+
         # calculate alpha and beta one-electron integrals in MO basis
-        one_body_int_a = np.dot(np.dot(alpha_coeff.T, hcore), alpha_coeff)
+        einsum_ao_to_mo = "jk,ji,kl->il"
+        one_body_int_a = np.einsum(
+            einsum_ao_to_mo, one_e_int_ao, alpha_coeff, alpha_coeff
+        )
         if beta_coeff is None:
             one_body_int_b = one_body_int_a
         else:
-            one_body_int_b = np.dot(np.dot(beta_coeff.T, hcore), beta_coeff)
+            one_body_int_b = np.einsum(
+                einsum_ao_to_mo, one_e_int_ao, beta_coeff, beta_coeff
+            )
 
-        # define two-electron integrals in AO basis
-        eri_nosym_ao = self.mol.intor("int2e", aosym=1)
+        # get 2-electron integrals in AO basis
+        two_e_int_ao = self.mol.intor("int2e", aosym=1)
 
         # calculate alpha-alpha, beta-beta, beta-alpha, alpha-beta
         # two-electron integrals in MO basis
         einsum_ao_to_mo = "pqrs,pi,qj,rk,sl->ijkl"
-        two_body_int_aa = np.einsum(einsum_ao_to_mo,
-                                    eri_nosym_ao,
-                                    alpha_coeff,
-                                    alpha_coeff,
-                                    alpha_coeff,
-                                    alpha_coeff)
+        two_body_int_aa = np.einsum(
+            einsum_ao_to_mo, two_e_int_ao,
+            alpha_coeff, alpha_coeff, alpha_coeff, alpha_coeff
+        )
         if beta_coeff is None:
             two_body_int_bb = two_body_int_aa
             two_body_int_ba = two_body_int_aa
             two_body_int_ab = two_body_int_aa
         else:
-            two_body_int_bb = np.einsum(einsum_ao_to_mo,
-                                        eri_nosym_ao,
-                                        beta_coeff,
-                                        beta_coeff,
-                                        beta_coeff,
-                                        beta_coeff)
-            two_body_int_ba = np.einsum(einsum_ao_to_mo,
-                                        eri_nosym_ao,
-                                        beta_coeff,
-                                        beta_coeff,
-                                        alpha_coeff,
-                                        alpha_coeff)
-            two_body_int_ab = np.einsum(einsum_ao_to_mo,
-                                        eri_nosym_ao,
-                                        alpha_coeff,
-                                        alpha_coeff,
-                                        beta_coeff,
-                                        beta_coeff)
+            two_body_int_bb = np.einsum(
+                einsum_ao_to_mo, two_e_int_ao,
+                beta_coeff, beta_coeff, beta_coeff, beta_coeff
+            )
+            two_body_int_ba = np.einsum(
+                einsum_ao_to_mo, two_e_int_ao,
+                beta_coeff, beta_coeff, alpha_coeff, alpha_coeff
+            )
+            two_body_int_ab = np.einsum(
+                einsum_ao_to_mo, two_e_int_ao,
+                alpha_coeff, alpha_coeff, beta_coeff, beta_coeff
+            )
 
-        return (e_core, one_body_int_a, one_body_int_b, two_body_int_aa,
-                two_body_int_bb, two_body_int_ab, two_body_int_ba)
+        return (
+            e_core, one_body_int_a, one_body_int_b, two_body_int_aa,
+            two_body_int_bb, two_body_int_ab, two_body_int_ba
+        )
+
+    def get_integrals_ao_basis(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Retrieves 1- & 2-e integrals in AO basis from PySCF routines."""
+        one_e_int = self.mol.intor('int1e_kin') + self.mol.intor('int1e_nuc')
+        two_e_int = self.mol.intor("int2e", aosym=1)
+        return one_e_int, two_e_int
+
+    def get_mo_coeffs(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Retrieves alpha and beta MO from PySCF routines."""
+        return self._expand_mo_object(
+            self.mf.mo_coeff, array_dimension=3
+        )
 
     def _expand_mo_object(
         self,
-        mo_object: Union[Tuple[Optional[np.ndarray], Optional[np.ndarray]],
-                         np.ndarray],
+        mo_object: Union[Tuple[Optional[np.ndarray],
+                               Optional[np.ndarray]],
+                               np.ndarray],
         array_dimension: int = 2,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Expands the mo object into alpha- and beta-spin components.
