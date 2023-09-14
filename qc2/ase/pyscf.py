@@ -26,6 +26,8 @@ from pyscf import gto, scf, dft, lib
 from pyscf.scf.chkfile import dump_scf
 from pyscf import __version__ as pyscf_version
 
+from qiskit_nature import __version__ as qiskit_nature_version
+
 from .qc2_ase_base_class import BaseQc2ASECalculator
 
 
@@ -340,7 +342,58 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             totalforces = np.array(totalforces)
             self.results['forces'] = totalforces
 
-    def save(self, hdf5_filename: str) -> None:
+    def save(self, datafile: h5py.File) -> None:
+        """Dumps qchem data to a HDF5.
+
+        Args:
+            datafile (h5py.File): HDF5 file to save the data to.
+
+        Notes:
+            HDF5 files are written following the QCSchema.
+
+        Returns:
+            None
+
+        Example:
+        >>> from ase.build import molecule
+        >>> from qc2.ase.pyscf import PySCF
+        >>>
+        >>> molecule = molecule('H2')
+        >>> molecule.calc = PySCF()  # => RHF/STO-3G
+        >>> molecule.calc.get_potential_energy()
+        >>> molecule.calc.save('h2.hdf5')
+        """
+        # create instances of QCSchema's component dataclasses
+        topology = super().instantiate_qctopology(
+            symbols=[
+                self.mol.atom_pure_symbol(i) for i in range(self.mol.natm)
+            ],
+            geometry=self.mol.atom_coords(unit="Bohr").ravel().tolist(),
+            molecular_charge=self.mol.charge,
+            molecular_multiplicity=(self.mol.spin + 1),
+            atomic_numbers=[atom[0] for atom in self.mol._atm],
+            schema_name="qcschema_molecule",
+            schema_version=qiskit_nature_version
+        )
+
+        model = super().instantiate_qcmodel(
+            basis=self.mol.basis,
+            method=self.mf._method_name()
+        )
+
+        properties = super().instantiate_qcproperties(
+            calcinfo_nbasis=self.mol.nbas,
+            calcinfo_nmo=self.mol.nao,
+            calcinfo_nalpha=self.mol.nelec[0],
+            calcinfo_nbeta=self.mol.nelec[1],
+            calcinfo_natom=self.mol.natm,
+            nuclear_repulsion_energy=e_core,
+            return_energy=self.mf.e_tot
+        )
+
+        print(model)
+
+    def old_save(self, hdf5_filename: str) -> None:
         """Dumps qchem data to a HDF5.
 
         Args:
@@ -365,7 +418,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         one_e_int_ao, two_e_int_ao = self.get_integrals_ao_basis()
 
         # get mo coefficients in AO basis
-        alpha_coeff, beta_coeff = self.get_mo_coeffs()
+        alpha_coeff, beta_coeff = self.get_molecular_orbitals_coefficients()
 
         # get 1- and 2-electron integrals in MO basis
         integrals = self.get_integrals_mo_basis()
@@ -388,7 +441,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         file.attrs['return_result'] = self.mf.e_tot
         file.attrs['success'] = True
 
-        # 2 => molecule group 
+        # 2 => molecule group
         molecule = file.require_group("molecule")
         molecule.attrs['symbols'] = [self.mol.atom_pure_symbol(i)
                                      for i in range(self.mol.natm)]
@@ -526,7 +579,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         e_core = self.mf.energy_nuc()
 
         # define alpha and beta MO coeffients
-        alpha_coeff, beta_coeff = self.get_mo_coeffs()
+        alpha_coeff, beta_coeff = self.get_molecular_orbitals_coefficients()
 
         # get 1- and 2-electron integral in AO basis
         one_e_int_ao, two_e_int_ao = self.get_integrals_ao_basis()
@@ -582,7 +635,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         two_e_int = self.mol.intor("int2e", aosym=1)
         return one_e_int, two_e_int
 
-    def get_mo_coeffs(self) -> Tuple[np.ndarray, np.ndarray]:
+    def get_molecular_orbitals_coefficients(self) -> Tuple[np.ndarray, np.ndarray]:
         """Retrieves alpha and beta MO from PySCF routines."""
         return self._expand_mo_object(
             self.mf.mo_coeff, array_dimension=3
