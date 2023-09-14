@@ -75,7 +75,7 @@ class BaseQc2ASECalculator(ABC):
     def get_molecular_orbitals_energies(self) -> Tuple[Any, ...]:
         """Reads alpha and beta orbital energies."""
         return NotImplementedError
-    
+
     def get_overlap_matrix(self) -> Tuple[Any, ...]:
         """Reads overlap matrix."""
         return NotImplementedError
