@@ -26,6 +26,7 @@ from pyscf import gto, scf, dft, lib
 from pyscf.scf.chkfile import dump_scf
 from pyscf import __version__ as pyscf_version
 
+from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature import __version__ as qiskit_nature_version
 
 from .qc2_ase_base_class import BaseQc2ASECalculator
@@ -376,6 +377,12 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             schema_version=qiskit_nature_version
         )
 
+        provenance = super().instantiate_qcprovenance(
+            creator=self.name,
+            version=pyscf_version,
+            routine=f"ASE-{self.__class__.__name__}.save()"
+        )
+
         model = super().instantiate_qcmodel(
             basis=self.mol.basis,
             method=self.mf._method_name()
@@ -387,99 +394,31 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             calcinfo_nalpha=self.mol.nelec[0],
             calcinfo_nbeta=self.mol.nelec[1],
             calcinfo_natom=self.mol.natm,
-            nuclear_repulsion_energy=e_core,
+            nuclear_repulsion_energy=self.mf.energy_nuc(),
             return_energy=self.mf.e_tot
         )
 
-        print(model)
-
-    def old_save(self, hdf5_filename: str) -> None:
-        """Dumps qchem data to a HDF5.
-
-        Args:
-            hdf5_filename (str): HDF5 file to save the data to.
-
-        Notes:
-            HDF5 files are written following the QCSchema.
-
-        Returns:
-            None
-
-        Example:
-        >>> from ase.build import molecule
-        >>> from qc2.ase.pyscf import PySCF
-        >>>
-        >>> molecule = molecule('H2')
-        >>> molecule.calc = PySCF()  # => RHF/STO-3G
-        >>> molecule.calc.get_potential_energy()
-        >>> molecule.calc.save('h2.h5')
-        """
         # get 1- and 2-electron integrals in AO basis
         one_e_int_ao, two_e_int_ao = self.get_integrals_ao_basis()
 
         # get mo coefficients in AO basis
         alpha_coeff, beta_coeff = self.get_molecular_orbitals_coefficients()
+        if beta_coeff is None:
+            beta_coeff = alpha_coeff
+
+        # get scf mo energies
+        alpha_mo, beta_mo = self.get_molecular_orbitals_energies()
+        if beta_mo is None:
+            beta_mo = alpha_mo
 
         # get 1- and 2-electron integrals in MO basis
         integrals = self.get_integrals_mo_basis()
-        e_core = integrals[0]
         one_body_coefficients_a = integrals[1]
         one_body_coefficients_b = integrals[2]
         two_body_coefficients_aa = integrals[3]
         two_body_coefficients_bb = integrals[4]
         two_body_coefficients_ab = integrals[5]
         two_body_coefficients_ba = integrals[6]
-
-        # open the HDF5 file in write mode
-        file = h5py.File(hdf5_filename, "w")
-
-        # set up general definitions for the QCSchema
-        # 1 => general initial attributes
-        file.attrs['driver'] = "energy"
-        file.attrs['schema_name'] = 'qcschema_molecule'
-        file.attrs['schema_version'] = pyscf_version
-        file.attrs['return_result'] = self.mf.e_tot
-        file.attrs['success'] = True
-
-        # 2 => molecule group
-        molecule = file.require_group("molecule")
-        molecule.attrs['symbols'] = [self.mol.atom_pure_symbol(i)
-                                     for i in range(self.mol.natm)]
-        molecule.attrs['geometry'] = self.mol.atom_coords(
-            unit="Bohr").ravel().tolist()
-        molecule.attrs['molecular_charge'] = self.mol.charge
-        molecule.attrs['molecular_multiplicity'] = self.mol.spin + 1
-        molecule.attrs['atomic_numbers'] = [atom[0] for atom in self.mol._atm]
-        molecule.attrs['schema_name'] = "qcschema_molecule"
-        molecule.attrs['schema_version'] = pyscf_version
-
-        # 3 => properties group
-        properties = file.require_group("properties")
-        properties.attrs['calcinfo_nbasis'] = self.mol.nbas
-        properties.attrs['calcinfo_nmo'] = self.mol.nao
-        properties.attrs['calcinfo_nalpha'] = self.mol.nelec[0]
-        properties.attrs['calcinfo_nbeta'] = self.mol.nelec[1]
-        properties.attrs['calcinfo_natom'] = self.mol.natm
-        properties.attrs['nuclear_repulsion_energy'] = e_core
-        properties.attrs['return_energy'] = self.mf.e_tot
-
-        # 4 => model group
-        model = file.require_group("model")
-        model.attrs['basis'] = self.mol.basis
-        model.attrs['method'] = self.mf._method_name()
-
-        # 5 => provenance group
-        provenance = file.require_group("provenance")
-        provenance.attrs['creator'] = self.name
-        provenance.attrs['version'] = pyscf_version
-        provenance.attrs['routine'] = f"ASE-{self.__class__.__name__}.save()"
-
-        # 6 => keywords group
-        file.require_group("keywords")
-
-        # 7 => wavefunction group
-        wavefunction = file.require_group("wavefunction")
-        wavefunction.attrs['basis'] = self.mol.basis
 
         # tolerance to consider number zero.
         EQ_TOLERANCE = 1e-8
@@ -502,51 +441,40 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         two_body_coefficients_ab[
             np.absolute(two_body_coefficients_ab) < EQ_TOLERANCE] = 0.
 
-    #    # 1-electron integrals in ao basis using QCSchema format
-    #    wavefunction.create_dataset("scf_fock_a",
-    #                                data=one_body_coefficients_a.flatten())
-    #    wavefunction.create_dataset("scf_fock_b",
-    #                                data=one_body_coefficients_b.flatten())
-
-        # 1-body coeffs in QCSchema format
-        wavefunction.create_dataset("scf_fock_mo_a",
-                                    data=one_body_coefficients_a.flatten())
-        wavefunction.create_dataset("scf_fock_mo_b",
-                                    data=one_body_coefficients_b.flatten())
-
-        # 2-body coeffs in QCSchema format
-        wavefunction.create_dataset("scf_eri_mo_aa",
-                                    data=two_body_coefficients_aa.flatten())
-        wavefunction.create_dataset("scf_eri_mo_bb",
-                                    data=two_body_coefficients_bb.flatten())
-        wavefunction.create_dataset("scf_eri_mo_ba",
-                                    data=two_body_coefficients_ba.flatten())
-        wavefunction.create_dataset("scf_eri_mo_ab",
-                                    data=two_body_coefficients_ab.flatten())
-
-        # mo coefficients in AO basis
-        if beta_coeff is None:
-            beta_coeff = alpha_coeff
-        wavefunction.create_dataset("scf_orbitals_a",
-                                    data=alpha_coeff.flatten())
-        wavefunction.create_dataset("scf_orbitals_b",
-                                    data=beta_coeff.flatten())
-        # scf mo energies
-        alpha_mo, beta_mo = self._expand_mo_object(
-            self.mf.mo_energy, array_dimension=2
+        wavefunction = super().instantiate_qcwavefunction(
+            basis=self.mol.basis,
+            scf_fock_mo_a=one_body_coefficients_a.flatten(),
+            scf_fock_mo_b=one_body_coefficients_b.flatten(),
+            scf_eri_mo_aa=two_body_coefficients_aa.flatten(),
+            scf_eri_mo_bb=two_body_coefficients_bb.flatten(),
+            scf_eri_mo_ba=two_body_coefficients_ba.flatten(),
+            scf_eri_mo_ab=two_body_coefficients_ab.flatten(),
+            scf_orbitals_a=alpha_coeff.flatten(),
+            scf_orbitals_b=beta_coeff.flatten(),
+            scf_eigenvalues_a=alpha_mo.flatten(),
+            scf_eigenvalues_b=beta_mo.flatten(),
+            localized_orbitals_a='',
+            localized_orbitals_b=''
         )
-        if beta_mo is None:
-            beta_mo = alpha_mo
-        wavefunction.create_dataset("scf_eigenvalues_a", data=alpha_mo.flatten())
-        wavefunction.create_dataset("scf_eigenvalues_b", data=beta_mo.flatten())
-        
-        # ROSE localized orbitals?
-        wavefunction.create_dataset("localized_orbitals_a", data='')
-        wavefunction.create_dataset("localized_orbitals_b", data='')
 
-        file.close()
+        qcschema = super().instantiate_qcschema(
+            schema_name='qcschema_molecule',
+            schema_version=qiskit_nature_version,
+            driver='energy',
+            keywords={},
+            return_result=self.mf.e_tot,
+            molecule=topology,
+            wavefunction=wavefunction,
+            properties=properties,
+            model=model,
+            provenance=provenance,
+            success=True
+        )
 
-    def load(self, hdf5_filename: str) -> None:
+        with h5py.File(datafile, 'w') as h5file:
+            qcschema.to_hdf5(h5file)
+
+    def load(self, datafile: h5py.File) -> QCSchema:
         """Loads electronic structure data from a HDF5 file.
 
         Example:
@@ -555,9 +483,9 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = PySCF()     # => RHF/STO-3G
-        >>> molecule.calc.load('h2.h5') # => instead of 'molecule.calc.get_potential_energy()'
+        >>> qcschema = molecule.calc.load('h2.h5')
         """
-        BaseQc2ASECalculator.load(self, hdf5_filename)
+        return BaseQc2ASECalculator.load(self, datafile)
 
     def get_integrals_mo_basis(self) -> Tuple[
         float, np.ndarray, np.ndarray, np.ndarray,
@@ -635,10 +563,18 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         two_e_int = self.mol.intor("int2e", aosym=1)
         return one_e_int, two_e_int
 
-    def get_molecular_orbitals_coefficients(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Retrieves alpha and beta MO from PySCF routines."""
+    def get_molecular_orbitals_coefficients(self) -> Tuple[np.ndarray,
+                                                           np.ndarray]:
+        """Retrieves alpha and beta MO coeffs from PySCF routines."""
         return self._expand_mo_object(
             self.mf.mo_coeff, array_dimension=3
+        )
+
+    def get_molecular_orbitals_energies(self) -> Tuple[np.ndarray,
+                                                       np.ndarray]:
+        """Retrieves alpha and beta MO energies from PySCF routines."""
+        return self._expand_mo_object(
+            self.mf.mo_energy, array_dimension=3
         )
 
     def _expand_mo_object(

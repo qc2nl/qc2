@@ -179,11 +179,11 @@ def test_PySCF_load_function(pyscf_calculator):
 
     # Load results from the HDF5 file
     atoms_new.calc = PySCF()
-    atoms_new.calc.load(hdf5_filename)
+    qcschema = atoms_new.calc.load(hdf5_filename)
 
-    # Check if the energy kept in 'return_energy'
+    # Check if the energy kept in 'return_result'
     # is equal to the expected energy
-    energy_new = atoms_new.calc.return_energy
+    energy_new = qcschema.return_result
     assert np.isclose(energy_new, energy)
 
 

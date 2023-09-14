@@ -39,7 +39,7 @@ class BaseQc2ASECalculator(ABC):
     def save(self, datafile: Union[h5py.File, str]) -> None:
         """Dumps qchem data to a file using QCSchema or FCIDump formats."""
 
-    def load(self, datafile: str) -> Union[QCSchema, FCIDump]:
+    def load(self, datafile: Union[h5py.File, str]) -> Union[QCSchema, FCIDump]:
         """Loads qchem data from a QCSchema- or FCIDump-formatted files."""
         # first check if the file exists
         if not os.path.exists(datafile):
