@@ -344,7 +344,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             self.results['forces'] = totalforces
 
     def save(self, datafile: h5py.File) -> None:
-        """Dumps qchem data to a HDF5.
+        """Dumps qchem data to an HDF5 datafile.
 
         Args:
             datafile (h5py.File): HDF5 file to save the data to.
@@ -364,6 +364,9 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         >>> molecule.calc.get_potential_energy()
         >>> molecule.calc.save('h2.hdf5')
         """
+        if self._format == "fcidump":
+            raise ValueError("FCIDump format not implemented in PySCF.save() method.")
+
         # create instances of QCSchema's component dataclasses
         topology = super().instantiate_qctopology(
             symbols=[
@@ -412,37 +415,19 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             beta_mo = alpha_mo
 
         # get 1- and 2-electron integrals in MO basis
-        integrals = self.get_integrals_mo_basis()
-        one_body_coefficients_a = integrals[1]
-        one_body_coefficients_b = integrals[2]
-        two_body_coefficients_aa = integrals[3]
-        two_body_coefficients_bb = integrals[4]
-        two_body_coefficients_ab = integrals[5]
-        two_body_coefficients_ba = integrals[6]
-
-        # tolerance to consider number zero.
-        EQ_TOLERANCE = 1e-8
-
-        # truncate numbers lower than EQ_TOLERANCE
-        one_e_int_ao[
-            np.absolute(one_e_int_ao) < EQ_TOLERANCE] = 0.
-        two_e_int_ao[
-            np.absolute(two_e_int_ao) < EQ_TOLERANCE] = 0.
-        one_body_coefficients_a[
-            np.absolute(one_body_coefficients_a) < EQ_TOLERANCE] = 0.
-        one_body_coefficients_b[
-            np.absolute(one_body_coefficients_b) < EQ_TOLERANCE] = 0.
-        two_body_coefficients_aa[
-            np.absolute(two_body_coefficients_aa) < EQ_TOLERANCE] = 0.
-        two_body_coefficients_bb[
-            np.absolute(two_body_coefficients_bb) < EQ_TOLERANCE] = 0.
-        two_body_coefficients_ba[
-            np.absolute(two_body_coefficients_ba) < EQ_TOLERANCE] = 0.
-        two_body_coefficients_ab[
-            np.absolute(two_body_coefficients_ab) < EQ_TOLERANCE] = 0.
+        integrals_mo = self.get_integrals_mo_basis()
+        one_body_coefficients_a = integrals_mo[0]
+        one_body_coefficients_b = integrals_mo[1]
+        two_body_coefficients_aa = integrals_mo[2]
+        two_body_coefficients_bb = integrals_mo[3]
+        two_body_coefficients_ab = integrals_mo[4]
+        two_body_coefficients_ba = integrals_mo[5]
 
         wavefunction = super().instantiate_qcwavefunction(
             basis=self.mol.basis,
+            scf_fock_a=one_e_int_ao.flatten(),
+            # scf_fock_b=one_e_int_ao.flatten(),
+            scf_eri=two_e_int_ao.flatten(),
             scf_fock_mo_a=one_body_coefficients_a.flatten(),
             scf_fock_mo_b=one_body_coefficients_b.flatten(),
             scf_eri_mo_aa=two_body_coefficients_aa.flatten(),
@@ -475,7 +460,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             qcschema.to_hdf5(h5file)
 
     def load(self, datafile: h5py.File) -> QCSchema:
-        """Loads electronic structure data from a HDF5 file.
+        """Loads electronic structure data from an HDF5 datafile.
 
         Example:
         >>> from ase.build import molecule
@@ -488,14 +473,13 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         return BaseQc2ASECalculator.load(self, datafile)
 
     def get_integrals_mo_basis(self) -> Tuple[
-        float, np.ndarray, np.ndarray, np.ndarray,
+        np.ndarray, np.ndarray, np.ndarray,
         np.ndarray, np.ndarray, np.ndarray
     ]:
         """Retrieves 1- & 2-body integrals in MO basis from PySCF routines.
 
         Returns:
             A tuple containing the following:
-                - e_core (float): The nuclear repulsion energy.
                 - one_body_int_a & one_body_int_b: Numpy arrays containing
                     alpha and beta components of the one-body integrals.
                 - two_body_int_aa, two_body_int_bb, two_body_int_ab
@@ -503,13 +487,10 @@ class PySCF(Calculator, BaseQc2ASECalculator):
                     alpha-alpha, beta-beta, alpha-beta & beta-alpha
                     components of the two-body integrals.
         """
-        # get nuclear repulsion energy
-        e_core = self.mf.energy_nuc()
-
         # define alpha and beta MO coeffients
         alpha_coeff, beta_coeff = self.get_molecular_orbitals_coefficients()
 
-        # get 1- and 2-electron integral in AO basis
+        # get 1- and 2-electron integrals in AO basis
         one_e_int_ao, two_e_int_ao = self.get_integrals_ao_basis()
 
         # calculate alpha and beta one-electron integrals in MO basis
@@ -523,9 +504,6 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             one_body_int_b = np.einsum(
                 einsum_ao_to_mo, one_e_int_ao, beta_coeff, beta_coeff
             )
-
-        # get 2-electron integrals in AO basis
-        two_e_int_ao = self.mol.intor("int2e", aosym=1)
 
         # calculate alpha-alpha, beta-beta, beta-alpha, alpha-beta
         # two-electron integrals in MO basis
@@ -553,35 +531,39 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             )
 
         return (
-            e_core, one_body_int_a, one_body_int_b, two_body_int_aa,
+            one_body_int_a, one_body_int_b, two_body_int_aa,
             two_body_int_bb, two_body_int_ab, two_body_int_ba
         )
 
-    def get_integrals_ao_basis(self) -> Tuple[np.ndarray, np.ndarray]:
+    def get_integrals_ao_basis(self) -> Tuple[
+        np.ndarray, np.ndarray, np.ndarray, np.ndarray
+    ]:
         """Retrieves 1- & 2-e integrals in AO basis from PySCF routines."""
         one_e_int = self.mol.intor('int1e_kin') + self.mol.intor('int1e_nuc')
         two_e_int = self.mol.intor("int2e", aosym=1)
         return one_e_int, two_e_int
 
-    def get_molecular_orbitals_coefficients(self) -> Tuple[np.ndarray,
-                                                           np.ndarray]:
+    def get_molecular_orbitals_coefficients(self) -> Tuple[
+        np.ndarray, np.ndarray
+    ]:
         """Retrieves alpha and beta MO coeffs from PySCF routines."""
         return self._expand_mo_object(
             self.mf.mo_coeff, array_dimension=3
         )
 
-    def get_molecular_orbitals_energies(self) -> Tuple[np.ndarray,
-                                                       np.ndarray]:
+    def get_molecular_orbitals_energies(self) -> Tuple[
+        np.ndarray, np.ndarray
+    ]:
         """Retrieves alpha and beta MO energies from PySCF routines."""
         return self._expand_mo_object(
-            self.mf.mo_energy, array_dimension=3
+            self.mf.mo_energy, array_dimension=2
         )
 
     def _expand_mo_object(
         self,
-        mo_object: Union[Tuple[Optional[np.ndarray],
-                               Optional[np.ndarray]],
-                               np.ndarray],
+        mo_object: Union[
+            Tuple[Optional[np.ndarray], Optional[np.ndarray]], np.ndarray
+        ],
         array_dimension: int = 2,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Expands the mo object into alpha- and beta-spin components.
@@ -606,7 +588,6 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             return mo_object[0], mo_object[1]
 
         return mo_object, None
-
 
 # all methods below are still under development......
 
