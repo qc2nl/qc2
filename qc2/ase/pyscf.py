@@ -559,6 +559,10 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             self.mf.mo_energy, array_dimension=2
         )
 
+    def get_overlap_matrix(self) -> np.ndarray:
+        """Retrieves overlap matrix from PySCF routines."""
+        return self.mf.get_ovlp()
+
     def _expand_mo_object(
         self,
         mo_object: Union[
