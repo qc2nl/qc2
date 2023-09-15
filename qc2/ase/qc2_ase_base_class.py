@@ -2,7 +2,7 @@
 This module implements the abstract base class for qc2 ase calculators.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Tuple, Any, Union
 import os
 import h5py
@@ -17,6 +17,7 @@ from qiskit_nature.second_q.formats.fcidump import FCIDump
 class BaseQc2ASECalculator(ABC):
     """Abstract base class for the qc2 ASE calculators."""
     def __init__(self) -> None:
+        # format in which to read/write qchem data
         self._implemented_formats = ["qcschema", "fcidump"]
         self._format = None
         self.format = "qcschema"
@@ -37,17 +38,20 @@ class BaseQc2ASECalculator(ABC):
         self._format = schema_format
 
     def save(self, datafile: Union[h5py.File, str]) -> None:
-        """Dumps qchem data to a file using QCSchema or FCIDump formats."""
+        """Dumps qchem data to a datafile using QCSchema or FCIDump formats."""
+        raise NotImplementedError("Subclasses should implement this method.")
 
-    def load(self, datafile: Union[h5py.File, str]) -> Union[QCSchema, FCIDump]:
-        """Loads qchem data from a QCSchema- or FCIDump-formatted files."""
+    def load(self, datafile: Union[h5py.File, str]) -> Union[
+        QCSchema, FCIDump
+    ]:
+        """Loads qchem data from a QCSchema- or FCIDump-formatted datafile."""
         # first check if the file exists
         if not os.path.exists(datafile):
             raise FileNotFoundError(f"{datafile} file not found!")
 
         # check if the file has a valid format
         if (self._format == "qcschema" and not h5py.is_hdf5(datafile)):
-            raise ValueError(f"{datafile} is not an hdf5 file")
+            raise ValueError(f"{datafile} is not an hdf5 file.")
 
         # add here checks for fcidump...
         # if (self._format == "fcidump" and ....):
@@ -60,25 +64,37 @@ class BaseQc2ASECalculator(ABC):
         with h5py.File(datafile, 'r') as file:
             return QCSchema._from_hdf5_group(file)
 
-    def get_integrals_mo_basis(self) -> Tuple[Any, ...]:
-        """Calculates core energy, one- and two-body integrals in MO basis."""
-        return NotImplementedError
+    def get_integrals_mo_basis(self, *args, **kwargs) -> Tuple[Any, ...]:
+        """Calculates one- and two-body integrals in MO basis."""
+        raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_integrals_ao_basis(self) -> Tuple[Any, ...]:
+    def get_integrals_ao_basis(self, *args, **kwargs) -> Tuple[Any, ...]:
         """Calculates one- and two-electron integrals in AO basis."""
-        return NotImplementedError
+        raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_molecular_orbitals_coefficients(self) -> Tuple[Any, ...]:
+    def get_molecular_orbitals_coefficients(
+            self, *args, **kwargs
+    ) -> Tuple[Any, ...]:
         """Reads alpha and beta molecular orbital coefficients."""
-        return NotImplementedError
+        raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_molecular_orbitals_energies(self) -> Tuple[Any, ...]:
+    def get_molecular_orbitals_energies(
+            self, *args, **kwargs
+    ) -> Tuple[Any, ...]:
         """Reads alpha and beta orbital energies."""
-        return NotImplementedError
+        raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_overlap_matrix(self) -> Tuple[Any, ...]:
-        """Reads overlap matrix."""
-        return NotImplementedError
+    def get_overlap_matrix(self, *args, **kwargs) -> Tuple[Any, ...]:
+        r"""Reads overlap matrix.
+
+        Notes:
+            Can also be calculate on-the-fly as:
+            .. math::
+                S = (C^{T})^{-1} \times C^{-1}
+                where, C is the matrix of mo coefficients.
+
+        """
+        raise NotImplementedError("Subclasses should implement this method.")
 
     def instantiate_qcschema(self, *args, **kwargs) -> QCSchema:
         """Creates an instance of QCSchema dataclass"""
