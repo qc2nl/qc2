@@ -64,27 +64,23 @@ class BaseQc2ASECalculator(ABC):
         with h5py.File(datafile, 'r') as file:
             return QCSchema._from_hdf5_group(file)
 
-    def get_integrals_mo_basis(self, *args, **kwargs) -> Tuple[Any, ...]:
+    def get_integrals_mo_basis(self) -> Tuple[Any, ...]:
         """Calculates one- and two-body integrals in MO basis."""
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_integrals_ao_basis(self, *args, **kwargs) -> Tuple[Any, ...]:
+    def get_integrals_ao_basis(self) -> Tuple[Any, ...]:
         """Calculates one- and two-electron integrals in AO basis."""
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_molecular_orbitals_coefficients(
-            self, *args, **kwargs
-    ) -> Tuple[Any, ...]:
+    def get_molecular_orbitals_coefficients(self) -> Tuple[Any, ...]:
         """Reads alpha and beta molecular orbital coefficients."""
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_molecular_orbitals_energies(
-            self, *args, **kwargs
-    ) -> Tuple[Any, ...]:
+    def get_molecular_orbitals_energies(self) -> Tuple[Any, ...]:
         """Reads alpha and beta orbital energies."""
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_overlap_matrix(self, *args, **kwargs) -> Tuple[Any, ...]:
+    def get_overlap_matrix(self) -> Tuple[Any, ...]:
         r"""Reads overlap matrix.
 
         Notes:
