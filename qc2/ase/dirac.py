@@ -169,11 +169,11 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         output = read_dirac_out(out_file)
         self.results = output
 
-    def save(self, datafile: str) -> None:
+    def save(self, datafile: h5py.File) -> None:
         """Dumps electronic structure data to a HDF5 file.
 
         Args:
-            datafile (str): HDF5 file to save the data to.
+            datafile (h5py.File): HDF5 file to save the data to.
 
         Notes:
             HDF5 files are written following the QCSchema.
@@ -190,62 +190,51 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         >>> molecule.calc.get_potential_energy()
         >>> molecule.calc.save('h2.h5')
         """
-        # calculate 1- and 2-electron integrals in MO basis
+        if self._format == "fcidump":
+            raise ValueError("FCIDump format not yet implemented "
+                             "in DIRAC.save() method.")
+
+        # get 1- and 2-electron integrals in MO basis
         integrals = self.get_integrals_mo_basis()
-        e_core = integrals[0]
-        one_body_integrals = integrals[2]
-        two_body_integrals = integrals[3]
 
-        # open the HDF5 file in write mode
-        file = h5py.File(datafile, "w")
+        # create instances of QCSchema's component dataclasses
+        topology = super().instantiate_qctopology(
+            symbols=self._get_from_dirac_hdf5_file(
+                '/input/molecule/symbols'
+            ),
+            geometry=self._get_from_dirac_hdf5_file(
+                '/input/molecule/geometry'
+            ) / Bohr,
+            molecular_charge=int(
+                self.parameters['molecule']['*charge']['.charge']
+            ),
+            molecular_multiplicity='',
+            atomic_numbers=self._get_from_dirac_hdf5_file(
+                '/input/molecule/nuc_charge'
+            ),
+            schema_name="qcschema_molecule",
+            schema_version=qiskit_nature_version
+        )
 
-        # set up general definitions for the QCSchema
-        # 1 => general initial attributes
-        schema_name = "qcschema_molecule"
-        version = '1.dev'
-        driver = "energy"
-        energy = self._get_from_dirac_hdf5_file(
-           '/result/wavefunctions/scf/energy')[0]
-        # final status of the calculation
-        status = self._get_from_dirac_hdf5_file(
-            '/result/execution/status')[0]
-        if status != 2:
-            success = False
+        provenance = super().instantiate_qcprovenance(
+            creator=self.name,
+            version='dirac23',
+            routine=f"ASE-{self.__class__.__name__}.save()"
+        )
+
+        # dealing with different types of basis
+        if '.default' in self.parameters['molecule']['*basis']:
+            basis = self.parameters['molecule']['*basis']['.default']
         else:
-            success = True
+            basis = 'special'
 
-        file.attrs['driver'] = driver
-        file.attrs['schema_name'] = schema_name
-        file.attrs['schema_version'] = version
-        file.attrs['return_result'] = energy
-        file.attrs['success'] = success
+        model = super().instantiate_qcmodel(
+            basis=basis,
+            method=list(
+                self.parameters['wave_function'].keys()
+            )[-1].strip('.')
+        )
 
-        # 2 => molecule group
-        symbols = self._get_from_dirac_hdf5_file(
-           '/input/molecule/symbols'
-           )
-        geometry = self._get_from_dirac_hdf5_file(
-           '/input/molecule/geometry') / Bohr  # => in a.u
-        molecular_charge = int(
-            self.parameters['molecule']['*charge']['.charge'])
-        atomic_numbers = self._get_from_dirac_hdf5_file(
-            '/input/molecule/nuc_charge')
-        # include here multiplicity ?
-        # Not a good quantum number for relativistic DIRAC?
-        molecular_multiplicity = ''
-
-        molecule = file.require_group("molecule")
-        molecule.attrs['symbols'] = symbols
-        molecule.attrs['geometry'] = geometry
-        molecule.attrs['molecular_charge'] = molecular_charge
-        molecule.attrs['molecular_multiplicity'] = molecular_multiplicity
-        molecule.attrs['atomic_numbers'] = atomic_numbers
-        molecule.attrs['schema_name'] = "qcschema_molecule"
-        molecule.attrs['schema_version'] = version
-
-        # 3 => properties group
-        calcinfo_nbasis = self._get_from_dirac_hdf5_file(
-            '/input/aobasis/1/n_ao')[0]
         # of molecular orbitals
         nmo = self._get_from_dirac_hdf5_file(
            '/result/wavefunctions/scf/mobasis/n_mo')
@@ -261,46 +250,32 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         # does not work for pure triplet ground states!?
         nuc_charge = self._get_from_dirac_hdf5_file(
             '/input/molecule/nuc_charge')
+        molecular_charge = int(
+            self.parameters['molecule']['*charge']['.charge'])
         nelec = int(sum(nuc_charge)) - molecular_charge
         calcinfo_nbeta = nelec // 2
         calcinfo_nalpha = nelec - calcinfo_nbeta
-        calcinfo_natom = self._get_from_dirac_hdf5_file(
-           '/input/molecule/n_atoms')[0]
-        #warnings.warn('VQEs with triplet ground state molecules '
-        #              'not supported by DIRAC-ASE...')
 
-        properties = file.require_group("properties")
-        properties.attrs['calcinfo_nbasis'] = calcinfo_nbasis
-        properties.attrs['calcinfo_nmo'] = nmo
-        properties.attrs['calcinfo_nalpha'] = calcinfo_nalpha
-        properties.attrs['calcinfo_nbeta'] = calcinfo_nbeta
-        properties.attrs['calcinfo_natom'] = calcinfo_natom
-        properties.attrs['nuclear_repulsion_energy'] = e_core
-        properties.attrs['return_energy'] = energy
+        properties = super().instantiate_qcproperties(
+            calcinfo_nbasis=self._get_from_dirac_hdf5_file(
+                '/input/aobasis/1/n_ao'
+            )[0],
+            calcinfo_nmo=nmo,
+            calcinfo_nalpha=calcinfo_nalpha,
+            calcinfo_nbeta=calcinfo_nbeta,
+            calcinfo_natom=self._get_from_dirac_hdf5_file(
+                '/input/molecule/n_atoms'
+            )[0],
+            nuclear_repulsion_energy=integrals[0],
+            return_energy=self._get_from_dirac_hdf5_file(
+                '/result/wavefunctions/scf/energy'
+            )[0]
+        )
 
-        # 4 => model group
-        # dealing with different types of basis
-        if '.default' in self.parameters['molecule']['*basis']:
-            basis = self.parameters['molecule']['*basis']['.default']
-        else:
-            basis = 'special'
-        # electronic structure method used
-        method = list(self.parameters['wave_function'].keys())[-1].strip('.')
+        # 1- and 2-electron integrals in MO basis
+        one_body_integrals = integrals[2]
+        two_body_integrals = integrals[3]
 
-        model = file.require_group("model")
-        model.attrs['basis'] = basis
-        model.attrs['method'] = method
-
-        # 5 => provenance group
-        provenance = file.require_group("provenance")
-        provenance.attrs['creator'] = self.name
-        provenance.attrs['version'] = version
-        provenance.attrs['routine'] = f"ASE-{self.__class__.__name__}.save()"
-
-        # 6 => keywords group
-        file.require_group("keywords")
-
-        # 7 => wavefunction group
         # tolerance to consider number zero.
         EQ_TOLERANCE = 1e-8
 
@@ -438,46 +413,43 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         two_body_coefficients_ba[np.abs(
             two_body_coefficients_ba) < EQ_TOLERANCE] = 0.
 
-        wavefunction = file.require_group("wavefunction")
-        wavefunction.attrs['basis'] = basis
+        wavefunction = super().instantiate_qcwavefunction(
+                    basis=basis,
+                    # scf_fock_a=one_e_int_ao.flatten(),
+                    # scf_fock_b=one_e_int_ao.flatten(),
+                    # scf_eri=two_e_int_ao.flatten(),
+                    scf_fock_mo_a=one_body_coefficients_a.flatten(),
+                    scf_fock_mo_b=one_body_coefficients_b.flatten(),
+                    scf_eri_mo_aa=two_body_coefficients_aa.flatten(),
+                    scf_eri_mo_bb=two_body_coefficients_bb.flatten(),
+                    scf_eri_mo_ba=two_body_coefficients_ba.flatten(),
+                    scf_eri_mo_ab=two_body_coefficients_ab.flatten(),
+                    # scf_orbitals_a=alpha_coeff.flatten(),
+                    # scf_orbitals_b=beta_coeff.flatten(),
+                    # scf_eigenvalues_a=alpha_mo.flatten(),
+                    # scf_eigenvalues_b=beta_mo.flatten(),
+                    localized_orbitals_a='',
+                    localized_orbitals_b=''
+                )
 
-        # 'scf_fock_mo_a/b' take the form of flattened nmo by nmo matrices.
-        # E.g., for H2 [r(H-H) = 0.737166 angs] at RHF/sto-3g level,
-        # scf_fock_mo_a = [-1.2550254253591242, 0.0, 0.0, -0.4732763494710688].
-        wavefunction.create_dataset("scf_fock_mo_a",
-                                    data=one_body_coefficients_a.flatten())
-        wavefunction.create_dataset("scf_fock_mo_b",
-                                    data=one_body_coefficients_b.flatten())
+        qcschema = super().instantiate_qcschema(
+            schema_name='qcschema_molecule',
+            schema_version=qiskit_nature_version,
+            driver='energy',
+            keywords={},
+            return_result=self._get_from_dirac_hdf5_file(
+                '/result/wavefunctions/scf/energy'
+            )[0],
+            molecule=topology,
+            wavefunction=wavefunction,
+            properties=properties,
+            model=model,
+            provenance=provenance,
+            success=True
+        )
 
-        # 'scf_eri_mo_aa/bb/ba/ab' take the form of flattened (nmo,nmo,nmo,nmo) matrices.
-        # E.g., for H2 [r(H-H) = 0.737166 angs] at RHF/sto-3g level,
-        # scf_fock_mo_aa = [0.6752967689354992, 0, 0, 0.6642044392432875,
-        #                   0, 0.1810520713689906, 0.18105207136899099, 0,
-        #                   0, 0.18105207136899074, 0.18105207136899115, 0,
-        #                   0.6642044392432873, 0, 0, 0.6981738857839892].
-        # For restricted cases: scf_fock_mo_aa = scf_fock_mo_bb =
-        #                       scf_fock_mo_ba = scf_fock_mo_ab
-        wavefunction.create_dataset("scf_eri_mo_aa",
-                                    data=two_body_coefficients_aa.flatten())
-        wavefunction.create_dataset("scf_eri_mo_bb",
-                                    data=two_body_coefficients_bb.flatten())
-        wavefunction.create_dataset("scf_eri_mo_ba",
-                                    data=two_body_coefficients_ba.flatten())
-        wavefunction.create_dataset("scf_eri_mo_ab",
-                                    data=two_body_coefficients_ab.flatten())
-
-        # possible future additions:
-        # mo coefficients in AO basis
-        wavefunction.create_dataset("scf_orbitals_a", data='')
-        wavefunction.create_dataset("scf_orbitals_b", data='')
-        # scf orbital energies
-        wavefunction.create_dataset("scf_eigenvalues_a", data='')
-        wavefunction.create_dataset("scf_eigenvalues_b", data='')
-        # ROSE localized orbitals?
-        wavefunction.create_dataset("localized_orbitals_a", data='')
-        wavefunction.create_dataset("localized_orbitals_b", data='')
-
-        file.close()
+        with h5py.File(datafile, 'w') as h5file:
+            qcschema.to_hdf5(h5file)
 
     def load(self, datafile: Union[h5py.File, str]) -> Union[
         QCSchema, FCIDump
