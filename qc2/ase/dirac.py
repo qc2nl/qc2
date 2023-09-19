@@ -191,7 +191,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         >>> molecule.calc.save('h2.h5')
         """
         # calculate 1- and 2-electron integrals in MO basis
-        integrals = self.get_integrals()
+        integrals = self.get_integrals_mo_basis()
         e_core = integrals[0]
         one_body_integrals = integrals[2]
         two_body_integrals = integrals[3]
