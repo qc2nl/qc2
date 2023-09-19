@@ -28,6 +28,7 @@ from pyscf import __version__ as pyscf_version
 
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature import __version__ as qiskit_nature_version
+from qiskit_nature.second_q.formats.fcidump import FCIDump
 
 from .qc2_ase_base_class import BaseQc2ASECalculator
 
@@ -91,7 +92,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
            = 'dft.UKS'
            = 'dft.ROKS'
     
-    Notes: 
+    Notes:
         - Scalar relativistic corrections can be added with
             'relativistic = True' keyword. If selected,
             the scf object will be decorated by x2c() method, e.g.,
@@ -459,7 +460,9 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         with h5py.File(datafile, 'w') as h5file:
             qcschema.to_hdf5(h5file)
 
-    def load(self, datafile: h5py.File) -> QCSchema:
+    def load(self, datafile: Union[h5py.File, str]) -> Union[
+        QCSchema, FCIDump
+    ]:
         """Loads electronic structure data from an HDF5 datafile.
 
         Example:
