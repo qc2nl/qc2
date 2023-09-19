@@ -84,7 +84,7 @@ class BaseQc2ASECalculator(ABC):
         r"""Reads overlap matrix.
 
         Notes:
-            Can also be calculate on-the-fly as:
+            Can also be evaluated on-the-fly as:
             .. math::
                 S = (C^{T})^{-1} \times C^{-1}
                 where, C is the matrix of mo coefficients.

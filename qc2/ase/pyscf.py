@@ -366,7 +366,8 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         >>> molecule.calc.save('h2.hdf5')
         """
         if self._format == "fcidump":
-            raise ValueError("FCIDump format not implemented in PySCF.save() method.")
+            raise ValueError("FCIDump format not yet implemented "
+                             "in PySCF.save() method.")
 
         # create instances of QCSchema's component dataclasses
         topology = super().instantiate_qctopology(
