@@ -22,8 +22,8 @@ from ase.io import write
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 
 from qiskit_nature.second_q.formats.qcschema import QCSchema
-from qiskit_nature.second_q.formats.fcidump import FCIDump
 from qiskit_nature import __version__ as qiskit_nature_version
+from qiskit_nature.second_q.formats.fcidump import FCIDump
 
 from .qc2_ase_base_class import BaseQc2ASECalculator
 
@@ -494,10 +494,11 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         """
         return BaseQc2ASECalculator.load(self, datafile)
 
-    def get_integrals(self) -> Tuple[Union[float, complex],
-                                     Dict[int, Union[float, complex]],
-                                     Dict[Tuple[int, int], Union[float, complex]],
-                                     Dict[Tuple[int, int, int, int], Union[float, complex]]]:
+    def get_integrals_mo_basis(self) -> Tuple[
+        Union[float, complex], Dict[int, Union[float, complex]],
+        Dict[Tuple[int, int], Union[float, complex]],
+        Dict[Tuple[int, int, int, int], Union[float, complex]]
+    ]:
         """Retrieves 1- and 2-body integrals in MO basis from DIRAC FCIDUMP.
 
         Notes:
