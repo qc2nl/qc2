@@ -164,11 +164,11 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         output = read_dirac_out(out_file)
         self.results = output
 
-    def save(self, hdf5_filename: str) -> None:
+    def save(self, datafile: str) -> None:
         """Dumps electronic structure data to a HDF5 file.
 
         Args:
-            hdf5_filename (str): HDF5 file to save the data to.
+            datafile (str): HDF5 file to save the data to.
 
         Notes:
             HDF5 files are written following the QCSchema.
@@ -192,7 +192,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         two_body_integrals = integrals[3]
 
         # open the HDF5 file in write mode
-        file = h5py.File(hdf5_filename, "w")
+        file = h5py.File(datafile, "w")
 
         # set up general definitions for the QCSchema
         # 1 => general initial attributes
@@ -474,7 +474,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         file.close()
 
-    def load(self, hdf5_filename: str) -> None:
+    def load(self, datafile: str) -> None:
         """Loads electronic structure data from a HDF5 file.
 
         Example:
@@ -485,7 +485,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         >>> molecule.calc = DIRAC()     # => RHF/STO-3G
         >>> molecule.calc.load('h2.h5') # => instead of 'molecule.calc.get_potential_energy()'
         """
-        BaseQc2ASECalculator.load(self, hdf5_filename)
+        BaseQc2ASECalculator.load(self, datafile)
 
     def get_integrals(self) -> Tuple[Union[float, complex],
                                      Dict[int, Union[float, complex]],
