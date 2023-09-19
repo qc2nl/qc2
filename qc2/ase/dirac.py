@@ -20,6 +20,11 @@ from ase.calculators.calculator import InputError, CalculationFailed
 from ase.units import Bohr
 from ase.io import write
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
+
+from qiskit_nature.second_q.formats.qcschema import QCSchema
+from qiskit_nature.second_q.formats.fcidump import FCIDump
+from qiskit_nature import __version__ as qiskit_nature_version
+
 from .qc2_ase_base_class import BaseQc2ASECalculator
 
 
@@ -474,7 +479,9 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         file.close()
 
-    def load(self, datafile: str) -> None:
+    def load(self, datafile: Union[h5py.File, str]) -> Union[
+        QCSchema, FCIDump
+    ]:
         """Loads electronic structure data from a HDF5 file.
 
         Example:
@@ -485,7 +492,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         >>> molecule.calc = DIRAC()     # => RHF/STO-3G
         >>> molecule.calc.load('h2.h5') # => instead of 'molecule.calc.get_potential_energy()'
         """
-        BaseQc2ASECalculator.load(self, datafile)
+        return BaseQc2ASECalculator.load(self, datafile)
 
     def get_integrals(self) -> Tuple[Union[float, complex],
                                      Dict[int, Union[float, complex]],
