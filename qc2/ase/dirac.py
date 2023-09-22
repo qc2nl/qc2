@@ -133,6 +133,9 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         if '*charge' not in self.parameters['molecule']:
             self.parameters['molecule']['*charge'] = {'.charge': '0'}
 
+        if '*symmetry' not in self.parameters['molecule']:
+            self.parameters['molecule']['*symmetry'] = {'.nosym': '#'}
+
         if '.4index' not in self.parameters['dirac']:
             # activates the transformation of integrals to MO basis
             self.parameters['dirac'].update({'.4index': ''})
@@ -193,7 +196,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         if self._format == "fcidump":
             raise ValueError("FCIDump format not yet implemented "
                              "in DIRAC.save() method.")
-        
+
         # first, set up general attributes
         # get info about the basis set used
         if '.default' in self.parameters['molecule']['*basis']:
