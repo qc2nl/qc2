@@ -118,7 +118,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             self.parameters = _update_dict(self.parameters, key, value)
 
         if 'hamiltonian' not in self.parameters:
-            self.parameters.update(hamiltonian={'.levy-leblond': ''})
+            self.parameters.update(hamiltonian={'.nonrel': ''})
 
         if 'wave_function' not in self.parameters:
             self.parameters.update(wave_function={'.scf': ''})
@@ -193,6 +193,37 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         if self._format == "fcidump":
             raise ValueError("FCIDump format not yet implemented "
                              "in DIRAC.save() method.")
+        
+        # first, set up general attributes
+        # get info about the basis set used
+        if '.default' in self.parameters['molecule']['*basis']:
+            basis = self.parameters['molecule']['*basis']['.default']
+        else:
+            basis = 'special'
+
+        # then get # of molecular orbitals
+        nmo = self._get_from_dirac_hdf5_file(
+           '/result/wavefunctions/scf/mobasis/n_mo'
+        )
+        nmo = sum(nmo)
+        # in case of relativistic calculations...
+        if ('.nonrel' not in self.parameters['hamiltonian'] and
+                '.levy-leblond' not in self.parameters['hamiltonian']):
+            nmo = nmo // 2
+            warnings.warn('At the moment, DIRAC-ASE relativistic calculations'
+                          ' may not work properly with'
+                          ' Qiskit and/or Pennylane...')
+        # approximate definition of # of alpha and beta electrons
+        # does not work for pure triplet ground states!?
+        nuc_charge = self._get_from_dirac_hdf5_file(
+            '/input/molecule/nuc_charge'
+        )
+        molecular_charge = int(
+            self.parameters['molecule']['*charge']['.charge']
+        )
+        nelec = int(sum(nuc_charge)) - molecular_charge
+        calcinfo_nbeta = nelec // 2
+        calcinfo_nalpha = nelec - calcinfo_nbeta
 
         # get 1- and 2-electron integrals in MO basis
         integrals = self.get_integrals_mo_basis()
@@ -222,39 +253,12 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             routine=f"ASE-{self.__class__.__name__}.save()"
         )
 
-        # dealing with different types of basis
-        if '.default' in self.parameters['molecule']['*basis']:
-            basis = self.parameters['molecule']['*basis']['.default']
-        else:
-            basis = 'special'
-
         model = super().instantiate_qcmodel(
             basis=basis,
             method=list(
                 self.parameters['wave_function'].keys()
             )[-1].strip('.')
         )
-
-        # of molecular orbitals
-        nmo = self._get_from_dirac_hdf5_file(
-           '/result/wavefunctions/scf/mobasis/n_mo')
-        nmo = sum(nmo)
-        # in case of relativistic calculations...
-        if ('.nonrel' not in self.parameters['hamiltonian'] and
-                '.levy-leblond' not in self.parameters['hamiltonian']):
-            nmo = nmo // 2
-            warnings.warn('At the moment, DIRAC-ASE relativistic calculations'
-                          ' may not work properly with'
-                          ' Qiskit and/or Pennylane...')
-        # approximate definition of # of alpha and beta electrons
-        # does not work for pure triplet ground states!?
-        nuc_charge = self._get_from_dirac_hdf5_file(
-            '/input/molecule/nuc_charge')
-        molecular_charge = int(
-            self.parameters['molecule']['*charge']['.charge'])
-        nelec = int(sum(nuc_charge)) - molecular_charge
-        calcinfo_nbeta = nelec // 2
-        calcinfo_nalpha = nelec - calcinfo_nbeta
 
         properties = super().instantiate_qcproperties(
             calcinfo_nbasis=self._get_from_dirac_hdf5_file(
@@ -475,7 +479,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         Notes:
             Requires MRCONEE MDCINT files obtained using
-            **DIRAC .4INDEX, **MOLTRA .ACTIVE all and 
+            **DIRAC .4INDEX, **MOLTRA .ACTIVE all and
             'pam ... --get="MRCONEE MDCINT"' options.
 
             Adapted from Openfermion-Dirac:
