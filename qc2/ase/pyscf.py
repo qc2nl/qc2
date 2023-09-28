@@ -365,7 +365,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         >>> molecule.calc.get_potential_energy()
         >>> molecule.calc.save('h2.hdf5')
         """
-        if self._format == "fcidump":
+        if self._schema_format == "fcidump":
             raise ValueError("FCIDump format not yet implemented "
                              "in PySCF.save() method.")
 

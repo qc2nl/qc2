@@ -193,7 +193,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         >>> molecule.calc.get_potential_energy()
         >>> molecule.calc.save('h2.h5')
         """
-        if self._format == "fcidump":
+        if self._schema_format == "fcidump":
             raise ValueError("FCIDump format not yet implemented "
                              "in DIRAC.save() method.")
 

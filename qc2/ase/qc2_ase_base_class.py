@@ -19,23 +19,23 @@ class BaseQc2ASECalculator(ABC):
     def __init__(self) -> None:
         # format in which to read/write qchem data
         self._implemented_formats = ["qcschema", "fcidump"]
-        self._format = None
-        self.format = "qcschema"
+        self._schema_format = None
+        self.schema_format = "qcschema"
 
     @property
-    def format(self) -> str:
+    def schema_format(self) -> str:
         """Returs the format attribute."""
-        return self._format
+        return self._schema_format
 
-    @format.setter
-    def format(self, schema_format) -> None:
+    @schema_format.setter
+    def schema_format(self, format) -> None:
         """Sets the format attribute."""
-        if schema_format not in self._implemented_formats:
+        if format not in self._implemented_formats:
             raise ValueError(
-                f"Format {schema_format} not recognized. "
+                f"Format {format} not recognized. "
                 "Valid options are `qcschema` or `fcidump`"
             )
-        self._format = schema_format
+        self._schema_format = format
 
     def save(self, datafile: Union[h5py.File, str]) -> None:
         """Dumps qchem data to a datafile using QCSchema or FCIDump formats."""
@@ -50,15 +50,15 @@ class BaseQc2ASECalculator(ABC):
             raise FileNotFoundError(f"{datafile} file not found!")
 
         # check if the file has a valid format
-        if (self._format == "qcschema" and not h5py.is_hdf5(datafile)):
+        if (self._schema_format == "qcschema" and not h5py.is_hdf5(datafile)):
             raise ValueError(f"{datafile} is not an hdf5 file.")
 
         # add here checks for fcidump...
-        # if (self._format == "fcidump" and ....):
+        # if (self._schema_format == "fcidump" and ....):
         #     raise ValueError(f"{datafile} is not an fcidump-formated file")
 
         # populating QCSchema or FCIDump dataclasses
-        if self._format == "fcidump":
+        if self._schema_format == "fcidump":
             return FCIDump.from_file(datafile)
 
         with h5py.File(datafile, 'r') as file:
