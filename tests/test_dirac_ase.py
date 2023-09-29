@@ -123,13 +123,13 @@ def test_DIRAC_energy_open_shell():
     c_atom.calc = DIRAC(hamiltonian={'.x2c': ''},
                         integrals={'*readin': {'.uncontracted': "#"}},
                         molecule={'*basis': {'.default': 'sto-3g'},
-                                  '*charge': {'.charge': '0'}},
-                                  # '*symmetry': {'.nosym': '#'}},
+                                  '*charge': {'.charge': '0'},
+                                  '*symmetry': {'.d2h': '#'}},
                         wave_function={'.scf': '',
                                        '*scf': {'.closed shell': '4 0',
                                                 '.open shell': '2\n1/0,2\n1/0,4',
                                                 '.kpsele': '3\n-1 1 -2\n4 0 0\n0 2 0\n0 0 4'}}
-    )
+                        )
     energy_Eh = c_atom.get_potential_energy() / Ha
 
     # compare with the energy obtained using dirac alone
