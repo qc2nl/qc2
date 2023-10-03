@@ -25,6 +25,7 @@ from ase.calculators.calculator import CalculatorSetupError
 from pyscf import gto, scf, dft, lib
 from pyscf.scf.chkfile import dump_scf
 from pyscf import __version__ as pyscf_version
+from pyscf.tools import fcidump 
 
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature import __version__ as qiskit_nature_version
@@ -344,14 +345,14 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             totalforces = np.array(totalforces)
             self.results['forces'] = totalforces
 
-    def save(self, datafile: h5py.File) -> None:
-        """Dumps qchem data to an HDF5 datafile.
+    def save(self, datafile: Union[h5py.File, str]) -> None:
+        """Dumps qchem data to a datafile using QCSchema or FCIDump formats.
 
         Args:
-            datafile (h5py.File): HDF5 file to save the data to.
+            datafile (Union[h5py.File, str]): file to save the data to.
 
         Notes:
-            HDF5 files are written following the QCSchema.
+            files are written following the QCSchema or FCIDump formats.
 
         Returns:
             None
@@ -362,13 +363,16 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = PySCF()  # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "qcschema"
         >>> molecule.calc.get_potential_energy()
         >>> molecule.calc.save('h2.hdf5')
         """
+        # in case of fcidump format
         if self._schema_format == "fcidump":
-            raise ValueError("FCIDump format not yet implemented "
-                             "in PySCF.save() method.")
+            fcidump.from_scf(self.mf, datafile)
+            return
 
+        # in case of qcschema format
         # create instances of QCSchema's component dataclasses
         topology = super().instantiate_qctopology(
             symbols=[
