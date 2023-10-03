@@ -366,6 +366,12 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         >>> molecule.calc.schema_format = "qcschema"
         >>> molecule.calc.get_potential_energy()
         >>> molecule.calc.save('h2.hdf5')
+        >>>
+        >>> molecule = molecule('H2')
+        >>> molecule.calc = PySCF()  # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "fcidump"
+        >>> molecule.calc.get_potential_energy()
+        >>> molecule.calc.save('h2.fcidump')
         """
         # in case of fcidump format
         if self._schema_format == "fcidump":
@@ -468,7 +474,13 @@ class PySCF(Calculator, BaseQc2ASECalculator):
     def load(self, datafile: Union[h5py.File, str]) -> Union[
         QCSchema, FCIDump
     ]:
-        """Loads electronic structure data from an HDF5 datafile.
+        """Loads electronic structure data from a datafile.
+
+        Notes:
+            files are read following the qcschema or fcidump formats.
+        
+        Returns:
+            `QCSchema` or `FCIDump` dataclasses containing qchem data.
 
         Example:
         >>> from ase.build import molecule
@@ -476,7 +488,13 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = PySCF()     # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "qcschema"
         >>> qcschema = molecule.calc.load('h2.h5')
+        >>>
+        >>> molecule = molecule('H2')
+        >>> molecule.calc = PySCF()     # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "fcidump"
+        >>> fcidump = molecule.calc.load('h2.fcidump')
         """
         return BaseQc2ASECalculator.load(self, datafile)
 
