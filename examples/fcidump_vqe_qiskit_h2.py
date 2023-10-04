@@ -15,7 +15,7 @@ from qiskit.algorithms.minimum_eigensolvers import VQE
 from qiskit.algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 
-from qc2.ase import PySCF, DIRAC
+from qc2.ase import PySCF
 from qc2.data import qc2Data
 
 # Avoid using the deprecated `PauliSumOp` object
