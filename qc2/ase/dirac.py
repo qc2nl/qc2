@@ -9,7 +9,7 @@ https://gitlab.com/dirac/dirac
 
 import subprocess
 import os
-from typing import Optional, List, Dict, Tuple, Union
+from typing import Optional, List, Dict, Tuple, Union, Any
 import warnings
 import h5py
 import numpy as np
@@ -455,6 +455,27 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             success=True
         )
 
+        n_basis_1 = self._get_from_dirac_hdf5_file(
+            '/input/aobasis/1/n_ao'
+        )
+
+        n_basis_2 = self._get_from_dirac_hdf5_file(
+            '/result/wavefunctions/scf/mobasis/n_basis'
+        )
+
+        mo_coeff_flatted = self._get_from_dirac_hdf5_file(
+                '/result/wavefunctions/scf/mobasis/orbitals'
+        )
+
+        mo_coeff = mo_coeff_flatted #.reshape(nmo, 2)
+
+        print(nelec, nmo, n_basis_1, n_basis_2, mo_coeff)
+        print(integrals[1])
+        #print()
+        print(self._get_from_dirac_hdf5_file(
+                '/result/wavefunctions/scf/mobasis/eigenvalues'
+            ))
+
         with h5py.File(datafile, 'w') as h5file:
             qcschema.to_hdf5(h5file)
 
@@ -481,10 +502,6 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         """Retrieves 1- and 2-body integrals in MO basis from DIRAC FCIDUMP.
 
         Notes:
-            Requires MRCONEE MDCINT files obtained using
-            **DIRAC .4INDEX, **MOLTRA .ACTIVE all and
-            'pam ... --get="MRCONEE MDCINT"' options.
-
             Adapted from Openfermion-Dirac:
             see: https://github.com/bsenjean/Openfermion-Dirac.
 
@@ -505,21 +522,8 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             CalculationFailed: If the calculator fails with
                 a non-zero error code.
         """
-        command = "dirac_mointegral_export.x fcidump"
-        try:
-            proc = subprocess.Popen(command, shell=True, cwd=self.directory)
-        except OSError as err:
-            msg = f"Failed to execute {command}"
-            raise EnvironmentError(msg) from err
-
-        errorcode = proc.wait()
-
-        if errorcode:
-            path = os.path.abspath(self.directory)
-            msg = (f"Calculator {self.name} failed with "
-                   f"command {command} failed in {path} "
-                   f"with error code {errorcode}")
-            raise CalculationFailed(msg)
+        # generate DIRAC FCIDUMP file
+        self._get_dirac_fcidump()
 
         e_core = 0
         spinor = {}
@@ -582,7 +586,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         return e_core, spinor, one_body_int, two_body_int
 
-    def _get_from_dirac_hdf5_file(self, property_name):
+    def _get_from_dirac_hdf5_file(self, property_name) -> Any:
         """Helper routine to open dirac HDF5 output and extract property."""
         out_hdf5_file = self.prefix + "_" + self.prefix + ".h5"
         try:
@@ -591,3 +595,27 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         except (KeyError, IOError):
             data = None
         return data
+
+    def _get_dirac_fcidump(self) -> None:
+        """Helper function to generate DIRAC FCIDUMP file.
+
+        Notes:
+            Requires MRCONEE MDCINT files obtained using
+            **DIRAC .4INDEX, **MOLTRA .ACTIVE all and
+            'pam ... --get="MRCONEE MDCINT"' options.
+        """
+        command = "dirac_mointegral_export.x fcidump"
+        try:
+            proc = subprocess.Popen(command, shell=True, cwd=self.directory)
+        except OSError as err:
+            msg = f"Failed to execute {command}"
+            raise EnvironmentError(msg) from err
+
+        errorcode = proc.wait()
+
+        if errorcode:
+            path = os.path.abspath(self.directory)
+            msg = (f"Calculator {self.name} failed with "
+                   f"command {command} failed in {path} "
+                   f"with error code {errorcode}")
+            raise CalculationFailed(msg)
