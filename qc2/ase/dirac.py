@@ -489,6 +489,44 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         return e_core, spinor, one_body_int, two_body_int
 
+    def get_integrals_ao_basis(self) -> Tuple[Any, ...]:
+        """Calculates one- and two-electron integrals in AO basis.
+
+        TODO: after Luuks's python interface
+        """
+        raise NotImplementedError(
+            "get_integrals_ao_basis() not yet implemented in DIRAC-ASE"
+        )
+
+    def get_molecular_orbitals_coefficients(self) -> Tuple[Any, ...]:
+        """Reads alpha and beta molecular orbital coefficients.
+
+        TODO: after Luuks's python interface
+        """
+        raise NotImplementedError(
+            "get_molecular_orbitals_coefficients() not yet "
+            "implemented in DIRAC-ASE"
+        )
+
+    def get_molecular_orbitals_energies(self) -> Tuple[Any, ...]:
+        """Reads alpha and beta orbital energies.
+
+        TODO: after Luuks's python interface
+        """
+        raise NotImplementedError(
+            "get_molecular_orbitals_energies() not yet "
+            "implemented in DIRAC-ASE"
+        )
+
+    def get_overlap_matrix(self) -> Tuple[Any, ...]:
+        """Reads overlap matrix.
+
+        TODO: after Luuks's python interface
+        """
+        raise NotImplementedError(
+            "get_overlap_matrix() not yet implemented in DIRAC-ASE"
+        )
+
     def _get_from_dirac_hdf5_file(self, property_name) -> Any:
         """Helper routine to open dirac HDF5 output and extract property."""
         out_hdf5_file = self.prefix + "_" + self.prefix + ".h5"
