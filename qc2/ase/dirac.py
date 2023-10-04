@@ -6,11 +6,10 @@ https://www.diracprogram.org/
 GitLab repo:
 https://gitlab.com/dirac/dirac
 """
-
+import logging
 import subprocess
 import os
 from typing import Optional, List, Dict, Tuple, Union, Any
-import warnings
 import h5py
 import numpy as np
 
@@ -19,12 +18,12 @@ from ase.calculators.calculator import FileIOCalculator
 from ase.calculators.calculator import InputError, CalculationFailed
 from ase.units import Bohr
 from ase.io import write
-from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature import __version__ as qiskit_nature_version
 from qiskit_nature.second_q.formats.fcidump import FCIDump
 
+from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from .qc2_ase_base_class import BaseQc2ASECalculator
 
 
@@ -223,9 +222,11 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         if ('.nonrel' not in self.parameters['hamiltonian'] and
                 '.levy-leblond' not in self.parameters['hamiltonian']):
             nmo = nmo // 2
-            warnings.warn('At the moment, DIRAC-ASE relativistic calculations'
-                          ' may not work properly with'
-                          ' Qiskit and/or Pennylane...')
+            logging.warning(
+                'At the moment, DIRAC-ASE relativistic '
+                'calculations may not work properly with '
+                'Qiskit and/or Pennylane...'
+            )
         # approximate definition of # of alpha and beta electrons
         # does not work for pure triplet ground states!?
         nuc_charge = self._get_from_dirac_hdf5_file(
@@ -514,6 +515,16 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         >>> molecule.calc.schema_format = "fcidump"
         >>> fcidump = molecule.calc.load('h2.fcidump')
         """
+        if self._schema_format == "fcidump":
+            logging.warning(
+                'FCIDump.from_file() in Qiskit-Nature may not load '
+                'properly integrals from DIRAC FCIDUMP file. '
+                'The reason lies in the fact that FCIDump.from_file() '
+                'reads integrals as `SymmetricTwoBodyIntegrals`, while, '
+                'in DIRAC, FCIDUMP file is generated with the full list '
+                'of terms.'
+            )
+
         return BaseQc2ASECalculator.load(self, datafile)
 
     def get_integrals_mo_basis(self) -> Tuple[
