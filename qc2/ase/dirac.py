@@ -492,15 +492,27 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
     def load(self, datafile: Union[h5py.File, str]) -> Union[
         QCSchema, FCIDump
     ]:
-        """Loads electronic structure data from a HDF5 file.
+        """Loads electronic structure data from a datafile.
+
+        Notes:
+            files are read following the qcschema or fcidump formats.
+
+        Returns:
+            `QCSchema` or `FCIDump` dataclasses containing qchem data.
 
         Example:
         >>> from ase.build import molecule
-        >>> from qc2.ase.dirac import DIRAC
+        >>> from qc2.ase.pyscf import PySCF
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = DIRAC()     # => RHF/STO-3G
-        >>> molecule.calc.load('h2.h5') # => instead of 'molecule.calc.get_potential_energy()'
+        >>> molecule.calc.schema_format = "qcschema"
+        >>> qcschema = molecule.calc.load('h2.h5')
+        >>>
+        >>> molecule = molecule('H2')
+        >>> molecule.calc = DIRAC()     # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "fcidump"
+        >>> fcidump = molecule.calc.load('h2.fcidump')
         """
         return BaseQc2ASECalculator.load(self, datafile)
 
