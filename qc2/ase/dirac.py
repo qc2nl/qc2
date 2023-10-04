@@ -206,7 +206,6 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             return
 
         # in case of qcschema format
-        # first, set up general attributes
         # get info about the basis set used
         if '.default' in self.parameters['molecule']['*basis']:
             basis = self.parameters['molecule']['*basis']['.default']
@@ -239,8 +238,21 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         calcinfo_nbeta = nelec // 2
         calcinfo_nalpha = nelec - calcinfo_nbeta
 
-        # get 1- and 2-electron integrals in MO basis
+        # get 1- and 2-electron integrals from FCIDUMP file
         integrals = self.get_integrals_mo_basis()
+        one_body_integrals = integrals[2]
+        two_body_integrals = integrals[3]
+
+        # format these integrals to make them compatible with qcschema
+        integrals_mo = self._format_fcidump_mo_integrals(
+            one_body_integrals, two_body_integrals, nmo
+        )
+        one_body_coefficients_a = integrals_mo[0]
+        one_body_coefficients_b = integrals_mo[1]
+        two_body_coefficients_aa = integrals_mo[2]
+        two_body_coefficients_bb = integrals_mo[3]
+        two_body_coefficients_ab = integrals_mo[4]
+        two_body_coefficients_ba = integrals_mo[5]
 
         # create instances of QCSchema's component dataclasses
         topology = super().instantiate_qctopology(
@@ -290,151 +302,13 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             )[0]
         )
 
-        # 1- and 2-electron integrals in MO basis
-        one_body_integrals = integrals[2]
-        two_body_integrals = integrals[3]
-
-        # tolerance to consider number zero.
-        EQ_TOLERANCE = 1e-8
-
-        # slipt 1-body integrals into alpha and beta contributions
-        one_body_coefficients_a = np.zeros((nmo, nmo), dtype=np.float64)
-        one_body_coefficients_b = np.zeros((nmo, nmo), dtype=np.float64)
-
-        # transform alpha and beta 1-body coeffs into QCSchema format
-        for p in range(nmo):
-            for q in range(nmo):
-
-                # alpha indexes
-                alpha_p = 2 * p + 1
-                alpha_q = 2 * q + 1
-
-                # beta indexes
-                beta_p = 2 * p + 2
-                beta_q = 2 * q + 2
-
-                # alpha and beta 1-body coeffs
-                one_body_coefficients_a[p, q] = one_body_integrals[
-                    (alpha_p, alpha_q)]
-                one_body_coefficients_b[p, q] = one_body_integrals[
-                    (beta_p, beta_q)]
-
-        # truncate numbers lower than EQ_TOLERANCE
-        one_body_coefficients_a[np.abs(
-            one_body_coefficients_a) < EQ_TOLERANCE] = 0.
-        one_body_coefficients_b[np.abs(
-            one_body_coefficients_b) < EQ_TOLERANCE] = 0.
-
-        # slipt 2-body coeffs into alpha-alpha, beta-beta,
-        # alpha-beta and beta-alpha contributions
-        two_body_coefficients_aa = np.zeros(
-            (nmo, nmo, nmo, nmo), dtype=np.float64)
-        two_body_coefficients_bb = np.zeros(
-            (nmo, nmo, nmo, nmo), dtype=np.float64)
-        two_body_coefficients_ab = np.zeros(
-            (nmo, nmo, nmo, nmo), dtype=np.float64)
-        two_body_coefficients_ba = np.zeros(
-            (nmo, nmo, nmo, nmo), dtype=np.float64)
-
-        # transform alpha-alpha, beta-beta, alpha-beta and beta-alpha
-        # 2-body coeffs into QCSchema format
-        for p in range(nmo):
-            for q in range(nmo):
-                for r in range(nmo):
-                    for s in range(nmo):
-
-                        # alpha indexes
-                        alpha_p = 2 * p + 1
-                        alpha_q = 2 * q + 1
-                        alpha_r = 2 * r + 1
-                        alpha_s = 2 * s + 1
-
-                        # beta indexes
-                        beta_p = 2 * p + 2
-                        beta_q = 2 * q + 2
-                        beta_r = 2 * r + 2
-                        beta_s = 2 * s + 2
-
-                        if (alpha_p, alpha_q,
-                                alpha_r, alpha_s) in two_body_integrals:
-
-                            # alpha-alpha unique matrix element
-                            aa_term = two_body_integrals[
-                                (alpha_p, alpha_q, alpha_r, alpha_s)]
-
-                            # exploiting perm symm of 2-body integrals
-                            two_body_coefficients_aa[p, q, r, s] = aa_term
-                            two_body_coefficients_aa[q, p, s, r] = aa_term
-                            two_body_coefficients_aa[r, s, p, q] = np.conj(aa_term)
-                            two_body_coefficients_aa[s, r, q, p] = np.conj(aa_term)
-
-                            # restricted non-relativistic case
-                            two_body_coefficients_ba[p, q, r, s] = aa_term
-                            two_body_coefficients_ba[q, p, s, r] = aa_term
-                            two_body_coefficients_ba[r, s, p, q] = np.conj(aa_term)
-                            two_body_coefficients_ba[s, r, q, p] = np.conj(aa_term)
-
-                            two_body_coefficients_ab[p, q, r, s] = aa_term
-                            two_body_coefficients_ab[q, p, s, r] = aa_term
-                            two_body_coefficients_ab[r, s, p, q] = np.conj(aa_term)
-                            two_body_coefficients_ab[s, r, q, p] = np.conj(aa_term)
-
-                            two_body_coefficients_bb[p, q, r, s] = aa_term
-                            two_body_coefficients_bb[q, p, s, r] = aa_term
-                            two_body_coefficients_bb[r, s, p, q] = np.conj(aa_term)
-                            two_body_coefficients_bb[s, r, q, p] = np.conj(aa_term)
-
-                        # non-restricted case ?
-                        if (beta_p, beta_q,
-                                beta_r, beta_s) in two_body_integrals:
-
-                            # beta-beta unique matrix element
-                            bb_term = two_body_integrals[
-                                (beta_p, beta_q, beta_r, beta_s)]
-
-                            two_body_coefficients_bb[p, q, r, s] = bb_term
-                            two_body_coefficients_bb[q, p, s, r] = bb_term
-                            two_body_coefficients_bb[r, s, p, q] = np.conj(bb_term)
-                            two_body_coefficients_bb[s, r, q, p] = np.conj(bb_term)
-
-                        if (alpha_p, beta_q,
-                                beta_r, alpha_s) in two_body_integrals:
-
-                            # alpha-beta unique matrix element
-                            ab_term = two_body_integrals[
-                                (alpha_p, beta_q, beta_r, alpha_s)]
-
-                            two_body_coefficients_ab[p, q, r, s] = ab_term
-                            two_body_coefficients_ab[q, p, s, r] = ab_term
-                            two_body_coefficients_ab[r, s, p, q] = np.conj(ab_term)
-                            two_body_coefficients_ab[s, r, q, p] = np.conj(ab_term)
-
-                        if (beta_p, alpha_q,
-                                alpha_r, beta_s) in two_body_integrals:
-
-                            # beta-alpha unique matrix element
-                            ba_term = two_body_integrals[
-                                (beta_p, alpha_q, alpha_r, beta_s)]
-
-                            two_body_coefficients_ba[p, q, r, s] = ba_term
-                            two_body_coefficients_ba[q, p, s, r] = ba_term
-                            two_body_coefficients_ba[r, s, p, q] = np.conj(ba_term)
-                            two_body_coefficients_ba[s, r, q, p] = np.conj(ba_term)
-
-        # truncate numbers lower than EQ_TOLERANCE
-        two_body_coefficients_aa[np.abs(
-            two_body_coefficients_aa) < EQ_TOLERANCE] = 0.
-        two_body_coefficients_bb[np.abs(
-            two_body_coefficients_bb) < EQ_TOLERANCE] = 0.
-        two_body_coefficients_ab[np.abs(
-            two_body_coefficients_ab) < EQ_TOLERANCE] = 0.
-        two_body_coefficients_ba[np.abs(
-            two_body_coefficients_ba) < EQ_TOLERANCE] = 0.
-
+        # TODO: 1. integrals in AO basis (one_e_int_ao, two_e_int_ao)
+        #       2. add mo coefficients and mo energies
+        #          (alpha_coeff, beta_coeff, alpha_mo, beta_mo)
         wavefunction = super().instantiate_qcwavefunction(
                     basis=basis,
                     # scf_fock_a=one_e_int_ao.flatten(),
-                    # scf_fock_b=one_e_int_ao.flatten(),
+                    # #scf_fock_b=one_e_int_ao.flatten(),
                     # scf_eri=two_e_int_ao.flatten(),
                     scf_fock_mo_a=one_body_coefficients_a.flatten(),
                     scf_fock_mo_b=one_body_coefficients_b.flatten(),
@@ -632,7 +506,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             Requires MRCONEE MDCINT files obtained using
             **DIRAC .4INDEX, **MOLTRA .ACTIVE all and
             'pam ... --get="MRCONEE MDCINT"' options.
-        
+
         Raises:
             EnvironmentError: If the command execution fails.
             CalculationFailed: If the calculator fails with
@@ -653,3 +527,170 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
                    f"command {command} failed in {path} "
                    f"with error code {errorcode}")
             raise CalculationFailed(msg)
+
+    def _format_fcidump_mo_integrals(
+        self,
+        one_body_integrals: Dict[Tuple[int, int], Union[float, complex]],
+        two_body_integrals: Dict[Tuple[int, int, int, int], Union[float, complex]],
+        nmo: int
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray,
+               np.ndarray, np.ndarray, np.ndarray]:
+        """Helper routine to format DIRAC FCIDUMP integrals.
+
+        Notes:
+            Adapted from Openfermion-Dirac:
+            see: https://github.com/bsenjean/Openfermion-Dirac.
+
+        Returns:
+            A tuple containing the following:
+                - one_body_coefficients_a & one_body_coefficients_b:
+                    Numpy arrays containing alpha and beta components
+                    of the one-body integrals.
+                - two_body_coefficients_aa, two_body_coefficients_bb,
+                    two_body_coefficients_ab & two_body_coefficients_ba:
+                    Numpy arrays containing alpha-alpha, beta-beta,
+                    alpha-beta & beta-alpha components of the two-body
+                    integrals.
+        """
+        # tolerance to consider number zero.
+        EQ_TOLERANCE = 1e-8
+
+        # slipt 1-body integrals into alpha and beta contributions
+        one_body_coefficients_a = np.zeros((nmo, nmo), dtype=np.float64)
+        one_body_coefficients_b = np.zeros((nmo, nmo), dtype=np.float64)
+
+        # transform alpha and beta 1-body coeffs into QCSchema format
+        for p in range(nmo):
+            for q in range(nmo):
+
+                # alpha indexes
+                alpha_p = 2 * p + 1
+                alpha_q = 2 * q + 1
+
+                # beta indexes
+                beta_p = 2 * p + 2
+                beta_q = 2 * q + 2
+
+                # alpha and beta 1-body coeffs
+                one_body_coefficients_a[p, q] = one_body_integrals[
+                    (alpha_p, alpha_q)]
+                one_body_coefficients_b[p, q] = one_body_integrals[
+                    (beta_p, beta_q)]
+
+        # truncate numbers lower than EQ_TOLERANCE
+        one_body_coefficients_a[np.abs(
+            one_body_coefficients_a) < EQ_TOLERANCE] = 0.
+        one_body_coefficients_b[np.abs(
+            one_body_coefficients_b) < EQ_TOLERANCE] = 0.
+
+        # slipt 2-body coeffs into alpha-alpha, beta-beta,
+        # alpha-beta and beta-alpha contributions
+        two_body_coefficients_aa = np.zeros(
+            (nmo, nmo, nmo, nmo), dtype=np.float64)
+        two_body_coefficients_bb = np.zeros(
+            (nmo, nmo, nmo, nmo), dtype=np.float64)
+        two_body_coefficients_ab = np.zeros(
+            (nmo, nmo, nmo, nmo), dtype=np.float64)
+        two_body_coefficients_ba = np.zeros(
+            (nmo, nmo, nmo, nmo), dtype=np.float64)
+
+        # transform alpha-alpha, beta-beta, alpha-beta and beta-alpha
+        # 2-body coeffs into QCSchema format
+        for p in range(nmo):
+            for q in range(nmo):
+                for r in range(nmo):
+                    for s in range(nmo):
+
+                        # alpha indexes
+                        alpha_p = 2 * p + 1
+                        alpha_q = 2 * q + 1
+                        alpha_r = 2 * r + 1
+                        alpha_s = 2 * s + 1
+
+                        # beta indexes
+                        beta_p = 2 * p + 2
+                        beta_q = 2 * q + 2
+                        beta_r = 2 * r + 2
+                        beta_s = 2 * s + 2
+
+                        if (alpha_p, alpha_q,
+                                alpha_r, alpha_s) in two_body_integrals:
+
+                            # alpha-alpha unique matrix element
+                            aa_term = two_body_integrals[
+                                (alpha_p, alpha_q, alpha_r, alpha_s)]
+
+                            # exploiting perm symm of 2-body integrals
+                            two_body_coefficients_aa[p, q, r, s] = aa_term
+                            two_body_coefficients_aa[q, p, s, r] = aa_term
+                            two_body_coefficients_aa[r, s, p, q] = np.conj(aa_term)
+                            two_body_coefficients_aa[s, r, q, p] = np.conj(aa_term)
+
+                            # restricted non-relativistic case
+                            two_body_coefficients_ba[p, q, r, s] = aa_term
+                            two_body_coefficients_ba[q, p, s, r] = aa_term
+                            two_body_coefficients_ba[r, s, p, q] = np.conj(aa_term)
+                            two_body_coefficients_ba[s, r, q, p] = np.conj(aa_term)
+
+                            two_body_coefficients_ab[p, q, r, s] = aa_term
+                            two_body_coefficients_ab[q, p, s, r] = aa_term
+                            two_body_coefficients_ab[r, s, p, q] = np.conj(aa_term)
+                            two_body_coefficients_ab[s, r, q, p] = np.conj(aa_term)
+
+                            two_body_coefficients_bb[p, q, r, s] = aa_term
+                            two_body_coefficients_bb[q, p, s, r] = aa_term
+                            two_body_coefficients_bb[r, s, p, q] = np.conj(aa_term)
+                            two_body_coefficients_bb[s, r, q, p] = np.conj(aa_term)
+
+                        # non-restricted case ?
+                        if (beta_p, beta_q,
+                                beta_r, beta_s) in two_body_integrals:
+
+                            # beta-beta unique matrix element
+                            bb_term = two_body_integrals[
+                                (beta_p, beta_q, beta_r, beta_s)]
+
+                            two_body_coefficients_bb[p, q, r, s] = bb_term
+                            two_body_coefficients_bb[q, p, s, r] = bb_term
+                            two_body_coefficients_bb[r, s, p, q] = np.conj(bb_term)
+                            two_body_coefficients_bb[s, r, q, p] = np.conj(bb_term)
+
+                        if (alpha_p, beta_q,
+                                beta_r, alpha_s) in two_body_integrals:
+
+                            # alpha-beta unique matrix element
+                            ab_term = two_body_integrals[
+                                (alpha_p, beta_q, beta_r, alpha_s)]
+
+                            two_body_coefficients_ab[p, q, r, s] = ab_term
+                            two_body_coefficients_ab[q, p, s, r] = ab_term
+                            two_body_coefficients_ab[r, s, p, q] = np.conj(ab_term)
+                            two_body_coefficients_ab[s, r, q, p] = np.conj(ab_term)
+
+                        if (beta_p, alpha_q,
+                                alpha_r, beta_s) in two_body_integrals:
+
+                            # beta-alpha unique matrix element
+                            ba_term = two_body_integrals[
+                                (beta_p, alpha_q, alpha_r, beta_s)]
+
+                            two_body_coefficients_ba[p, q, r, s] = ba_term
+                            two_body_coefficients_ba[q, p, s, r] = ba_term
+                            two_body_coefficients_ba[r, s, p, q] = np.conj(ba_term)
+                            two_body_coefficients_ba[s, r, q, p] = np.conj(ba_term)
+
+        # truncate numbers lower than EQ_TOLERANCE
+        two_body_coefficients_aa[np.abs(
+            two_body_coefficients_aa) < EQ_TOLERANCE] = 0.
+        two_body_coefficients_bb[np.abs(
+            two_body_coefficients_bb) < EQ_TOLERANCE] = 0.
+        two_body_coefficients_ab[np.abs(
+            two_body_coefficients_ab) < EQ_TOLERANCE] = 0.
+        two_body_coefficients_ba[np.abs(
+            two_body_coefficients_ba) < EQ_TOLERANCE] = 0.
+
+        return (
+            one_body_coefficients_a, one_body_coefficients_b,
+            two_body_coefficients_aa, two_body_coefficients_bb,
+            two_body_coefficients_ab, two_body_coefficients_ba
+        )
