@@ -5,7 +5,6 @@ Standard restricted calculation => H2 example.
 Notes:
     Requires the installation of qc2, ase, qiskit and h5py.
 """
-import subprocess
 from ase.build import molecule
 
 import qiskit_nature
