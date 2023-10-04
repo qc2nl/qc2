@@ -15,7 +15,7 @@ from qiskit.algorithms.minimum_eigensolvers import VQE
 from qiskit.algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 
-from qc2.ase import PySCF
+from qc2.ase import PySCF, DIRAC
 from qc2.data import qc2Data
 
 # Avoid using the deprecated `PauliSumOp` object
@@ -26,10 +26,10 @@ qiskit_nature.settings.use_pauli_sum_op = False
 mol = molecule('H2')
 
 # file to save data
-hdf5_file = 'h2_ase_pyscf_qiskit.fcidump'
+fcidump_file = 'h2_ase_pyscf_qiskit.fcidump'
 
 # init the hdf5 file
-qc2data = qc2Data(hdf5_file, mol, schema='fcidump')
+qc2data = qc2Data(fcidump_file, mol, schema='fcidump')
 
 # specify the qchem calculator
 qc2data.molecule.calc = PySCF()  # default => RHF/STO-3G
