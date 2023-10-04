@@ -173,13 +173,13 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         self.results = output
 
     def save(self, datafile: h5py.File) -> None:
-        """Dumps electronic structure data to a HDF5 file.
+        """Dumps qchem data to a datafile using QCSchema or FCIDump formats.
 
         Args:
-            datafile (h5py.File): HDF5 file to save the data to.
+            datafile (Union[h5py.File, str]): file to save the data to.
 
         Notes:
-            HDF5 files are written following the QCSchema.
+            files are written following the QCSchema or FCIDump formats.
 
         Returns:
             None
@@ -190,13 +190,23 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = DIRAC()  # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "qcschema"
         >>> molecule.calc.get_potential_energy()
         >>> molecule.calc.save('h2.h5')
+        >>>
+        >>> molecule = molecule('H2')
+        >>> molecule.calc = DIRAC()  # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "fcidump"
+        >>> molecule.calc.get_potential_energy()
+        >>> molecule.calc.save('h2.fcidump')
         """
+        # in case of fcidump format
         if self._schema_format == "fcidump":
-            raise ValueError("FCIDump format not yet implemented "
-                             "in DIRAC.save() method.")
+            self._get_dirac_fcidump()
+            os.rename('FCIDUMP', datafile)
+            return
 
+        # in case of qcschema format
         # first, set up general attributes
         # get info about the basis set used
         if '.default' in self.parameters['molecule']['*basis']:
@@ -516,21 +526,17 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
                 - two_body_int (Dict[Tuple[int, int, int, int],
                     Union[float, complex]]): Dictionary of two-body integrals
                     with their corresponding indices as tuples.
-
-        Raises:
-            EnvironmentError: If the command execution fails.
-            CalculationFailed: If the calculator fails with
-                a non-zero error code.
         """
-        # generate DIRAC FCIDUMP file
         self._get_dirac_fcidump()
 
         e_core = 0
         spinor = {}
         one_body_int = {}
         two_body_int = {}
-        num_lines = sum(1 for line in open("FCIDUMP"))
-        with open('FCIDUMP') as f:
+        num_lines = sum(
+            1 for line in open("FCIDUMP", encoding='utf-8')
+        )
+        with open('FCIDUMP', encoding='utf-8') as f:
             start_reading = 0
             for line in f:
                 start_reading += 1
@@ -597,12 +603,17 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         return data
 
     def _get_dirac_fcidump(self) -> None:
-        """Helper function to generate DIRAC FCIDUMP file.
+        """Helper routine to generate DIRAC FCIDUMP file.
 
         Notes:
             Requires MRCONEE MDCINT files obtained using
             **DIRAC .4INDEX, **MOLTRA .ACTIVE all and
             'pam ... --get="MRCONEE MDCINT"' options.
+        
+        Raises:
+            EnvironmentError: If the command execution fails.
+            CalculationFailed: If the calculator fails with
+                a non-zero error code.
         """
         command = "dirac_mointegral_export.x fcidump"
         try:

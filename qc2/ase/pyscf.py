@@ -478,7 +478,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
         Notes:
             files are read following the qcschema or fcidump formats.
-        
+
         Returns:
             `QCSchema` or `FCIDump` dataclasses containing qchem data.
 
