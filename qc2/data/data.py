@@ -1,7 +1,6 @@
 """This module defines the main qc2 data class."""
 from typing import Optional, Tuple, Union
 import os
-import h5py
 
 from ase import Atoms
 from ase.units import Ha
@@ -21,8 +20,6 @@ from qiskit_nature.second_q.transformers import ActiveSpaceTransformer
 
 from pennylane.operation import Operator
 from ..pennylane.convert import import_operator
-
-#from .schema import generate_empty_h5
 
 # avoid using the deprecated `PauliSumOp` object
 qiskit_nature.settings.use_pauli_sum_op = False
@@ -59,8 +56,8 @@ class qc2Data:
             molecule (Optional[Atoms]): An optional `ase.atoms.Atoms` instance
                 representing the target molecule.
             schema (Optional[str]): An optional attribute defining the format
-                in which to save qchem data. Options are 'qcschema' or 'fcidump'.
-                Defaults to 'qcschema'.
+                in which to save qchem data. Options are 'qcschema' or
+                'fcidump'. Defaults to 'qcschema'.
 
         Example:
         >>> from qc2.data import qc2Data
@@ -93,7 +90,7 @@ class qc2Data:
             raise ValueError(
                 f"{file_extension} is not a valid extension. "
                 "For QCSchema format provide a file with "
-                "*.hdf5 extension."
+                "*.hdf5 or *.h5 extensions."
             )
 
         if (self._schema == 'fcidump' and not file_extension == '.fcidump'):
