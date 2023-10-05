@@ -340,27 +340,6 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             success=True
         )
 
-        n_basis_1 = self._get_from_dirac_hdf5_file(
-            '/input/aobasis/1/n_ao'
-        )
-
-        n_basis_2 = self._get_from_dirac_hdf5_file(
-            '/result/wavefunctions/scf/mobasis/n_basis'
-        )
-
-        mo_coeff_flatted = self._get_from_dirac_hdf5_file(
-                '/result/wavefunctions/scf/mobasis/orbitals'
-        )
-
-        mo_coeff = mo_coeff_flatted #.reshape(nmo, 2)
-
-        print(nelec, nmo, n_basis_1, n_basis_2, mo_coeff)
-        print(integrals[1])
-        #print()
-        print(self._get_from_dirac_hdf5_file(
-                '/result/wavefunctions/scf/mobasis/eigenvalues'
-            ))
-
         with h5py.File(datafile, 'w') as h5file:
             qcschema.to_hdf5(h5file)
 
