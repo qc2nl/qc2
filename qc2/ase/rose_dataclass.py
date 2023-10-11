@@ -1,8 +1,35 @@
-"""Customized input options for Rose"""
-from ase import Atoms
+"""
+This module defines customized input options for Rose
+"""
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, List, Union, Sequence
+from typing import Optional, Tuple, List, Union, Sequence
+import numpy as np
+from ase import Atoms
+
+
+@dataclass
+class RoseFragment:
+    """A dataclass representing an atomic or molecular fragment in Rose."""
+    name: str
+    atoms: Optional[
+        List[Tuple[Union[str, np.ndarray], np.ndarray]]
+    ] = field(default_factory=list)
+    charge: int = 0
+    multiplicity: int = 1
+    basis: str = 'sto-3g'
+
+
+@dataclass
+class RoseMolecule:
+    """A dataclass representing the target molecular system in Rose."""
+    name: str
+    atoms: Optional[
+        List[Tuple[Union[str, np.ndarray], np.ndarray]]
+    ] = field(default_factory=list)
+    charge: int = 0
+    multiplicity: int = 1
+    basis: str = 'sto-3g'
 
 
 class RoseCalcType(Enum):
@@ -37,56 +64,57 @@ class RoseILMOExponent(Enum):
 @dataclass
 class RoseInputDataClass:
     """A dataclass representing input options for Rose."""
-    ### defining calculator specific options
-
-    # target supermolecule => ASE Atoms object
-    rose_target: Atoms
-    # list of atomic or molecular fragments
-    rose_frags: Union[Atoms, Sequence[Atoms]]
-    # are canonical mo files already present?
-    target_mo_file_exists: bool = False 
+    rose_target: Union[Atoms, RoseMolecule]
+    """Target supermolecule => ASE Atoms object."""
+    rose_frags: Union[
+        Atoms, Sequence[Atoms], RoseFragment, Sequence[RoseFragment]
+    ]
+    """List of atomic or molecular fragments."""
+    target_mo_file_exists: bool = False
     frags_mo_files_exist: bool = False
-    # calculation type
+    """Are canonical mo files already present?"""
     rose_calc_type: RoseCalcType = RoseCalcType.ATOM_FRAG.value
+    """Calculation type"""
 
-    ### Rose intrinsic options
-
-    # exponent used in the localization procedure 
     exponent: RoseILMOExponent = RoseILMOExponent.TWO.value
+    """Exponent used in the localization procedure."""
     restricted: bool = True
+    """Restricted calculation option"""
     spatial_orbitals: bool = True
+    """Spatial orbitals option - true for non-relativistic calculations."""
     test: bool = False
+    """Test to calculate HF energy with the final localized orbitals."""
     include_core: bool = False
+    """Frozen core option."""
     relativistic: bool = False
-    # version of the IAO construction
+    """Relativistic calculation option."""
     version: RoseIFOVersion = RoseIFOVersion.STNDRD_2013.value
-    # spherical or cartesian coordinate GTOs
+    """Version of the IAO construction."""
     spherical: bool = False
-    # use decontracted basis sets
+    "Spherical or cartesian coordinate GTOs."
     uncontract: bool = True
-    # extract the one-electron integrals
+    "Use decontracted basis sets."
     get_oeint: bool = False
-    # save final iaos/ibos ?
+    "Option to extract the one-electron integrals."
     save: bool = True
-    # add virtual orbitals with energies below this treshold
+    """Option to save final iaos/ibos."""
     additional_virtuals_cutoff: Optional[float] = None  # 2.0  # Eh
-    # define reference virtuals as those with energies below this treshold
+    """Add virtual orbitals with energies below this treshold."""
     frag_threshold: Optional[float] = None  # 10.0  # Eh
-    # number of valence orbitals (valence occupied + valence virtuals) per fragment
+    """Set reference virtuals as those with energies below this treshold."""
     frag_valence: Optional[List[List[int]]] = field(default_factory=list)
-    # number of core orbitals per fragment
+    """# of valence orbitals (valence occ + valence virt) per fragment."""
     frag_core: Optional[List[List[int]]] = field(default_factory=list)
-    # bias fragments when assigning the loc orb (for non-polar bonding orb)
+    """# of core orbitals per fragment."""
     frag_bias: Optional[List[List[int]]] = field(default_factory=list)
+    """Bias frags when assigning the loc orb (for non-polar bonding orb)."""
 
-    # avas related options => made inactive in this version
-    ## fragment IAO file to be extracted from ROSE (used for AVAS for instance)
-    # avas_frag: Optional[List[int]] = field(default_factory=list)
-    ## list of spatial MOs (or spinors if restricted = False) to consider in AVAS.
-    # nmo_avas: Optional[List[int]] = field(default_factory=list)
+    avas_frag: Optional[List[int]] = field(default_factory=list)
+    """Fragment IAO file to be extracted from ROSE."""
+    nmo_avas: Optional[List[int]] = field(default_factory=list)
+    """List of spatial MOs (or spinors if restricted = False) to AVAS."""
 
     def __post_init__(self):
         """This method is called after the instance is initialized."""
         if self.test:
             self.get_oeint = True
-
