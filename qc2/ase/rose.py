@@ -62,12 +62,7 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
 
         Example:
         >>> from ase.build import molecule
-        >>> from qc2.ase.pyscf import PySCF
-        >>>
-        >>> molecule = molecule('H2')
-        >>> molecule.calc = PySCF()     # => RHF/STO-3G
-        >>> molecule.calc.schema_format = "qcschema"
-        >>> qcschema = molecule.calc.load('h2.h5')
+        >>> from qc2.ase.rose import ROSE
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = PySCF()     # => RHF/STO-3G
