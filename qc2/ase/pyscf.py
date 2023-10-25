@@ -400,7 +400,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
         model = super().instantiate_qcmodel(
             basis=self.mol.basis,
-            method=self.mf._method_name()
+            method=self.mf.__class__.__name__
         )
 
         properties = super().instantiate_qcproperties(
