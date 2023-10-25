@@ -1,6 +1,6 @@
 """Tests for the ASE-PySCF interface"""
-
 import os
+import glob
 import subprocess
 import pytest
 
@@ -10,6 +10,19 @@ from ase.units import Ha
 import numpy as np
 import h5py
 from qc2.ase.dirac import DIRAC
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clean_up_h5_files():
+    """Runs at the end of all tests."""
+    yield
+    # Define the pattern for files to delete
+    file_pattern = "*.h5"
+    # Get a list of files that match the pattern
+    matching_files = glob.glob(file_pattern)
+    # Loop through the matching files and delete each one
+    for file_path in matching_files:
+        os.remove(file_path)
 
 
 def create_test_atoms():
@@ -37,7 +50,6 @@ def clean_up_files():
 
 def test_DIRAC_energy_rks():
     """Test case # 1 - RKS/B3LYP H2 molecule."""
-
     # define molecule geometry
     h2_molecule = Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.7284]])
 
@@ -55,7 +67,6 @@ def test_DIRAC_energy_rks():
 
 def test_DIRAC_energy_hf():
     """Test case # 2 - Testing ASE-DIRAC default parameters - HF/sto-3g."""
-
     h_atom = Atoms('H')
 
     h_atom.calc = DIRAC()
@@ -72,7 +83,6 @@ def test_DIRAC_energy_mp2():
     Notes:
         Adapted from the original DIRAC test set.
     """
-
     h2o_molecule = molecule('H2O')
 
     h2o_molecule.calc = DIRAC(hamiltonian={'.lvcorr': ''},
@@ -96,7 +106,6 @@ def test_DIRAC_energy_ccsdt():
         Adapted from the original DIRAC test set.
         Uses integral transformation option **MOLTRA.
     """
-
     h2o_molecule = molecule('H2O')
 
     h2o_molecule.calc = DIRAC(dirac={'.wave function': '', '.4index': ''},
@@ -117,7 +126,6 @@ def test_DIRAC_energy_open_shell():
     Notes:
         Adapted from the original DIRAC open-shell test set.
     """
-
     c_atom = Atoms('C')
 
     c_atom.calc = DIRAC(hamiltonian={'.x2c': ''},
@@ -126,9 +134,11 @@ def test_DIRAC_energy_open_shell():
                                   '*charge': {'.charge': '0'},
                                   '*symmetry': {'.d2h': '#'}},
                         wave_function={'.scf': '',
-                                       '*scf': {'.closed shell': '4 0',
-                                                '.open shell': '2\n1/0,2\n1/0,4',
-                                                '.kpsele': '3\n-1 1 -2\n4 0 0\n0 2 0\n0 0 4'}}
+                                       '*scf':
+                                       {'.closed shell': '4 0',
+                                        '.open shell': '2\n1/0,2\n1/0,4',
+                                        '.kpsele':
+                                        '3\n-1 1 -2\n4 0 0\n0 2 0\n0 0 4'}}
                         )
     energy_Eh = c_atom.get_potential_energy() / Ha
 
@@ -139,7 +149,6 @@ def test_DIRAC_energy_open_shell():
 
 def test_DIRAC_save_function(dirac_calculator):
     """Test case # 6 - tesing the save method of the DIRAC calculator."""
-
     # Perform calculation to generate results
     energy = dirac_calculator.get_potential_energy()/Ha
 
@@ -165,7 +174,6 @@ def test_DIRAC_save_function(dirac_calculator):
 
 def test_DIRAC_load_function(dirac_calculator):
     """Test case # 7 - testing the load method of the DIRAC calculator."""
-
     # Perform calculation to generate results
     energy = dirac_calculator.get_potential_energy()/Ha
 
@@ -186,15 +194,15 @@ def test_DIRAC_load_function(dirac_calculator):
     assert np.isclose(energy_new, energy)
 
 
-def test_DIRAC_get_integrals_function(dirac_calculator):
+def test_DIRAC_get_mo_integrals_function(dirac_calculator):
     """Test case # 8 - testing the get_integrals method of the ASE-DIRAC."""
-
     # Perform calculation to generate results
-    dirac_calculator.get_potential_energy()/Ha
+    dirac_calculator.get_potential_energy()
 
     # Calculate integrals
     (e_core, spinor,
-     one_body_int, two_body_int) = dirac_calculator.calc.get_integrals_mo_basis()
+     one_body_int,
+     two_body_int) = dirac_calculator.calc.get_integrals_mo_basis()
 
     # Check the type and content of the integrals
     assert isinstance(e_core, (float, complex))

@@ -1,5 +1,6 @@
 """Tests for the ASE-PySCF interface"""
 import os
+import glob
 import pytest
 import h5py
 import numpy as np
@@ -11,6 +12,19 @@ from ase.units import Ha
 from ase.calculators.calculator import InputError
 from ase.calculators.calculator import CalculatorSetupError
 from qc2.ase.pyscf import PySCF
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clean_up_files():
+    """Runs at the end of all tests."""
+    yield
+    # Define the pattern for files to delete
+    file_pattern = "*.h5"
+    # Get a list of files that match the pattern
+    matching_files = glob.glob(file_pattern)
+    # Loop through the matching files and delete each one
+    for file_path in matching_files:
+        os.remove(file_path)
 
 
 def create_test_atoms():
