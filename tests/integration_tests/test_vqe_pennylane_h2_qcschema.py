@@ -24,11 +24,12 @@ def clean_up_files():
 
 @pytest.fixture
 def vqe_calculation():
+    """Create input for H2 and save/load data using QCSchema."""
     # set Atoms object (H2 molecule)
     mol = molecule('H2')
 
     # file to save data
-    hdf5_file = 'h2_ase_dirac_pennylane.hdf5'
+    hdf5_file = 'h2_ase_pennylane.hdf5'
 
     # init the hdf5 file
     qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
@@ -90,8 +91,9 @@ def vqe_calculation():
 
 
 def test_vqe_calculation(vqe_calculation):
+    """Check that the final vqe energy corresponds to one at FCI/sto-3g."""
     calculated_electronic_energy, e_core = vqe_calculation
-    calculated_energy = calculated_electronic_energy+e_core
+    calculated_energy = calculated_electronic_energy + e_core
     assert calculated_energy == pytest.approx(-1.137301563740087, rel=1e-6)
 
 

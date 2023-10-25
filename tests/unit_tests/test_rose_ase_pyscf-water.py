@@ -9,7 +9,7 @@ from .rose_test_functions import clean_up, extract_number, read_output
 
 
 # Check first if the `genibo.x` and `avas.x` executables are available
-if not shutil.which("gen.x") or not shutil.which("avas.x"):
+if not shutil.which("genibo.x") or not shutil.which("avas.x"):
     pytest.skip("ROSE executables not found or not in your path. "
                 "Skipping tests.", allow_module_level=True)
 

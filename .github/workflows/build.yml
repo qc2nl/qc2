@@ -54,12 +54,12 @@ jobs:
       #    make
       #    echo `pwd`/bin >> $GITHUB_PATH
       #    cd ..
-      - name: Run unit tests in the 'qc2/qc2/tests/unit_tests' directory
+      - name: Run unit tests in the 'tests/unit_tests' directory
         run: |
-          pytest -v --pyargs qc2/qc2/tests/unit_tests
-      - name: Run integration tests in the 'qc2/qc2/tests/integration_tests' directory (PR merges only)
+          pytest -v --pyargs tests/unit_tests
+      - name: Run integration tests in the 'tests/integration_tests' directory (PR merges only)
         if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
         run: |
-          pytest -v --pyargs qc2/qc2/tests/integration_tests
+          pytest -v --pyargs tests/integration_tests
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel

@@ -26,6 +26,7 @@ def clean_up_files():
 
 @pytest.fixture
 def vqe_calculation():
+    """Create input for CH and save/load data using QCSchema."""
     # set Atoms object (H2 molecule)
     mol = molecule('CH')
 
@@ -73,8 +74,9 @@ def vqe_calculation():
 
 
 def test_vqe_calculation(vqe_calculation):
+    """Check that the final vqe energy corresponds to one at FCI/sto-3g."""
     calculated_electronic_energy, e_core = vqe_calculation
-    calculated_energy = calculated_electronic_energy+e_core
+    calculated_energy = calculated_electronic_energy + e_core
     assert calculated_energy == pytest.approx(-37.81103335229991, rel=1e-6)
 
 
