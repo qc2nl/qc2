@@ -1,6 +1,7 @@
 """Tests for the ASE-DIRAC interface"""
 import os
 import glob
+import shutil
 import subprocess
 import pytest
 
@@ -13,13 +14,9 @@ from qc2.ase.dirac import DIRAC
 
 
 # Check first if the `pam` executable is available
-try:
-    subprocess.run(
-        ["pam", "--help"], stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, check=True
-    )
-except FileNotFoundError:
-    pytest.skip("pam executable not found. Skipping tests.",
+if not shutil.which("pam"):
+    pytest.skip("pam executable not found or not in your path. "
+                "Skipping tests.",
                 allow_module_level=True)
 
 
