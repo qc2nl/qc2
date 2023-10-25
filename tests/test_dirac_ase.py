@@ -1,4 +1,4 @@
-"""Tests for the ASE-PySCF interface"""
+"""Tests for the ASE-DIRAC interface"""
 import os
 import glob
 import subprocess
