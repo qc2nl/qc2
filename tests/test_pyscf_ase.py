@@ -29,11 +29,10 @@ def pyscf_calculator():
 
 def test_PySCF_energy_rks():
     """Test case # 1 - RKS H2 molecule."""
-
     # define molecule geometry
     h2_molecule = Atoms('H2', positions=[[0, 0, 0], [0, 0, 0.7]])
 
-    # run calc and convert electronic energy into atomic units 
+    # run calc and convert electronic energy into atomic units
     h2_molecule.calc = PySCF(method='dft.RKS', xc='pbe', basis='sto-3g',
                              charge=0, multiplicity=1, verbose=0)
     energy_Eh = h2_molecule.get_potential_energy() / Ha
@@ -45,7 +44,6 @@ def test_PySCF_energy_rks():
 
 def test_PySCF_energy_uhf():
     """Test case # 2 - UHF H atom."""
-
     h_atom = Atoms('H')
 
     h_atom.calc = PySCF(method='scf.UHF', basis='sto-3g', charge=0,
@@ -57,7 +55,6 @@ def test_PySCF_energy_uhf():
 
 def test_PySCF_energy_rohf():
     """Test case # 3 - ROHF O2 molecule."""
-
     # now using the built-in molecule dataset to define the geometry
     o2_molecule = molecule('O2')
 
@@ -70,7 +67,6 @@ def test_PySCF_energy_rohf():
 
 def test_PySCF_energy_opt():
     """Test case # 4 - RKS geometry optimization H2 molecule."""
-
     # define geometry and wave function
     h2_molecule = molecule('H2')
     h2_molecule.calc = PySCF(method='dft.RKS', xc='pbe', basis='sto-3g',
@@ -91,7 +87,6 @@ def test_PySCF_energy_opt():
 
 def test_PySCF_energy_rel():
     """Test case # 5 - C atom with relativistic and cartesian basis sets."""
-
     c_atom = Atoms('C')
 
     c_atom.calc = PySCF(method='scf.UHF', basis='cc-pVDZ', multiplicity=3,
@@ -103,7 +98,6 @@ def test_PySCF_energy_rel():
 
 def test_PySCF_energy_scf_addons():
     """Test case # 6 - C atom with frac occupancy for degenerated HOMOs."""
-
     c_atom = Atoms('C')
 
     c_atom.calc = PySCF(method='scf.UHF', multiplicity=3,
@@ -115,7 +109,6 @@ def test_PySCF_energy_scf_addons():
 
 def test_PySCF_with_attribute_error():
     """Test case # 7 - Initializing attribute with unrecognized name."""
-
     with pytest.raises(InputError) as excinfo:
 
         # setting the basis attribute with an unrecognized name
@@ -128,7 +121,6 @@ def test_PySCF_with_attribute_error():
 
 def test_PySCF_with_wf_error():
     """Test case # 8 - Setting wave function not yet implemented."""
-
     with pytest.raises(CalculatorSetupError) as excinfo:
 
         mol = Atoms()
@@ -140,7 +132,6 @@ def test_PySCF_with_wf_error():
 
 def test_PySCF_save_function(pyscf_calculator):
     """Test case # 9 - tesing the save method of the PySCF calculator."""
-
     # Perform calculation to generate results
     energy = pyscf_calculator.get_potential_energy()/Ha
 
@@ -166,7 +157,6 @@ def test_PySCF_save_function(pyscf_calculator):
 
 def test_PySCF_load_function(pyscf_calculator):
     """Test case # 10 - testing the load method of the PySCF calculator."""
-
     # Perform calculation to generate results
     energy = pyscf_calculator.get_potential_energy()/Ha
 
@@ -187,16 +177,16 @@ def test_PySCF_load_function(pyscf_calculator):
     assert np.isclose(energy_new, energy)
 
 
-def test_PySCF_get_integrals_function(pyscf_calculator):
-    """Test case # 11 - testing get_integrals method of the ASE-PySCF."""
-
+def test_PySCF_get_mo_integrals_function(pyscf_calculator):
+    """Test case # 11 - testing get_mo_integrals method of the ASE-PySCF."""
     # Perform calculation to generate results
-    pyscf_calculator.get_potential_energy()/Ha
+    pyscf_calculator.get_potential_energy()
 
     # Calculate integrals
     (one_body_int_a, one_body_int_b,
      two_body_int_aa, two_body_int_bb,
-     two_body_int_ab, two_body_int_ba) = pyscf_calculator.calc.get_integrals_mo_basis()
+     two_body_int_ab,
+     two_body_int_ba) = pyscf_calculator.calc.get_integrals_mo_basis()
 
     # Check the type and content of the integrals
     assert isinstance(one_body_int_a, np.ndarray)
@@ -211,3 +201,47 @@ def test_PySCF_get_integrals_function(pyscf_calculator):
     assert len(two_body_int_bb) > 0
     assert len(two_body_int_ab) > 0
     assert len(two_body_int_ba) > 0
+
+
+def test_PySCF_get_ao_integrals_function(pyscf_calculator):
+    """Test case # 12 - testing get_ao_integrals method of the ASE-PySCF."""
+    # Perform calculation to generate results
+    pyscf_calculator.get_potential_energy()
+    one_e_int, two_e_int = pyscf_calculator.calc.get_integrals_ao_basis()
+    # Add assertions to check the correctness of the returned values.
+    assert isinstance(one_e_int, np.ndarray)
+    assert isinstance(two_e_int, np.ndarray)
+
+
+def test_PySCF_get_molecular_orbitals_coefficients(pyscf_calculator):
+    """Testing get_molecular_orbitals_coefficients of the ASE-PySCF."""
+    # Perform calculation to generate results
+    pyscf_calculator.get_potential_energy()
+    (alpha_coeffs,
+     beta_coeffs) = pyscf_calculator.calc.get_molecular_orbitals_coefficients()
+    # Add assertions to check the correctness of the returned coefficients.
+    assert isinstance(alpha_coeffs, np.ndarray)
+    # for restricted case
+    assert isinstance(beta_coeffs, type(None))
+
+
+def test_PySCF_get_molecular_orbitals_energies(pyscf_calculator):
+    """Testing get_molecular_orbitals_energies of the ASE-PySCF."""
+    # Perform calculation to generate results
+    pyscf_calculator.get_potential_energy()
+    (alpha_energies,
+     beta_energies) = pyscf_calculator.calc.get_molecular_orbitals_energies()
+    print(alpha_energies, beta_energies)
+    # Add assertions to check the correctness of the returned energies.
+    assert isinstance(alpha_energies, np.ndarray)
+    # for restricted case
+    assert isinstance(beta_energies, type(None))
+
+
+def test_get_overlap_matrix(pyscf_calculator):
+    """Testing get_overlap_matrix of the ASE-PySCF."""
+    # Perform calculation to generate results
+    pyscf_calculator.get_potential_energy()
+    overlap_matrix = pyscf_calculator.calc.get_overlap_matrix()
+    # Add assertions to check the correctness of the returned overlap matrix.
+    assert isinstance(overlap_matrix, np.ndarray)
