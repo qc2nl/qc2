@@ -12,6 +12,17 @@ import h5py
 from qc2.ase.dirac import DIRAC
 
 
+# Check first if the `pam` executable is available
+try:
+    subprocess.run(
+        ["pam", "--help"], stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, check=True
+    )
+except FileNotFoundError:
+    pytest.skip("pam executable not found. Skipping tests.",
+                allow_module_level=True)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def clean_up_h5_files():
     """Runs at the end of all tests."""
