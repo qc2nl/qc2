@@ -19,12 +19,12 @@ def qc2_data_instance():
     """Fixture to set up qc2Data instance."""
     # Create a temporary file for testing
     tmp_filename = str('test_qc2data.h5')
-
+    
     # Create an ASE Atoms instance for testing
     atoms = Atoms(symbols="H2", positions=[(0, 0, 0), (0, 0, 0.74)])
 
     # Create the qc2Data instance
-    qc2_data = qc2Data(filename=tmp_filename, molecule=atoms)
+    qc2_data = qc2Data(tmp_filename, atoms, schema='qcschema')
     qc2_data.molecule.calc = PySCF()
     yield qc2_data
 
@@ -34,6 +34,7 @@ def qc2_data_instance():
 
 def test_init(qc2_data_instance):
     """Test case # 1 - Testing molecule attribute."""
+    qc2_data_instance.run()
     assert isinstance(qc2_data_instance._molecule, Atoms)
 
 
@@ -45,10 +46,10 @@ def test_run(qc2_data_instance, capsys):
     assert f"Saving qchem data in {qc2_data_instance._filename}" in captured.out
 
 
-def test_read_qcschema(qc2_data_instance):
+def test_read_schema(qc2_data_instance):
     """Test case # 3 - Populating QCSchema dataclass."""
     qc2_data_instance.run()
-    qcschema = qc2_data_instance.read_qcschema()
+    qcschema = qc2_data_instance.read_schema()
     assert qcschema is not None
     assert isinstance(qcschema, QCSchema)
 

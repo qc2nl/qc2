@@ -179,11 +179,11 @@ def test_PySCF_load_function(pyscf_calculator):
 
     # Load results from the HDF5 file
     atoms_new.calc = PySCF()
-    atoms_new.calc.load(hdf5_filename)
+    qcschema = atoms_new.calc.load(hdf5_filename)
 
-    # Check if the energy kept in 'return_energy'
+    # Check if the energy kept in 'return_result'
     # is equal to the expected energy
-    energy_new = atoms_new.calc.return_energy
+    energy_new = qcschema.return_result
     assert np.isclose(energy_new, energy)
 
 
@@ -194,12 +194,11 @@ def test_PySCF_get_integrals_function(pyscf_calculator):
     pyscf_calculator.get_potential_energy()/Ha
 
     # Calculate integrals
-    (e_core, one_body_int_a, one_body_int_b,
+    (one_body_int_a, one_body_int_b,
      two_body_int_aa, two_body_int_bb,
-     two_body_int_ab, two_body_int_ba) = pyscf_calculator.calc.get_integrals()
+     two_body_int_ab, two_body_int_ba) = pyscf_calculator.calc.get_integrals_mo_basis()
 
     # Check the type and content of the integrals
-    assert isinstance(e_core, float)
     assert isinstance(one_body_int_a, np.ndarray)
     assert isinstance(one_body_int_b, np.ndarray)
     assert isinstance(two_body_int_aa, np.ndarray)

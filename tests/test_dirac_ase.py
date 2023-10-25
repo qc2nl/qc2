@@ -123,13 +123,13 @@ def test_DIRAC_energy_open_shell():
     c_atom.calc = DIRAC(hamiltonian={'.x2c': ''},
                         integrals={'*readin': {'.uncontracted': "#"}},
                         molecule={'*basis': {'.default': 'sto-3g'},
-                                  '*charge': {'.charge': '0'}},
-                                  # '*symmetry': {'.nosym': '#'}},
+                                  '*charge': {'.charge': '0'},
+                                  '*symmetry': {'.d2h': '#'}},
                         wave_function={'.scf': '',
                                        '*scf': {'.closed shell': '4 0',
                                                 '.open shell': '2\n1/0,2\n1/0,4',
                                                 '.kpsele': '3\n-1 1 -2\n4 0 0\n0 2 0\n0 0 4'}}
-    )
+                        )
     energy_Eh = c_atom.get_potential_energy() / Ha
 
     # compare with the energy obtained using dirac alone
@@ -178,11 +178,11 @@ def test_DIRAC_load_function(dirac_calculator):
 
     # Load results from the HDF5 file
     atoms_new.calc = DIRAC()
-    atoms_new.calc.load(hdf5_filename)
+    qcschema = atoms_new.calc.load(hdf5_filename)
 
-    # Check if the energy kept in 'return_energy'
+    # Check if the energy kept in 'return_result'
     # is equal to the expected energy
-    energy_new = atoms_new.calc.return_energy
+    energy_new = qcschema.return_result
     assert np.isclose(energy_new, energy)
 
 
@@ -194,7 +194,7 @@ def test_DIRAC_get_integrals_function(dirac_calculator):
 
     # Calculate integrals
     (e_core, spinor,
-     one_body_int, two_body_int) = dirac_calculator.calc.get_integrals()
+     one_body_int, two_body_int) = dirac_calculator.calc.get_integrals_mo_basis()
 
     # Check the type and content of the integrals
     assert isinstance(e_core, (float, complex))

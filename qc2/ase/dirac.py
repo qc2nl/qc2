@@ -6,11 +6,10 @@ https://www.diracprogram.org/
 GitLab repo:
 https://gitlab.com/dirac/dirac
 """
-
+import logging
 import subprocess
 import os
-from typing import Optional, List, Dict, Tuple, Union
-import warnings
+from typing import Optional, List, Dict, Tuple, Union, Any
 import h5py
 import numpy as np
 
@@ -19,6 +18,11 @@ from ase.calculators.calculator import FileIOCalculator
 from ase.calculators.calculator import InputError, CalculationFailed
 from ase.units import Bohr
 from ase.io import write
+
+from qiskit_nature.second_q.formats.qcschema import QCSchema
+from qiskit_nature import __version__ as qiskit_nature_version
+from qiskit_nature.second_q.formats.fcidump import FCIDump
+
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from .qc2_ase_base_class import BaseQc2ASECalculator
 
@@ -113,7 +117,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             self.parameters = _update_dict(self.parameters, key, value)
 
         if 'hamiltonian' not in self.parameters:
-            self.parameters.update(hamiltonian={'.levy-leblond': ''})
+            self.parameters.update(hamiltonian={'.nonrel': ''})
 
         if 'wave_function' not in self.parameters:
             self.parameters.update(wave_function={'.scf': ''})
@@ -127,6 +131,9 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         if '*charge' not in self.parameters['molecule']:
             self.parameters['molecule']['*charge'] = {'.charge': '0'}
+
+        if '*symmetry' not in self.parameters['molecule']:
+            self.parameters['molecule']['*symmetry'] = {'.nosym': '#'}
 
         if '.4index' not in self.parameters['dirac']:
             # activates the transformation of integrals to MO basis
@@ -164,14 +171,14 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         output = read_dirac_out(out_file)
         self.results = output
 
-    def save(self, hdf5_filename: str) -> None:
-        """Dumps electronic structure data to a HDF5 file.
+    def save(self, datafile: h5py.File) -> None:
+        """Dumps qchem data to a datafile using QCSchema or FCIDump formats.
 
         Args:
-            hdf5_filename (str): HDF5 file to save the data to.
+            datafile (Union[h5py.File, str]): file to save the data to.
 
         Notes:
-            HDF5 files are written following the QCSchema.
+            files are written following the QCSchema or FCIDump formats.
 
         Returns:
             None
@@ -182,120 +189,386 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = DIRAC()  # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "qcschema"
         >>> molecule.calc.get_potential_energy()
         >>> molecule.calc.save('h2.h5')
+        >>>
+        >>> molecule = molecule('H2')
+        >>> molecule.calc = DIRAC()  # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "fcidump"
+        >>> molecule.calc.get_potential_energy()
+        >>> molecule.calc.save('h2.fcidump')
         """
-        # calculate 1- and 2-electron integrals in MO basis
-        integrals = self.get_integrals()
-        e_core = integrals[0]
-        one_body_integrals = integrals[2]
-        two_body_integrals = integrals[3]
+        # in case of fcidump format
+        if self._schema_format == "fcidump":
+            self._get_dirac_fcidump()
+            os.rename('FCIDUMP', datafile)
+            return
 
-        # open the HDF5 file in write mode
-        file = h5py.File(hdf5_filename, "w")
-
-        # set up general definitions for the QCSchema
-        # 1 => general initial attributes
-        schema_name = "qcschema_molecule"
-        version = '1.dev'
-        driver = "energy"
-        energy = self._get_from_dirac_hdf5_file(
-           '/result/wavefunctions/scf/energy')[0]
-        # final status of the calculation
-        status = self._get_from_dirac_hdf5_file(
-            '/result/execution/status')[0]
-        if status != 2:
-            success = False
+        # in case of qcschema format
+        # get info about the basis set used
+        if '.default' in self.parameters['molecule']['*basis']:
+            basis = self.parameters['molecule']['*basis']['.default']
         else:
-            success = True
+            basis = 'special'
 
-        file.attrs['driver'] = driver
-        file.attrs['schema_name'] = schema_name
-        file.attrs['schema_version'] = version
-        file.attrs['return_result'] = energy
-        file.attrs['success'] = success
-
-        # 2 => molecule group
-        symbols = self._get_from_dirac_hdf5_file(
-           '/input/molecule/symbols'
-           )
-        geometry = self._get_from_dirac_hdf5_file(
-           '/input/molecule/geometry') / Bohr  # => in a.u
-        molecular_charge = int(
-            self.parameters['molecule']['*charge']['.charge'])
-        atomic_numbers = self._get_from_dirac_hdf5_file(
-            '/input/molecule/nuc_charge')
-        # include here multiplicity ?
-        # Not a good quantum number for relativistic DIRAC?
-        molecular_multiplicity = ''
-
-        molecule = file.require_group("molecule")
-        molecule.attrs['symbols'] = symbols
-        molecule.attrs['geometry'] = geometry
-        molecule.attrs['molecular_charge'] = molecular_charge
-        molecule.attrs['molecular_multiplicity'] = molecular_multiplicity
-        molecule.attrs['atomic_numbers'] = atomic_numbers
-        molecule.attrs['schema_name'] = "qcschema_molecule"
-        molecule.attrs['schema_version'] = version
-
-        # 3 => properties group
-        calcinfo_nbasis = self._get_from_dirac_hdf5_file(
-            '/input/aobasis/1/n_ao')[0]
-        # of molecular orbitals
+        # then get # of molecular orbitals
         nmo = self._get_from_dirac_hdf5_file(
-           '/result/wavefunctions/scf/mobasis/n_mo')
+           '/result/wavefunctions/scf/mobasis/n_mo'
+        )
         nmo = sum(nmo)
         # in case of relativistic calculations...
         if ('.nonrel' not in self.parameters['hamiltonian'] and
                 '.levy-leblond' not in self.parameters['hamiltonian']):
             nmo = nmo // 2
-            warnings.warn('At the moment, DIRAC-ASE relativistic calculations'
-                          ' may not work properly with'
-                          ' Qiskit and/or Pennylane...')
+            logging.warning(
+                'At the moment, DIRAC-ASE relativistic '
+                'calculations may not work properly with '
+                'Qiskit and/or Pennylane...'
+            )
         # approximate definition of # of alpha and beta electrons
         # does not work for pure triplet ground states!?
         nuc_charge = self._get_from_dirac_hdf5_file(
-            '/input/molecule/nuc_charge')
+            '/input/molecule/nuc_charge'
+        )
+        molecular_charge = int(
+            self.parameters['molecule']['*charge']['.charge']
+        )
         nelec = int(sum(nuc_charge)) - molecular_charge
         calcinfo_nbeta = nelec // 2
         calcinfo_nalpha = nelec - calcinfo_nbeta
-        calcinfo_natom = self._get_from_dirac_hdf5_file(
-           '/input/molecule/n_atoms')[0]
-        #warnings.warn('VQEs with triplet ground state molecules '
-        #              'not supported by DIRAC-ASE...')
 
-        properties = file.require_group("properties")
-        properties.attrs['calcinfo_nbasis'] = calcinfo_nbasis
-        properties.attrs['calcinfo_nmo'] = nmo
-        properties.attrs['calcinfo_nalpha'] = calcinfo_nalpha
-        properties.attrs['calcinfo_nbeta'] = calcinfo_nbeta
-        properties.attrs['calcinfo_natom'] = calcinfo_natom
-        properties.attrs['nuclear_repulsion_energy'] = e_core
-        properties.attrs['return_energy'] = energy
+        # get 1- and 2-electron integrals from FCIDUMP file
+        integrals = self.get_integrals_mo_basis()
+        one_body_integrals = integrals[2]
+        two_body_integrals = integrals[3]
 
-        # 4 => model group
-        # dealing with different types of basis
-        if '.default' in self.parameters['molecule']['*basis']:
-            basis = self.parameters['molecule']['*basis']['.default']
-        else:
-            basis = 'special'
-        # electronic structure method used
-        method = list(self.parameters['wave_function'].keys())[-1].strip('.')
+        # format these integrals to make them compatible with qcschema
+        integrals_mo = self._format_fcidump_mo_integrals(
+            one_body_integrals, two_body_integrals, nmo
+        )
+        one_body_coefficients_a = integrals_mo[0]
+        one_body_coefficients_b = integrals_mo[1]
+        two_body_coefficients_aa = integrals_mo[2]
+        two_body_coefficients_bb = integrals_mo[3]
+        two_body_coefficients_ab = integrals_mo[4]
+        two_body_coefficients_ba = integrals_mo[5]
 
-        model = file.require_group("model")
-        model.attrs['basis'] = basis
-        model.attrs['method'] = method
+        # create instances of QCSchema's component dataclasses
+        topology = super().instantiate_qctopology(
+            symbols=self._get_from_dirac_hdf5_file(
+                '/input/molecule/symbols'
+            ),
+            geometry=self._get_from_dirac_hdf5_file(
+                '/input/molecule/geometry'
+            ) / Bohr,
+            molecular_charge=int(
+                self.parameters['molecule']['*charge']['.charge']
+            ),
+            molecular_multiplicity='',
+            atomic_numbers=self._get_from_dirac_hdf5_file(
+                '/input/molecule/nuc_charge'
+            ),
+            schema_name="qcschema_molecule",
+            schema_version=qiskit_nature_version
+        )
 
-        # 5 => provenance group
-        provenance = file.require_group("provenance")
-        provenance.attrs['creator'] = self.name
-        provenance.attrs['version'] = version
-        provenance.attrs['routine'] = f"ASE-{self.__class__.__name__}.save()"
+        provenance = super().instantiate_qcprovenance(
+            creator=self.name,
+            version='dirac23',
+            routine=f"ASE-{self.__class__.__name__}.save()"
+        )
 
-        # 6 => keywords group
-        file.require_group("keywords")
+        model = super().instantiate_qcmodel(
+            basis=basis,
+            method=list(
+                self.parameters['wave_function'].keys()
+            )[-1].strip('.')
+        )
 
-        # 7 => wavefunction group
+        properties = super().instantiate_qcproperties(
+            calcinfo_nbasis=self._get_from_dirac_hdf5_file(
+                '/input/aobasis/1/n_ao'
+            )[0],
+            calcinfo_nmo=nmo,
+            calcinfo_nalpha=calcinfo_nalpha,
+            calcinfo_nbeta=calcinfo_nbeta,
+            calcinfo_natom=self._get_from_dirac_hdf5_file(
+                '/input/molecule/n_atoms'
+            )[0],
+            nuclear_repulsion_energy=integrals[0],
+            return_energy=self._get_from_dirac_hdf5_file(
+                '/result/wavefunctions/scf/energy'
+            )[0]
+        )
+
+        # TODO: 1. integrals in AO basis (one_e_int_ao, two_e_int_ao)
+        #       2. add mo coefficients and mo energies
+        #          (alpha_coeff, beta_coeff, alpha_mo, beta_mo)
+        wavefunction = super().instantiate_qcwavefunction(
+                    basis=basis,
+                    # scf_fock_a=one_e_int_ao.flatten(),
+                    # #scf_fock_b=one_e_int_ao.flatten(),
+                    # scf_eri=two_e_int_ao.flatten(),
+                    scf_fock_mo_a=one_body_coefficients_a.flatten(),
+                    scf_fock_mo_b=one_body_coefficients_b.flatten(),
+                    scf_eri_mo_aa=two_body_coefficients_aa.flatten(),
+                    scf_eri_mo_bb=two_body_coefficients_bb.flatten(),
+                    scf_eri_mo_ba=two_body_coefficients_ba.flatten(),
+                    scf_eri_mo_ab=two_body_coefficients_ab.flatten(),
+                    # scf_orbitals_a=alpha_coeff.flatten(),
+                    # scf_orbitals_b=beta_coeff.flatten(),
+                    # scf_eigenvalues_a=alpha_mo.flatten(),
+                    # scf_eigenvalues_b=beta_mo.flatten(),
+                    localized_orbitals_a='',
+                    localized_orbitals_b=''
+                )
+
+        qcschema = super().instantiate_qcschema(
+            schema_name='qcschema_molecule',
+            schema_version=qiskit_nature_version,
+            driver='energy',
+            keywords={},
+            return_result=self._get_from_dirac_hdf5_file(
+                '/result/wavefunctions/scf/energy'
+            )[0],
+            molecule=topology,
+            wavefunction=wavefunction,
+            properties=properties,
+            model=model,
+            provenance=provenance,
+            success=True
+        )
+
+        with h5py.File(datafile, 'w') as h5file:
+            qcschema.to_hdf5(h5file)
+
+    def load(self, datafile: Union[h5py.File, str]) -> Union[
+        QCSchema, FCIDump
+    ]:
+        """Loads electronic structure data from a datafile.
+
+        Notes:
+            files are read following the qcschema or fcidump formats.
+
+        Returns:
+            `QCSchema` or `FCIDump` dataclasses containing qchem data.
+
+        Example:
+        >>> from ase.build import molecule
+        >>> from qc2.ase.pyscf import PySCF
+        >>>
+        >>> molecule = molecule('H2')
+        >>> molecule.calc = DIRAC()     # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "qcschema"
+        >>> qcschema = molecule.calc.load('h2.h5')
+        >>>
+        >>> molecule = molecule('H2')
+        >>> molecule.calc = DIRAC()     # => RHF/STO-3G
+        >>> molecule.calc.schema_format = "fcidump"
+        >>> fcidump = molecule.calc.load('h2.fcidump')
+        """
+        if self._schema_format == "fcidump":
+            logging.warning(
+                'FCIDump.from_file() in Qiskit-Nature may not load '
+                'properly integrals from DIRAC FCIDUMP file. '
+                'The reason lies in the fact that FCIDump.from_file() '
+                'reads integrals as `SymmetricTwoBodyIntegrals`, while, '
+                'in DIRAC, FCIDUMP file is generated with the full list '
+                'of terms.'
+            )
+
+        return BaseQc2ASECalculator.load(self, datafile)
+
+    def get_integrals_mo_basis(self) -> Tuple[
+        Union[float, complex], Dict[int, Union[float, complex]],
+        Dict[Tuple[int, int], Union[float, complex]],
+        Dict[Tuple[int, int, int, int], Union[float, complex]]
+    ]:
+        """Retrieves 1- and 2-body integrals in MO basis from DIRAC FCIDUMP.
+
+        Notes:
+            Adapted from Openfermion-Dirac:
+            see: https://github.com/bsenjean/Openfermion-Dirac.
+
+        Returns:
+            A tuple containing the following:
+                - e_core (Union[float, complex]): Nuclear repulsion energy.
+                - spinor (Dict[int, Union[float, complex]]): Dictionary of
+                    spinor values with their corresponding indices.
+                - one_body_int (Dict[Tuple[int, int], Union[float, complex]]):
+                    Dictionary of one-body integrals with their corresponding
+                    indices as tuples.
+                - two_body_int (Dict[Tuple[int, int, int, int],
+                    Union[float, complex]]): Dictionary of two-body integrals
+                    with their corresponding indices as tuples.
+        """
+        self._get_dirac_fcidump()
+
+        e_core = 0
+        spinor = {}
+        one_body_int = {}
+        two_body_int = {}
+        num_lines = sum(
+            1 for line in open("FCIDUMP", encoding='utf-8')
+        )
+        with open('FCIDUMP', encoding='utf-8') as f:
+            start_reading = 0
+            for line in f:
+                start_reading += 1
+                if "&END" in line:
+                    break
+            listed_values = [
+                [token for token in line.split()] for line in f.readlines()]
+            complex_int = False
+            if len(listed_values[0]) == 6:
+                complex_int = True
+            if not complex_int:
+                for row in range(num_lines-start_reading):
+                    a_1 = int(listed_values[row][1])
+                    a_2 = int(listed_values[row][2])
+                    a_3 = int(listed_values[row][3])
+                    a_4 = int(listed_values[row][4])
+                    if a_4 == 0 and a_3 == 0:
+                        if a_2 == 0:
+                            if a_1 == 0:
+                                e_core = float(listed_values[row][0])
+                            else:
+                                spinor[a_1] = float(listed_values[row][0])
+                        else:
+                            one_body_int[a_1, a_2] = float(
+                                listed_values[row][0])
+                    else:
+                        two_body_int[a_1, a_2, a_3, a_4] = float(
+                            listed_values[row][0])
+            if complex_int:
+                for row in range(num_lines-start_reading):
+                    a_1 = int(listed_values[row][2])
+                    a_2 = int(listed_values[row][3])
+                    a_3 = int(listed_values[row][4])
+                    a_4 = int(listed_values[row][5])
+                    if a_4 == 0 and a_3 == 0:
+                        if a_2 == 0:
+                            if a_1 == 0:
+                                e_core = complex(
+                                   float(listed_values[row][0]),
+                                   float(listed_values[row][1]))
+                            else:
+                                spinor[a_1] = complex(
+                                   float(listed_values[row][0]),
+                                   float(listed_values[row][1]))
+                        else:
+                            one_body_int[a_1, a_2] = complex(
+                               float(listed_values[row][0]),
+                               float(listed_values[row][1]))
+                    else:
+                        two_body_int[a_1, a_2, a_3, a_4] = complex(
+                           float(listed_values[row][0]),
+                           float(listed_values[row][1]))
+
+        return e_core, spinor, one_body_int, two_body_int
+
+    def get_integrals_ao_basis(self) -> Tuple[Any, ...]:
+        """Calculates one- and two-electron integrals in AO basis.
+
+        TODO: after Luuks's python interface
+        """
+        raise NotImplementedError(
+            "get_integrals_ao_basis() not yet implemented in DIRAC-ASE"
+        )
+
+    def get_molecular_orbitals_coefficients(self) -> Tuple[Any, ...]:
+        """Reads alpha and beta molecular orbital coefficients.
+
+        TODO: after Luuks's python interface
+        """
+        raise NotImplementedError(
+            "get_molecular_orbitals_coefficients() not yet "
+            "implemented in DIRAC-ASE"
+        )
+
+    def get_molecular_orbitals_energies(self) -> Tuple[Any, ...]:
+        """Reads alpha and beta orbital energies.
+
+        TODO: after Luuks's python interface
+        """
+        raise NotImplementedError(
+            "get_molecular_orbitals_energies() not yet "
+            "implemented in DIRAC-ASE"
+        )
+
+    def get_overlap_matrix(self) -> Tuple[Any, ...]:
+        """Reads overlap matrix.
+
+        TODO: after Luuks's python interface
+        """
+        raise NotImplementedError(
+            "get_overlap_matrix() not yet implemented in DIRAC-ASE"
+        )
+
+    def _get_from_dirac_hdf5_file(self, property_name) -> Any:
+        """Helper routine to open dirac HDF5 output and extract property."""
+        out_hdf5_file = self.prefix + "_" + self.prefix + ".h5"
+        try:
+            with h5py.File(out_hdf5_file, "r") as f:
+                data = f[property_name][...]
+        except (KeyError, IOError):
+            data = None
+        return data
+
+    def _get_dirac_fcidump(self) -> None:
+        """Helper routine to generate DIRAC FCIDUMP file.
+
+        Notes:
+            Requires MRCONEE MDCINT files obtained using
+            **DIRAC .4INDEX, **MOLTRA .ACTIVE all and
+            'pam ... --get="MRCONEE MDCINT"' options.
+
+        Raises:
+            EnvironmentError: If the command execution fails.
+            CalculationFailed: If the calculator fails with
+                a non-zero error code.
+        """
+        command = "dirac_mointegral_export.x fcidump"
+        try:
+            proc = subprocess.Popen(command, shell=True, cwd=self.directory)
+        except OSError as err:
+            msg = f"Failed to execute {command}"
+            raise EnvironmentError(msg) from err
+
+        errorcode = proc.wait()
+
+        if errorcode:
+            path = os.path.abspath(self.directory)
+            msg = (f"Calculator {self.name} failed with "
+                   f"command {command} failed in {path} "
+                   f"with error code {errorcode}")
+            raise CalculationFailed(msg)
+
+    def _format_fcidump_mo_integrals(
+        self,
+        one_body_integrals: Dict[Tuple[int, int], Union[float, complex]],
+        two_body_integrals: Dict[Tuple[int, int, int, int], Union[float, complex]],
+        nmo: int
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray,
+               np.ndarray, np.ndarray, np.ndarray]:
+        """Helper routine to format DIRAC FCIDUMP integrals.
+
+        Notes:
+            Adapted from Openfermion-Dirac:
+            see: https://github.com/bsenjean/Openfermion-Dirac.
+
+        Returns:
+            A tuple containing the following:
+                - one_body_coefficients_a & one_body_coefficients_b:
+                    Numpy arrays containing alpha and beta components
+                    of the one-body integrals.
+                - two_body_coefficients_aa, two_body_coefficients_bb,
+                    two_body_coefficients_ab & two_body_coefficients_ba:
+                    Numpy arrays containing alpha-alpha, beta-beta,
+                    alpha-beta & beta-alpha components of the two-body
+                    integrals.
+        """
         # tolerance to consider number zero.
         EQ_TOLERANCE = 1e-8
 
@@ -433,174 +706,8 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         two_body_coefficients_ba[np.abs(
             two_body_coefficients_ba) < EQ_TOLERANCE] = 0.
 
-        wavefunction = file.require_group("wavefunction")
-        wavefunction.attrs['basis'] = basis
-
-        # 'scf_fock_mo_a/b' take the form of flattened nmo by nmo matrices.
-        # E.g., for H2 [r(H-H) = 0.737166 angs] at RHF/sto-3g level,
-        # scf_fock_mo_a = [-1.2550254253591242, 0.0, 0.0, -0.4732763494710688].
-        wavefunction.create_dataset("scf_fock_mo_a",
-                                    data=one_body_coefficients_a.flatten())
-        wavefunction.create_dataset("scf_fock_mo_b",
-                                    data=one_body_coefficients_b.flatten())
-
-        # 'scf_eri_mo_aa/bb/ba/ab' take the form of flattened (nmo,nmo,nmo,nmo) matrices.
-        # E.g., for H2 [r(H-H) = 0.737166 angs] at RHF/sto-3g level,
-        # scf_fock_mo_aa = [0.6752967689354992, 0, 0, 0.6642044392432875,
-        #                   0, 0.1810520713689906, 0.18105207136899099, 0,
-        #                   0, 0.18105207136899074, 0.18105207136899115, 0,
-        #                   0.6642044392432873, 0, 0, 0.6981738857839892].
-        # For restricted cases: scf_fock_mo_aa = scf_fock_mo_bb =
-        #                       scf_fock_mo_ba = scf_fock_mo_ab
-        wavefunction.create_dataset("scf_eri_mo_aa",
-                                    data=two_body_coefficients_aa.flatten())
-        wavefunction.create_dataset("scf_eri_mo_bb",
-                                    data=two_body_coefficients_bb.flatten())
-        wavefunction.create_dataset("scf_eri_mo_ba",
-                                    data=two_body_coefficients_ba.flatten())
-        wavefunction.create_dataset("scf_eri_mo_ab",
-                                    data=two_body_coefficients_ab.flatten())
-
-        # possible future additions:
-        # mo coefficients in AO basis
-        wavefunction.create_dataset("scf_orbitals_a", data='')
-        wavefunction.create_dataset("scf_orbitals_b", data='')
-        # scf orbital energies
-        wavefunction.create_dataset("scf_eigenvalues_a", data='')
-        wavefunction.create_dataset("scf_eigenvalues_b", data='')
-        # ROSE localized orbitals?
-        wavefunction.create_dataset("localized_orbitals_a", data='')
-        wavefunction.create_dataset("localized_orbitals_b", data='')
-
-        file.close()
-
-    def load(self, hdf5_filename: str) -> None:
-        """Loads electronic structure data from a HDF5 file.
-
-        Example:
-        >>> from ase.build import molecule
-        >>> from qc2.ase.dirac import DIRAC
-        >>>
-        >>> molecule = molecule('H2')
-        >>> molecule.calc = DIRAC()     # => RHF/STO-3G
-        >>> molecule.calc.load('h2.h5') # => instead of 'molecule.calc.get_potential_energy()'
-        """
-        BaseQc2ASECalculator.load(self, hdf5_filename)
-
-    def get_integrals(self) -> Tuple[Union[float, complex],
-                                     Dict[int, Union[float, complex]],
-                                     Dict[Tuple[int, int], Union[float, complex]],
-                                     Dict[Tuple[int, int, int, int], Union[float, complex]]]:
-        """Retrieves 1- and 2-body integrals in MO basis from DIRAC FCIDUMP.
-
-        Notes:
-            Requires MRCONEE MDCINT files obtained using
-            **DIRAC .4INDEX, **MOLTRA .ACTIVE all and 
-            'pam ... --get="MRCONEE MDCINT"' options.
-
-            Adapted from Openfermion-Dirac:
-            see: https://github.com/bsenjean/Openfermion-Dirac.
-
-        Returns:
-            A tuple containing the following:
-                - e_core (Union[float, complex]): Nuclear repulsion energy.
-                - spinor (Dict[int, Union[float, complex]]): Dictionary of
-                    spinor values with their corresponding indices.
-                - one_body_int (Dict[Tuple[int, int], Union[float, complex]]):
-                    Dictionary of one-body integrals with their corresponding
-                    indices as tuples.
-                - two_body_int (Dict[Tuple[int, int, int, int],
-                    Union[float, complex]]): Dictionary of two-body integrals
-                    with their corresponding indices as tuples.
-
-        Raises:
-            EnvironmentError: If the command execution fails.
-            CalculationFailed: If the calculator fails with
-                a non-zero error code.
-        """
-        command = "dirac_mointegral_export.x fcidump"
-        try:
-            proc = subprocess.Popen(command, shell=True, cwd=self.directory)
-        except OSError as err:
-            msg = f"Failed to execute {command}"
-            raise EnvironmentError(msg) from err
-
-        errorcode = proc.wait()
-
-        if errorcode:
-            path = os.path.abspath(self.directory)
-            msg = (f"Calculator {self.name} failed with "
-                   f"command {command} failed in {path} "
-                   f"with error code {errorcode}")
-            raise CalculationFailed(msg)
-
-        e_core = 0
-        spinor = {}
-        one_body_int = {}
-        two_body_int = {}
-        num_lines = sum(1 for line in open("FCIDUMP"))
-        with open('FCIDUMP') as f:
-            start_reading = 0
-            for line in f:
-                start_reading += 1
-                if "&END" in line:
-                    break
-            listed_values = [
-                [token for token in line.split()] for line in f.readlines()]
-            complex_int = False
-            if len(listed_values[0]) == 6:
-                complex_int = True
-            if not complex_int:
-                for row in range(num_lines-start_reading):
-                    a_1 = int(listed_values[row][1])
-                    a_2 = int(listed_values[row][2])
-                    a_3 = int(listed_values[row][3])
-                    a_4 = int(listed_values[row][4])
-                    if a_4 == 0 and a_3 == 0:
-                        if a_2 == 0:
-                            if a_1 == 0:
-                                e_core = float(listed_values[row][0])
-                            else:
-                                spinor[a_1] = float(listed_values[row][0])
-                        else:
-                            one_body_int[a_1, a_2] = float(
-                                listed_values[row][0])
-                    else:
-                        two_body_int[a_1, a_2, a_3, a_4] = float(
-                            listed_values[row][0])
-            if complex_int:
-                for row in range(num_lines-start_reading):
-                    a_1 = int(listed_values[row][2])
-                    a_2 = int(listed_values[row][3])
-                    a_3 = int(listed_values[row][4])
-                    a_4 = int(listed_values[row][5])
-                    if a_4 == 0 and a_3 == 0:
-                        if a_2 == 0:
-                            if a_1 == 0:
-                                e_core = complex(
-                                   float(listed_values[row][0]),
-                                   float(listed_values[row][1]))
-                            else:
-                                spinor[a_1] = complex(
-                                   float(listed_values[row][0]),
-                                   float(listed_values[row][1]))
-                        else:
-                            one_body_int[a_1, a_2] = complex(
-                               float(listed_values[row][0]),
-                               float(listed_values[row][1]))
-                    else:
-                        two_body_int[a_1, a_2, a_3, a_4] = complex(
-                           float(listed_values[row][0]),
-                           float(listed_values[row][1]))
-
-        return e_core, spinor, one_body_int, two_body_int
-
-    def _get_from_dirac_hdf5_file(self, property_name):
-        """Helper routine to open dirac HDF5 output and extract property."""
-        out_hdf5_file = self.prefix + "_" + self.prefix + ".h5"
-        try:
-            with h5py.File(out_hdf5_file, "r") as f:
-                data = f[property_name][...]
-        except (KeyError, IOError):
-            data = None
-        return data
+        return (
+            one_body_coefficients_a, one_body_coefficients_b,
+            two_body_coefficients_aa, two_body_coefficients_bb,
+            two_body_coefficients_ab, two_body_coefficients_ba
+        )
