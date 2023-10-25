@@ -19,7 +19,7 @@ from qiskit_nature.second_q.hamiltonians import ElectronicEnergy
 from qiskit_nature.second_q.transformers import ActiveSpaceTransformer
 
 from pennylane.operation import Operator
-from ..pennylane.convert import import_operator
+from qc2.pennylane.convert import import_operator
 
 # avoid using the deprecated `PauliSumOp` object
 qiskit_nature.settings.use_pauli_sum_op = False
