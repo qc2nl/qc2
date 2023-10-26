@@ -1,13 +1,13 @@
 name: Python package
 
 on:
-  #push:
-  #  branches:
-  #  - main
-  pull_request:
+  push:
     branches:
     - main
-    types: [closed]
+  # uncomment below if the workflow must run for every push in the PR branch
+  #pull_request:
+  #  branches:
+  #  - main
 
 jobs:
 
