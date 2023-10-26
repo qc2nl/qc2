@@ -58,7 +58,7 @@ jobs:
         run: |
           pytest -v --pyargs tests/unit_tests
       - name: Run integration tests (PR merges only)
-      #  if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
+        if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
         run: |
           pytest -v --pyargs tests/integration_tests
       - name: Verify that we can build the package
