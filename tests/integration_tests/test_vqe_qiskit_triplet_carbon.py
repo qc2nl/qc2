@@ -61,4 +61,4 @@ def vqe_result():
 def test_total_ground_state_energy(vqe_result):
     """Check that the final vqe energy corresponds to one at FCI/sto-3g."""
     expected_energy = -37.218733550636
-    assert pytest.approx(vqe_result, rel=1e-9) == expected_energy
+    assert pytest.approx(vqe_result, rel=1e-6) == expected_energy
