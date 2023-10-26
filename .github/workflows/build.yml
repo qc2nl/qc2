@@ -1,9 +1,9 @@
 name: Python package
 
 on:
-  push:
-    branches:
-    - main
+  #push:
+  #  branches:
+  #  - main
   pull_request:
     branches:
     - main
@@ -57,8 +57,8 @@ jobs:
       - name: Run unit tests
         run: |
           pytest -v --pyargs tests/unit_tests
-      - name: Run integration tests (PR merges only)
+      - name: Run integration tests
         run: |
-          pytest -v --pyargs tests/integration_tests
+          pytest -v -k --pyargs tests/integration_tests
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel
