@@ -70,11 +70,13 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
 
         Example:
         >>> from ase.build import molecule
-        >>> from qc2.ase.rose import ROSE
+        >>> from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
         >>>
-        >>> molecule = molecule('H2')
-        >>> molecule.calc = PySCF()     # => RHF/STO-3G
-        >>> molecule.calc.schema_format = "fcidump"
-        >>> fcidump = molecule.calc.load('h2.fcidump')
+        >>> H2 = ROSETargetMolecule(atoms=[('H', (0,0,0.)), ('H', (0,0,1))])
+        >>> H = ROSEFragment(atoms=[('H', (0, 0, 0))])
+        >>> H2_calculator = ROSE(rose_target=H2, rose_frags=[H])
+        >>> H2_calculator.calculate()
+        >>> H2_calculator.schema_format = "fcidump"
+        >>> fcidump = H2_calculator.load('ibo.fcidump')
         """
         return BaseQc2ASECalculator.load(self, datafile)
