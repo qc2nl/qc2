@@ -7,15 +7,15 @@ import subprocess
 def clean_up():
     """Remove Rose-ASE calculation outputs."""
     command = ("rm *.xyz *.dfcoef DFCOEF* *.inp INPUT* "
-    "MOLECULE.XYZ MRCONEE* *dfpcmo DFPCMO* *.fchk "
-    "fort.* timer.dat INFO_MOL *.pyscf "
-    "*.npy *.clean OUTPUT_AVAS "
-    "OUTPUT_ROSE *.chk ILMO*dat *.out")
+               "MOLECULE.XYZ MRCONEE* *dfpcmo DFPCMO* *.fchk "
+               "fort.* timer.dat INFO_MOL *.pyscf "
+               "*.npy *.clean OUTPUT_AVAS "
+               "OUTPUT_ROSE *.chk ILMO*dat *.out")
     subprocess.run(command, shell=True, capture_output=True)
 
 
 def extract_number(pattern: str, text: str) -> List[float]:
-    """Extracts floating point numbers from a chunk of text selected by a pattern."""
+    """Extracts floating point numbers from a chunk of text by pattern."""
     # Define a regular expression that matches floating point numbers
     number_pattern = re.compile(r'([-+]?\d*\.\d+|[-+]?\d+\.\d*|[-+]?\d+)')
 

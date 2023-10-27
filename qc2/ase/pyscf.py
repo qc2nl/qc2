@@ -400,7 +400,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
         model = super().instantiate_qcmodel(
             basis=self.mol.basis,
-            method=self.mf._method_name()
+            method=self.mf.__class__.__name__
         )
 
         properties = super().instantiate_qcproperties(
@@ -655,7 +655,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         # start preparing the data
         mol = self.mol
         mf = self.mf
-        method_name = self.mf._method_name()
+        method_name = self.mf.__class__.__name__
 
         ibo_wfn = copy.copy(mf)
 
@@ -713,7 +713,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         mo_data = self.get_mo_data()
         ei_data = self.get_integrals_data()
 
-        method_name = self.mf._method_name()
+        method_name = self.mf.__class__.__name__
 
         # start writing input file to be read by ROSE
         with open(output_file, "w") as f:
@@ -893,7 +893,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         beta_MO = []
         beta_energies = []
 
-        method_name = self.mf._method_name()
+        method_name = self.mf.__class__.__name__
 
         if ('UHF' not in method_name) and ('UKS' not in method_name):
             alpha_coeff = self.mf.mo_coeff.copy()
@@ -939,7 +939,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
     """
         scf_e = self.mf.e_tot
 
-        method_name = self.mf._method_name()
+        method_name = self.mf.__class__.__name__
 
         if ('UHF' not in method_name) and ('UKS' not in method_name):
             alpha_coeff = self.mf.mo_coeff.copy()
