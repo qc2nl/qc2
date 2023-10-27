@@ -15,6 +15,7 @@ except ImportError as error:
 
 from dataclasses import dataclass
 from typing import Union
+import logging
 import h5py
 
 from qiskit_nature.second_q.formats.qcschema import QCSchema
@@ -48,6 +49,13 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
         """
         ROSE_original.__init__(self, *args, **kwargs)
         BaseQc2ASECalculator.__init__(self)
+
+    def save(self, datafile: Union[h5py.File, str]) -> None:
+        """Dumps qchem data to a datafile."""
+        logging.warning(
+                'ROSE.save() method currently inactive. '
+                'Datafile %s from ROSE can only be read.', datafile
+            )
 
     def load(self, datafile: Union[h5py.File, str]) -> Union[
             QCSchema, FCIDump
