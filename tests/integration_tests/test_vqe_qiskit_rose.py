@@ -1,4 +1,5 @@
 import subprocess
+import shutil
 import pytest
 
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
@@ -9,6 +10,12 @@ from qiskit.primitives import Estimator
 
 from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
 from qc2.data import qc2Data
+
+
+# Check first if the `genibo.x` and `avas.x` executables are available
+if not shutil.which("genibo.x") or not shutil.which("avas.x"):
+    pytest.skip("ROSE executables not found or not in your path. "
+                "Skipping tests.", allow_module_level=True)
 
 
 def clean_up():
