@@ -107,7 +107,9 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
                 self.scf_wfn.molecule().fsymbol(n)
                 for n in range(self.scf_wfn.molecule().natom())
             ],
-            geometry=self.scf_wfn.molecule().full_geometry(),
+            geometry=(
+                self.scf_wfn.molecule().full_geometry().np[:].flatten()
+            ),
             molecular_charge=self.scf_wfn.molecule().molecular_charge(),
             molecular_multiplicity=self.scf_wfn.molecule().multiplicity(),
             atomic_numbers=[
