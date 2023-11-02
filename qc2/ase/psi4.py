@@ -95,12 +95,16 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         # create instances of QCSchema's component dataclasses
         topology = super().instantiate_qctopology(
             symbols=[
-                self.mol.atom_pure_symbol(i) for i in range(self.mol.natm)
+                self.scf_wfn.molecule().fsymbol(n)
+                for n in range(self.scf_wfn.molecule().natom())
             ],
-            geometry=self.mol.atom_coords(unit="Bohr").ravel().tolist(),
-            molecular_charge=self.mol.charge,
-            molecular_multiplicity=(self.mol.spin + 1),
-            atomic_numbers=[atom[0] for atom in self.mol._atm],
+            geometry=self.scf_wfn.molecule().full_geometry(),
+            molecular_charge=self.scf_wfn.molecule().molecular_charge(),
+            molecular_multiplicity=self.scf_wfn.molecule().multiplicity(),
+            atomic_numbers=[
+                self.scf_wfn.molecule().true_atomic_number(n)
+                for n in range(self.scf_wfn.molecule().natom())
+            ],
             schema_name="qcschema_molecule",
             schema_version=qiskit_nature_version
         )
@@ -117,13 +121,15 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         )
 
         properties = super().instantiate_qcproperties(
-            calcinfo_nbasis=self.mol.nbas,
-            calcinfo_nmo=self.mol.nao,
-            calcinfo_nalpha=self.mol.nelec[0],
-            calcinfo_nbeta=self.mol.nelec[1],
-            calcinfo_natom=self.mol.natm,
-            nuclear_repulsion_energy=self.mf.energy_nuc(),
-            return_energy=self.mf.e_tot
+            calcinfo_nbasis=self.scf_wfn.basisset().nbf(),
+            calcinfo_nmo=self.scf_wfn.basisset().nao(),
+            calcinfo_nalpha=self.scf_wfn.nalpha(),
+            calcinfo_nbeta=self.scf_wfn.nbeta(),
+            calcinfo_natom=self.scf_wfn.molecule().natom(),
+            nuclear_repulsion_energy=(
+                self.scf_wfn.molecule().nuclear_repulsion_energy()
+            ),
+            return_energy=self.scf_e
         )
 
         # get 1- and 2-electron integrals in AO basis
@@ -131,13 +137,9 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
 
         # get mo coefficients in AO basis
         alpha_coeff, beta_coeff = self.get_molecular_orbitals_coefficients()
-        if beta_coeff is None:
-            beta_coeff = alpha_coeff
 
         # get scf mo energies
         alpha_mo, beta_mo = self.get_molecular_orbitals_energies()
-        if beta_mo is None:
-            beta_mo = alpha_mo
 
         # get 1- and 2-electron integrals in MO basis
         integrals_mo = self.get_integrals_mo_basis()
@@ -149,7 +151,7 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         two_body_coefficients_ba = integrals_mo[5]
 
         wavefunction = super().instantiate_qcwavefunction(
-            basis=self.mol.basis,
+            basis=self.parameters['basis'],
             scf_fock_a=one_e_int_ao.flatten(),
             # scf_fock_b=one_e_int_ao.flatten(),
             scf_eri=two_e_int_ao.flatten(),
@@ -172,7 +174,7 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
             schema_version=qiskit_nature_version,
             driver='energy',
             keywords={},
-            return_result=self.mf.e_tot,
+            return_result=self.scf_e,
             molecule=topology,
             wavefunction=wavefunction,
             properties=properties,
