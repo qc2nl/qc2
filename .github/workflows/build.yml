@@ -60,6 +60,6 @@ jobs:
           pytest -v --pyargs tests/unit_tests
       - name: Run integration tests
         run: |
-          pytest -v -k --pyargs tests/integration_tests
+          pytest -v --pyargs tests/integration_tests
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel
