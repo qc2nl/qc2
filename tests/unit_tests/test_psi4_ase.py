@@ -7,7 +7,12 @@ import numpy as np
 
 from ase import Atoms
 from ase.units import Ha
-from qc2.ase import Psi4
+
+try:
+    from qc2.ase import Psi4
+except ImportError:
+    pytest.skip("Skipping ASE-Psi4 tests...",
+                allow_module_level=True)
 
 
 @pytest.fixture(scope="session", autouse=True)

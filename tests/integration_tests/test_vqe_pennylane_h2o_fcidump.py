@@ -5,8 +5,13 @@ from ase.build import molecule
 import pennylane as qml
 from pennylane import numpy as np
 from qiskit_nature.second_q.mappers import JordanWignerMapper
-from qc2.ase import Psi4
 from qc2.data import qc2Data
+
+try:
+    from qc2.ase import Psi4
+except ImportError:
+    pytest.skip("Skipping ASE-Psi4 tests...",
+                allow_module_level=True)
 
 
 @pytest.fixture(scope="session", autouse=True)
