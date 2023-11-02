@@ -35,7 +35,16 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
     def __init__(self, *args, **kwargs) -> None:
         """ASE-Psi4 Class Constructor.
 
-        Give an example here on how to use Psi4....
+        Example of a typical ASE-PySCF input:
+
+        >>> from ase import Atoms
+        >>> from ase.build import molecule
+        >>> from qc2.ase import Psi4
+        >>>
+        >>> molecule = Atoms(...) or molecule = molecule('...')
+        >>> molecule.calc = Psi4(method='hf', basis='sto-3g', ...)
+        >>> energy = molecule.get_potential_energy()
+        >>> gradient = molecule.get_forces()
         """
         Psi4_original.__init__(self, *args, **kwargs)
         BaseQc2ASECalculator.__init__(self)
