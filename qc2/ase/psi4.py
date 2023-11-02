@@ -1,21 +1,16 @@
 """This module defines a cutomized qc2 ASE-Psi4 calculator.
 
-For the original calculator see:
+For the original ASE calculator see:
 https://databases.fysik.dtu.dk/ase/ase/calculators/psi4.html#module-ase.calculators.psi4
 """
-try:
-    from ase.calculators.psi4 import Psi4 as Psi4_original
-    from psi4.driver import fcidump
-    from psi4.core import MintsHelper
-    from psi4 import __version__ as psi4_version
-except ImportError as error:
-    raise ImportError(
-        "Failed to export original ROSE-Psi4 calculator!"
-    ) from error
-
 from typing import Union, Tuple
 import numpy as np
 import h5py
+
+from ase.calculators.psi4 import Psi4 as Psi4_original
+from psi4.driver import fcidump
+from psi4.core import MintsHelper
+from psi4 import __version__ as psi4_version
 
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature import __version__ as qiskit_nature_version
@@ -28,14 +23,14 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
     """An extended ASE calculator for Psi4.
 
     Args:
-        Psi4_original (Psi4_original): Original ROSE Psi4 calculator.
+        Psi4_original (Psi4_original): Original ASE-Psi4 calculator.
         BaseQc2ASECalculator (BaseQc2ASECalculator): Base class for
             ase calculartors in qc2.
     """
     def __init__(self, *args, **kwargs) -> None:
         """ASE-Psi4 Class Constructor.
 
-        Example of a typical ASE-PySCF input:
+        Example of a typical ASE-Psi4 input:
 
         >>> from ase import Atoms
         >>> from ase.build import molecule
@@ -64,7 +59,7 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
             f'{method}/{basis}', return_wfn=True
         )
 
-        # instantiate `psi4.core.MintsHelper` class
+        # instantiate `psi4.core.MintsHelper` class for integrals calculation.
         self.mints = MintsHelper(self.scf_wfn.basisset())
 
     def save(self, datafile: Union[h5py.File, str]) -> None:
