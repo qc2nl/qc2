@@ -12,8 +12,8 @@ except ImportError as error:
         "Failed to export original ROSE-Psi4 calculator!"
     ) from error
 
+from typing import Union, Tuple
 import numpy as np
-from typing import Union
 import h5py
 
 from qiskit_nature.second_q.formats.qcschema import QCSchema
@@ -115,6 +115,13 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         >>> fcidump = molecule.calc.load('h2.fcidump')
         """
         return BaseQc2ASECalculator.load(self, datafile)
+
+    def get_integrals_ao_basis(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Retrieves 1- & 2-e integrals in AO basis from Psi4 routines."""
+        one_e_int = np.asarray(self.mints.ao_kinetic()) + \
+            np.asarray(self.mints.ao_potential())
+        two_e_int = np.asarray(self.mints.ao_eri())
+        return one_e_int, two_e_int
 
     def get_overlap_matrix(self) -> np.ndarray:
         """Retrieves overlap matrix from Psi4 routines."""
