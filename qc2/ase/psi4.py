@@ -6,11 +6,13 @@ https://databases.fysik.dtu.dk/ase/ase/calculators/psi4.html#module-ase.calculat
 try:
     from ase.calculators.psi4 import Psi4 as Psi4_original
     from psi4.driver import fcidump
+    from psi4.core import MintsHelper
 except ImportError as error:
     raise ImportError(
         "Failed to export original ROSE-Psi4 calculator!"
     ) from error
 
+import numpy as np
 from typing import Union
 import h5py
 
@@ -38,6 +40,21 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
 
         self.scf_e = None
         self.scf_wfn = None
+        self.mints = None
+
+    def calculate(self, *args, **kwargs) -> None:
+        """Calculate method for qc2 ASE-Psi4."""
+        Psi4_original.calculate(self, *args, **kwargs)
+
+        # save energy and wavefunction
+        method = self.parameters['method']
+        basis = self.parameters['basis']
+        (self.scf_e, self.scf_wfn) = self.psi4.energy(
+            f'{method}/{basis}', return_wfn=True
+        )
+
+        # instantiate `psi4.core.MintsHelper` class
+        self.mints = MintsHelper(self.scf_wfn.basisset())
 
     def save(self, datafile: Union[h5py.File, str]) -> None:
         """Dumps qchem data to a datafile using QCSchema or FCIDump formats.
@@ -56,24 +73,17 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         >>> from qc2.ase import Psi4
         >>>
         >>> molecule = molecule('H2')
-        >>> molecule.calc = Psi4(atoms=molecule, method='hf', basis='sto-3g')
+        >>> molecule.calc = Psi4(method='hf', basis='sto-3g')
         >>> molecule.calc.schema_format = "qcschema"
-        >>> molecule.calc.get_potential_energy()
+        >>> molecule.get_potential_energy()
         >>> molecule.calc.save('h2.hdf5')
         >>>
         >>> molecule = molecule('H2')
-        >>> molecule.calc = Psi4(atoms=molecule, method='hf', basis='sto-3g')
+        >>> molecule.calc = Psi4(method='hf', basis='sto-3g')
         >>> molecule.calc.schema_format = "fcidump"
-        >>> molecule.calc.get_potential_energy()
+        >>> molecule.get_potential_energy()
         >>> molecule.calc.save('h2.fcidump')
         """
-        # save energy and wavefunction
-        method = self.parameters['method']
-        basis = self.parameters['basis']
-        self.scf_e, self.scf_wfn = self.psi4.energy(
-            f'{method}/{basis}', return_wfn=True
-        )
-
         # in case of fcidump format
         if self._schema_format == "fcidump":
             fcidump(self.scf_wfn, datafile)
@@ -95,13 +105,17 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         >>> from qc2.ase import Psi4
         >>>
         >>> molecule = molecule('H2')
-        >>> molecule.calc = Psi4(atoms=molecule, method='hf', basis='sto-3g')
+        >>> molecule.calc = Psi4(method='hf', basis='sto-3g')
         >>> molecule.calc.schema_format = "qcschema"
         >>> qcschema = molecule.calc.load('h2.h5')
         >>>
         >>> molecule = molecule('H2')
-        >>> molecule.calc = Psi4(atoms=molecule, method='hf', basis='sto-3g')
+        >>> molecule.calc = Psi4(method='hf', basis='sto-3g')
         >>> molecule.calc.schema_format = "fcidump"
         >>> fcidump = molecule.calc.load('h2.fcidump')
         """
         return BaseQc2ASECalculator.load(self, datafile)
+
+    def get_overlap_matrix(self) -> np.ndarray:
+        """Retrieves overlap matrix from Psi4 routines."""
+        return np.asarray(self.mints.ao_overlap())
