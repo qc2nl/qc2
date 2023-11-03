@@ -63,6 +63,8 @@ qc2data.molecule.calc = ROSE(
     exponent=4,
     rose_target=H2O,
     rose_frags=[oxigen, hydrogen],
+    # restricted=False,
+    # openshell=False,
     rose_mo_calculator='pyscf'
 )
 
