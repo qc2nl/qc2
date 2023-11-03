@@ -16,8 +16,13 @@ except ImportError:
         "Psi4 is not available. "
         "ASE-Psi4 calculator not functional."
     )
-
-from .rose import ROSE, ROSETargetMolecule, ROSEFragment
+try:
+    from .rose import ROSE, ROSETargetMolecule, ROSEFragment
+except ImportError:
+    logging.warning(
+        "ROSE is not available. "
+        "ASE-ROSE calculator not functional."
+    )
 from .dirac import DIRAC
 
 __all__ = [
