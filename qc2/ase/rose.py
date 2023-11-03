@@ -38,9 +38,48 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
             ase calculartors in qc2.
     """
     def __init__(self, *args, **kwargs) -> None:
-        """ASE-Rose Class Constructor.
+        """ROSE-ASE calculator.
 
-        Give an example here on how to use ROSE....
+        Example of a typical ASE-ROSE input:
+
+        >>> from qc2.ase import ROSE
+        >>> from qc2.ase import ROSETargetMolecule, ROSEFragment
+        >>>
+        >>> h2o = ROSETargetMolecule(
+        >>> name='water',
+        >>> atoms=[('O', (0.,  0.00000,  0.59372)),
+        >>>        ('H', (0.,  0.76544, -0.00836)),
+        >>>        ('H', (0., -0.76544, -0.00836))],
+        >>> basis='sto-3g'
+        >>> )
+        >>>
+        >>> oxygen = ROSEFragment(
+        >>>     name='oxygen',
+        >>>     atoms=[('O', (0, 0, 0))],
+        >>>     multiplicity=1, basis='sto-3g'
+        >>> )
+        >>>
+        >>> hydrogen = ROSEFragment(
+        >>>     name='hydrogen',
+        >>>     atoms=[('H', (0, 0, 0))],
+        >>>     multiplicity=2, basis='sto-3g'
+        >>> )
+        >>>
+        >>> h2o_calculator = ROSE(
+        >>>    rose_calc_type='atom_frag',
+        >>>    exponent=4,
+        >>>    rose_target=h2o,
+        >>>    rose_frags=[oxygen, hydrogen],
+        >>>    test=True,
+        >>>    avas_frag=[0],
+        >>>    nmo_avas=[3, 4, 5],
+        >>>    save_data=True,
+        >>>    restricted=True,
+        >>>    openshell=True,
+        >>>    rose_mo_calculator='pyscf'
+        >>> )
+        >>>
+        >>> h2o_calculator.calculate()
         """
         ROSE_original.__init__(self, *args, **kwargs)
         BaseQc2ASECalculator.__init__(self)
@@ -52,20 +91,17 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
                 'Datafile %s from ROSE can only be read.', datafile
             )
 
-    def load(self, datafile: Union[h5py.File, str]) -> Union[
+    def load(self, datafile: str) -> Union[
             QCSchema, FCIDump
     ]:
-        """Loads electronic structure data from a datafile.
-
-        Notes:
-            files are read following the qcschema or fcidump formats.
+        """Loads electronic structure data from a fcidump datafile.
 
         Returns:
-            `QCSchema` or `FCIDump` dataclasses containing qchem data.
+            `FCIDump` dataclass containing qchem data.
 
         Example:
-        >>> from ase.build import molecule
-        >>> from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
+        >>> from qc2.ase import ROSE
+        >>> from qc2.ase import ROSETargetMolecule, ROSEFragment
         >>>
         >>> H2 = ROSETargetMolecule(atoms=[('H', (0,0,0.)), ('H', (0,0,1))])
         >>> H = ROSEFragment(atoms=[('H', (0, 0, 0))])
