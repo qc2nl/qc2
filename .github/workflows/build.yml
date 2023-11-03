@@ -42,15 +42,16 @@ jobs:
           bash miniconda.sh -b -p $HOME/miniconda
           source $HOME/miniconda/etc/profile.d/conda.sh
           conda init bash
-          conda update -q conda
+          conda update -y -q conda
         shell: bash
-      - name: Initialize Conda in the shell
-        run: conda init
-        shell: bash
+      #- name: Initialize Conda in the shell
+      #  run: conda init
+      #  shell: bash
       - name: Create and activate Conda environment
         run: |
-          conda create -n my_env python=${{ matrix.python-version }} psi4 -c conda-forge/label/libint_dev -c conda-forge
-          conda activate my_env
+          conda create -y -n my_env python=${{ matrix.python-version }} psi4 -c conda-forge/label/libint_dev -c conda-forge
+          source activate my_env
+      # conda activate my_env
         shell: bash
       - name: Upgrade pip and install dependencies
         run: |
