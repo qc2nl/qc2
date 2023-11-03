@@ -59,46 +59,6 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         CalculatorSetupError: If abinitio methods other than
             'scf.RHF', 'scf.UHF', 'scf.ROHF',
             'dft.RKS', 'dft.UKS', and 'dft.ROKS' are selected.
-
-    Example of a typical ASE-PySCF input:
-
-    >>> from ase import Atoms
-    >>> from ase.build import molecule
-    >>> from qc2.ase.pyscf import PySCF
-    >>>
-    >>> molecule = Atoms(...) or molecule = molecule('...')
-    >>> molecule.calc = PySCF(method='dft.RKS',
-                            xc='b3lyp',
-                            basis='6-31g*',
-                            charge=0,
-                            multiplicity=1,
-                            verbose=0,
-                            cart=False,
-                            relativistic=False,
-                            scf_addons='frac_occ',
-                            output='output_file_name_with_no_extension')
-    >>> energy = molecule.get_potential_energy()
-    >>> gradient = molecule.get_forces()
-
-    where (currently)
-
-    method = 'scf.RHF'
-           = 'scf.UHF'
-           = 'scf.ROHF'
-           = 'dft.RKS'
-           = 'dft.UKS'
-           = 'dft.ROKS'
-
-    Notes:
-        - Scalar relativistic corrections can be added with
-            'relativistic = True' keyword. If selected,
-            the scf object will be decorated by x2c() method, e.g.,
-            mf = scf.RHF(mol).x2c().
-            'relativistic' is False by default.
-        - pyscf.scf.addons functions can also be included, e.g.:
-            if scf_addons='frac_occ' keyword is added, then
-            mf = scf.addons.frac_occ(mf).
-            'scf_addons' is None by default.
     """
     implemented_properties: List[str] = ['energy', 'forces']
 
@@ -121,11 +81,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
                  command: Optional[str] = None,
                  directory: str = '.',
                  **kwargs) -> None:
-        """ASE-PySCF Class Constructor to initialize the object.
-
-        Notes:
-            Basic implementation based on the class Psi4(Calculator);
-            see, e.g., ase/ase/calculators/psi4.py.
+        """PySCF-ASE calculator.
 
         Args:
             restart (bool, optional): Prefix for restart file.
@@ -140,6 +96,48 @@ class PySCF(Calculator, BaseQc2ASECalculator):
                 Defaults to None.
             directory (str, optional): Working directory in which
                 to perform calculations. Defaults to '.'.
+
+        Example of a typical ASE-PySCF input:
+
+        >>> from ase import Atoms
+        >>> from ase.build import molecule
+        >>> from qc2.ase import PySCF
+        >>>
+        >>> molecule = Atoms(...) or molecule = molecule('...')
+        >>> molecule.calc = PySCF(method='dft.RKS',
+                                xc='b3lyp',
+                                basis='6-31g*',
+                                charge=0,
+                                multiplicity=1,
+                                verbose=0,
+                                cart=False,
+                                relativistic=False,
+                                scf_addons='frac_occ',
+                                output='output_file_name_with_no_extension')
+        >>> energy = molecule.get_potential_energy()
+        >>> gradient = molecule.get_forces()
+
+        where (currently)
+
+        method = 'scf.RHF'
+               = 'scf.UHF'
+               = 'scf.ROHF'
+               = 'dft.RKS'
+               = 'dft.UKS'
+               = 'dft.ROKS'
+
+        Notes:
+            - Scalar relativistic corrections can be added with
+                'relativistic = True' keyword. If selected,
+                the scf object will be decorated by x2c() method, e.g.,
+                mf = scf.RHF(mol).x2c().
+                'relativistic' is False by default.
+            - pyscf.scf.addons functions can also be included, e.g.:
+                if scf_addons='frac_occ' keyword is added, then
+                mf = scf.addons.frac_occ(mf).
+                'scf_addons' is None by default.
+            - Basic implementation based on the class Psi4(Calculator);
+                see, e.g., ase/ase/calculators/psi4.py.
         """
         # initializing base class Calculator.
         # see ase/ase/calculators/calculator.py.
@@ -147,11 +145,9 @@ class PySCF(Calculator, BaseQc2ASECalculator):
                             ignore_bad_restart=ignore_bad_restart, label=label,
                             atoms=atoms, command=command, directory=directory,
                             **kwargs)
-        """Transforms **kwargs into a dictionary with calculation parameters.
-
-        Starting with (attr1=value1, attr2=value2, ...)
-            it creates self.parameters['attr1']=value1, and so on.
-        """
+        # transforms **kwargs into a dictionary with calculation parameters.
+        # starting with (attr1=value1, attr2=value2, ...)
+        # it creates self.parameters['attr1']=value1, and so on.
 
         # Check self.parameters input keys and values
         self.check_pyscf_attributes()
@@ -355,7 +351,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
         Example:
         >>> from ase.build import molecule
-        >>> from qc2.ase.pyscf import PySCF
+        >>> from qc2.ase import PySCF
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = PySCF()  # => RHF/STO-3G
@@ -480,7 +476,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
         Example:
         >>> from ase.build import molecule
-        >>> from qc2.ase.pyscf import PySCF
+        >>> from qc2.ase import PySCF
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = PySCF()     # => RHF/STO-3G
