@@ -33,7 +33,7 @@ jobs:
       - name: Upgrade pip and install dependencies
         run: |
           python3 -m pip install --upgrade pip setuptools
-          python3 -m pip install .[dev,publishing]
+          python3 -m pip install .[dev,publishing,psi4,pennylane]
       #- name: Setup GNU Fortran
       #  uses: modflowpy/install-gfortran-action@v1
       #- name: Rose install for tests
@@ -60,6 +60,6 @@ jobs:
           pytest -v --pyargs tests/unit_tests
       - name: Run integration tests
         run: |
-          pytest -v -k --pyargs tests/integration_tests
+          pytest -v --pyargs tests/integration_tests
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel
