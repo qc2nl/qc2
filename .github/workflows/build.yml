@@ -46,7 +46,7 @@ jobs:
         shell: bash
       - name: Create and activate Conda environment
         run: |
-          conda create -n my_env python=${{ matrix.python-version }} psi4 other_dependencies
+          conda create -n my_env python=${{ matrix.python-version }} psi4 -c conda-forge/label/libint_dev -c conda-forge
           conda activate my_env
         shell: bash
       - name: Upgrade pip and install dependencies
