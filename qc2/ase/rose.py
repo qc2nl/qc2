@@ -4,19 +4,14 @@ For the original calculator see:
 https://gitlab.com/quantum_rose/rose/ase_rose/
 https://gitlab.com/Cmurilochem/rose/-/blob/ROSE_ase_calculator/ase_rose/ase_rose/rose.py?ref_type=heads#L1
 """
-try:
-    from ase_rose import ROSE as ROSE_original
-    from ase_rose import ROSEFragment as ROSEFragment_original
-    from ase_rose import ROSETargetMolecule as ROSETargetMolecule_original
-except ImportError as error:
-    raise ImportError(
-        "Failed to export original ROSE-ASE calculator!"
-    ) from error
-
 from dataclasses import dataclass
 from typing import Union
 import logging
 import h5py
+
+from ase_rose import ROSE as ROSE_original
+from ase_rose import ROSEFragment as ROSEFragment_original
+from ase_rose import ROSETargetMolecule as ROSETargetMolecule_original
 
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature.second_q.formats.fcidump import FCIDump
