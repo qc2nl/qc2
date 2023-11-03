@@ -2,11 +2,16 @@ import os
 import glob
 import pytest
 from ase.build import molecule
-import pennylane as qml
-from pennylane import numpy as np
 from qiskit_nature.second_q.mappers import JordanWignerMapper
 from qc2.ase import PySCF
 from qc2.data import qc2Data
+
+try:
+    import pennylane as qml
+    from pennylane import numpy as np
+except ImportError:
+    pytest.skip("Skipping Pennylane tests...",
+                allow_module_level=True)
 
 
 @pytest.fixture(scope="session", autouse=True)
