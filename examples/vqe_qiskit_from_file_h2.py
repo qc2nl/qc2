@@ -1,6 +1,6 @@
 """Example of a VQE calc using Qiskit-Nature and data loaded from file.
 
-H2 data generated from a RHF/6-31G calculation using DIRAC-ASE calculator.
+H2 data generated from a RHF/sto-3g calculation using DIRAC-ASE calculator.
 """
 import os
 
