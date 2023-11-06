@@ -39,7 +39,7 @@ H2O = ROSETargetMolecule(
     basis='sto-3g'
 )
 
-oxigen = ROSEFragment(
+oxygen = ROSEFragment(
     name='oxygen',
     atoms=[('O', (0, 0, 0))],
     multiplicity=1, basis='sto-3g'
@@ -62,7 +62,7 @@ qc2data.molecule.calc = ROSE(
     rose_calc_type='atom_frag',
     exponent=4,
     rose_target=H2O,
-    rose_frags=[oxigen, hydrogen],
+    rose_frags=[oxygen, hydrogen],
     # restricted=False,
     # openshell=False,
     rose_mo_calculator='pyscf'
