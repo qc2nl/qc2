@@ -71,8 +71,6 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
         >>>    rose_target=h2o,
         >>>    rose_frags=[oxygen, hydrogen],
         >>>    test=True,
-        >>>    avas_frag=[0],
-        >>>    nmo_avas=[3, 4, 5],
         >>>    save_data=True,
         >>>    restricted=True,
         >>>    openshell=True,
