@@ -13,7 +13,6 @@ from ase_rose import ROSE as ROSE_original
 from ase_rose import ROSEFragment as ROSEFragment_original
 from ase_rose import ROSETargetMolecule as ROSETargetMolecule_original
 
-from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature.second_q.formats.fcidump import FCIDump
 
 from .qc2_ase_base_class import BaseQc2ASECalculator
@@ -89,13 +88,15 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
                 'Datafile %s from ROSE can only be read.', datafile
             )
 
-    def load(self, datafile: str) -> Union[
-            QCSchema, FCIDump
-    ]:
+    def load(self, datafile: str) -> FCIDump:
         """Loads electronic structure data from a fcidump datafile.
 
         Returns:
             `FCIDump` dataclass containing qchem data.
+
+        Notes:
+            Can be extended to load `QCSchema` formated hdf5 files inasmuch as
+            the original ROSE-ASE calculator supports it in the future.
 
         Example:
         >>> from qc2.ase import ROSE
