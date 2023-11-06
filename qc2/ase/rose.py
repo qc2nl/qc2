@@ -85,7 +85,7 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
         """Dumps qchem data to a datafile."""
         logging.warning(
                 'ROSE.save() method currently inactive. '
-                'Datafile %s from ROSE can only be read.', datafile
+                'Datafile %s from ROSE can only be loaded.', datafile
             )
 
     def load(self, datafile: str) -> FCIDump:
