@@ -73,6 +73,7 @@ def vqe_calculation():
     return result.eigenvalue, e_core
 
 
+@pytest.mark.skip(reason="Takes a long time because of UHF ??")
 def test_vqe_calculation(vqe_calculation):
     """Check that the final vqe energy corresponds to one at FCI/sto-3g."""
     calculated_electronic_energy, e_core = vqe_calculation

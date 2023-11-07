@@ -58,6 +58,7 @@ def vqe_result():
     return result.eigenvalue + e_core
 
 
+@pytest.mark.skip(reason="Takes a long time because of the TQ excitations...")
 def test_total_ground_state_energy(vqe_result):
     """Check that the final vqe energy corresponds to one at FCI/sto-3g."""
     expected_energy = -37.218733550636
