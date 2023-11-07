@@ -35,16 +35,6 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             that write/read input/output files.
         BaseQc2ASECalculator (BaseQc2ASECalculator): Base class for
             ase calculartors in qc2.
-
-    Example of a typical ASE-DIRAC input:
-
-    >>> from ase import Atoms
-    >>> from ase.build import molecule
-    >>> from qc2.ase.dirac import DIRAC
-    >>>
-    >>> molecule = Atoms(...) or molecule = molecule('...')
-    >>> molecule.calc = DIRAC(dirac={}, wave_function={}...)
-    >>> energy = molecule.get_potential_energy()
     """
     implemented_properties: List[str] = ['energy']
     label: str = 'dirac'
@@ -59,12 +49,12 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
                  atoms: Optional[Atoms] = None,
                  command: Optional[str] = None,
                  **kwargs) -> None:
-        """ASE-DIRAC Class Constructor to initialize the object.
+        """DIRAC-ASE calculator.
 
         Args:
             restart (bool, optional): Prefix for restart file.
                 May contain a directory. Defaults to None: don't restart.
-            ignore_bad_restart (bool, optional): Deprecated and will
+            ignore_bad_restart_file (bool, optional): Deprecated and will
                 stop working in the future. Defaults to False.
             label (str, optional): Calculator name. Defaults to 'dirac'.
             atoms (Atoms, optional): Atoms object to which the calculator
@@ -74,6 +64,16 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
                 Defaults to None.
             directory (str, optional): Working directory in which
                 to perform calculations. Defaults to '.'.
+
+        Example of a typical ASE-DIRAC input:
+
+        >>> from ase import Atoms
+        >>> from ase.build import molecule
+        >>> from qc2.ase import DIRAC
+        >>>
+        >>> molecule = Atoms(...) or molecule = molecule('...')
+        >>> molecule.calc = DIRAC(dirac={}, wave_function={}...)
+        >>> energy = molecule.get_potential_energy()
         """
         # initialize ASE base class Calculator.
         # see ase/ase/calculators/calculator.py.
@@ -185,7 +185,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         Example:
         >>> from ase.build import molecule
-        >>> from qc2.ase.dirac import DIRAC
+        >>> from qc2.ase import DIRAC
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = DIRAC()  # => RHF/STO-3G
@@ -356,7 +356,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         Example:
         >>> from ase.build import molecule
-        >>> from qc2.ase.pyscf import PySCF
+        >>> from qc2.ase import DIRAC
         >>>
         >>> molecule = molecule('H2')
         >>> molecule.calc = DIRAC()     # => RHF/STO-3G
@@ -548,7 +548,9 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
     def _format_fcidump_mo_integrals(
         self,
         one_body_integrals: Dict[Tuple[int, int], Union[float, complex]],
-        two_body_integrals: Dict[Tuple[int, int, int, int], Union[float, complex]],
+        two_body_integrals: Dict[
+            Tuple[int, int, int, int], Union[float, complex]
+        ],
         nmo: int
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray,
                np.ndarray, np.ndarray, np.ndarray]:
@@ -640,24 +642,40 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
                             # exploiting perm symm of 2-body integrals
                             two_body_coefficients_aa[p, q, r, s] = aa_term
                             two_body_coefficients_aa[q, p, s, r] = aa_term
-                            two_body_coefficients_aa[r, s, p, q] = np.conj(aa_term)
-                            two_body_coefficients_aa[s, r, q, p] = np.conj(aa_term)
+                            two_body_coefficients_aa[r, s, p, q] = np.conj(
+                                aa_term
+                            )
+                            two_body_coefficients_aa[s, r, q, p] = np.conj(
+                                aa_term
+                            )
 
                             # restricted non-relativistic case
                             two_body_coefficients_ba[p, q, r, s] = aa_term
                             two_body_coefficients_ba[q, p, s, r] = aa_term
-                            two_body_coefficients_ba[r, s, p, q] = np.conj(aa_term)
-                            two_body_coefficients_ba[s, r, q, p] = np.conj(aa_term)
+                            two_body_coefficients_ba[r, s, p, q] = np.conj(
+                                aa_term
+                            )
+                            two_body_coefficients_ba[s, r, q, p] = np.conj(
+                                aa_term
+                            )
 
                             two_body_coefficients_ab[p, q, r, s] = aa_term
                             two_body_coefficients_ab[q, p, s, r] = aa_term
-                            two_body_coefficients_ab[r, s, p, q] = np.conj(aa_term)
-                            two_body_coefficients_ab[s, r, q, p] = np.conj(aa_term)
+                            two_body_coefficients_ab[r, s, p, q] = np.conj(
+                                aa_term
+                            )
+                            two_body_coefficients_ab[s, r, q, p] = np.conj(
+                                aa_term
+                            )
 
                             two_body_coefficients_bb[p, q, r, s] = aa_term
                             two_body_coefficients_bb[q, p, s, r] = aa_term
-                            two_body_coefficients_bb[r, s, p, q] = np.conj(aa_term)
-                            two_body_coefficients_bb[s, r, q, p] = np.conj(aa_term)
+                            two_body_coefficients_bb[r, s, p, q] = np.conj(
+                                aa_term
+                            )
+                            two_body_coefficients_bb[s, r, q, p] = np.conj(
+                                aa_term
+                            )
 
                         # non-restricted case ?
                         if (beta_p, beta_q,
@@ -669,8 +687,12 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
                             two_body_coefficients_bb[p, q, r, s] = bb_term
                             two_body_coefficients_bb[q, p, s, r] = bb_term
-                            two_body_coefficients_bb[r, s, p, q] = np.conj(bb_term)
-                            two_body_coefficients_bb[s, r, q, p] = np.conj(bb_term)
+                            two_body_coefficients_bb[r, s, p, q] = np.conj(
+                                bb_term
+                            )
+                            two_body_coefficients_bb[s, r, q, p] = np.conj(
+                                bb_term
+                            )
 
                         if (alpha_p, beta_q,
                                 beta_r, alpha_s) in two_body_integrals:
@@ -681,8 +703,12 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
                             two_body_coefficients_ab[p, q, r, s] = ab_term
                             two_body_coefficients_ab[q, p, s, r] = ab_term
-                            two_body_coefficients_ab[r, s, p, q] = np.conj(ab_term)
-                            two_body_coefficients_ab[s, r, q, p] = np.conj(ab_term)
+                            two_body_coefficients_ab[r, s, p, q] = np.conj(
+                                ab_term
+                            )
+                            two_body_coefficients_ab[s, r, q, p] = np.conj(
+                                ab_term
+                            )
 
                         if (beta_p, alpha_q,
                                 alpha_r, beta_s) in two_body_integrals:
@@ -693,8 +719,12 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
                             two_body_coefficients_ba[p, q, r, s] = ba_term
                             two_body_coefficients_ba[q, p, s, r] = ba_term
-                            two_body_coefficients_ba[r, s, p, q] = np.conj(ba_term)
-                            two_body_coefficients_ba[s, r, q, p] = np.conj(ba_term)
+                            two_body_coefficients_ba[r, s, p, q] = np.conj(
+                                ba_term
+                            )
+                            two_body_coefficients_ba[s, r, q, p] = np.conj(
+                                ba_term
+                            )
 
         # truncate numbers lower than EQ_TOLERANCE
         two_body_coefficients_aa[np.abs(
