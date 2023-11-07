@@ -25,35 +25,19 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Set up conda environment
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          environment-file: environment.yml
+      - name: Activate conda environment
+        shell: bash -l {0}
+        run: |
+          conda activate my-env
       - name: Python info
         shell: bash -l {0}
         run: |
           which python3
           python3 --version
-      - name: Install Conda
-        run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            # Install Miniconda
-            wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-          else
-            # Install Miniconda
-            wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
-          fi
-          bash miniconda.sh -b -p $HOME/miniconda
-          source $HOME/miniconda/etc/profile.d/conda.sh
-          conda init bash
-          source ~/.bashrc
-          conda update -y -q conda
-        shell: bash
-      #- name: Initialize Conda in the shell
-      #  run: conda init
-      #  shell: bash
-      - name: Create and activate Conda environment
-        run: |
-          conda create -y -n my_env python=${{ matrix.python-version }} psi4 -c conda-forge/label/libint_dev -c conda-forge
-          conda activate my_env
-      # conda activate my_env
-        shell: bash
       - name: Upgrade pip and install dependencies
         run: |
           python3 -m pip install --upgrade pip setuptools
