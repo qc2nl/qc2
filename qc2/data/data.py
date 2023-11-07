@@ -1,5 +1,5 @@
 """This module defines the main qc2 data class."""
-from typing import Optional, Tuple, Union
+from typing import Tuple, Union
 import os
 
 from ase import Atoms
@@ -44,9 +44,9 @@ class qc2Data:
     def __init__(
             self,
             filename: str,
-            molecule: Optional[Atoms],
+            molecule: Atoms = Atoms(),
             *,
-            schema: Optional[str] = 'qcschema'
+            schema: str = 'qcschema'
     ):
         """Initializes the `qc2Data` instance.
 
@@ -353,7 +353,6 @@ class qc2Data:
         ...     n_electrons, n_spatial_orbitals, mapper, format='qiskit'
         ... )
         """
-
         if format not in ["qiskit", "pennylane"]:
             raise TypeError(f"Format {format} not yet suported.")
 

@@ -28,7 +28,7 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
             ase calculartors in qc2.
     """
     def __init__(self, *args, **kwargs) -> None:
-        """ASE-Psi4 Class Constructor.
+        """Psi4-ASE calculator.
 
         Example of a typical ASE-Psi4 input:
 
