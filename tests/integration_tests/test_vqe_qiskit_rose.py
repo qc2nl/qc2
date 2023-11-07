@@ -8,11 +8,15 @@ from qiskit_algorithms.minimum_eigensolvers import VQE
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 
-from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
 from qc2.data import qc2Data
 
+try:
+    from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
+except ImportError:
+    pytest.skip("Skipping ASE-ROSE test...",
+                allow_module_level=True)
 
-# Check first if the `genibo.x` and `avas.x` executables are available
+# also check if the `genibo.x` and `avas.x` executables are available
 if not shutil.which("genibo.x") or not shutil.which("avas.x"):
     pytest.skip("ROSE executables not found or not in your path. "
                 "Skipping tests.", allow_module_level=True)

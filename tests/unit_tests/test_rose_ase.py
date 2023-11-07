@@ -4,10 +4,14 @@ import shutil
 import pytest
 
 from qiskit_nature.second_q.formats.fcidump import FCIDump
-from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
 
+try:
+    from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
+except ImportError:
+    pytest.skip("Skipping ASE-ROSE tests...",
+                allow_module_level=True)
 
-# Check first if the `genibo.x` and `avas.x` executables are available
+# also check if the `genibo.x` and `avas.x` executables are available
 if not shutil.which("genibo.x") or not shutil.which("avas.x"):
     pytest.skip("ROSE executables not found or not in your path. "
                 "Skipping tests.", allow_module_level=True)
