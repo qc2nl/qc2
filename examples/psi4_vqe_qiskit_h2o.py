@@ -1,46 +1,51 @@
-"""Example of a VQE calc using Qiskit-Nature and PYSCF-ASE as calculator.
+"""Example of a VQE calc using Qiskit-Nature and Psi4-ASE calculator.
 
-Test case for C atom as an example of a triplet (unrestricted)
-calculation.
+Standard restricted calculation => H2O example.
 
 Notes:
-    Requires the installation of qc2, ase, qiskit and h5py.
+    Requires the installation of qc2, ase, psi4, qiskit and h5py.
 """
-from ase import Atoms
+import subprocess
+from ase.build import molecule
 
 import qiskit_nature
-from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
+from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
 from qiskit_nature.second_q.mappers import JordanWignerMapper
 from qiskit_algorithms.minimum_eigensolvers import VQE
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 
-from qc2.ase import PySCF
+from qc2.ase import Psi4
 from qc2.data import qc2Data
 
 # Avoid using the deprecated `PauliSumOp` object
 qiskit_nature.settings.use_pauli_sum_op = False
 
 
+def clean_up_Psi4_files():
+    """Remove Psi4 calculation outputs."""
+    command = "rm *.dat"
+    subprocess.run(command, shell=True, capture_output=True)
+
+
 # set Atoms object
-mol = Atoms('C')
+mol = molecule('H2O')
 
 # file to save data
-hdf5_file = 'carbon_ase_pyscf_qiskit.hdf5'
+hdf5_file = 'h2o_ase_psi4_qiskit.fcidump'
 
 # init the hdf5 file
-qc2data = qc2Data(hdf5_file, mol)
+qc2data = qc2Data(hdf5_file, mol, schema='fcidump')
 
-# specify the qchem calculator and run
-qc2data.molecule.calc = PySCF(method='scf.UHF', basis='sto-3g',
-                              multiplicity=3, charge=0)
+# specify the qchem calculator
+qc2data.molecule.calc = Psi4(method='hf', basis='sto-3g')
 
 # run calculation and save qchem data in the hdf5 file
 qc2data.run()
 
 # define activate space
-n_active_electrons = (4, 2)  # => (n_alpha, n_beta)
-n_active_spatial_orbitals = 5
+n_active_electrons = (2, 2)  # => (n_alpha, n_beta)
+n_active_spatial_orbitals = 3
 
 # define the type of fermionic-to-qubit transformation
 mapper = JordanWignerMapper()
@@ -58,12 +63,11 @@ reference_state = HartreeFock(
 
 # print(reference_state.draw())
 
-ansatz = UCC(
-    num_spatial_orbitals=n_active_spatial_orbitals,
-    num_particles=n_active_electrons,
-    qubit_mapper=mapper,
-    initial_state=reference_state,
-    excitations='sdtq'
+ansatz = UCCSD(
+    n_active_spatial_orbitals,
+    n_active_electrons,
+    mapper,
+    initial_state=reference_state
 )
 
 # print(ansatz.draw())
@@ -78,3 +82,5 @@ print(f"* Inactive core energy (Hartree): {e_core}")
 print(f">>> Total ground state energy (Hartree): {result.eigenvalue+e_core}\n")
 
 # print(f"+++ Final parameters:{result.optimal_parameters}")
+
+clean_up_Psi4_files()

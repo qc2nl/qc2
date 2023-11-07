@@ -1,16 +1,15 @@
-"""Example of a VQE calc using Qiskit-Nature and PYSCF-ASE as calculator.
+"""Example of a VQE calc using Qiskit-Nature and PySCF-ASE calculator fcidump.
 
-Test case for C atom as an example of a triplet (unrestricted)
-calculation.
+Standard restricted calculation => H2 example.
 
 Notes:
     Requires the installation of qc2, ase, qiskit and h5py.
 """
-from ase import Atoms
+from ase.build import molecule
 
 import qiskit_nature
-from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
-from qiskit_nature.second_q.mappers import JordanWignerMapper
+from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
+from qiskit_nature.second_q.mappers import BravyiKitaevMapper
 from qiskit_algorithms.minimum_eigensolvers import VQE
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
@@ -23,27 +22,26 @@ qiskit_nature.settings.use_pauli_sum_op = False
 
 
 # set Atoms object
-mol = Atoms('C')
+mol = molecule('H2')
 
 # file to save data
-hdf5_file = 'carbon_ase_pyscf_qiskit.hdf5'
+fcidump_file = 'h2_ase_pyscf_qiskit.fcidump'
 
 # init the hdf5 file
-qc2data = qc2Data(hdf5_file, mol)
+qc2data = qc2Data(fcidump_file, mol, schema='fcidump')
 
-# specify the qchem calculator and run
-qc2data.molecule.calc = PySCF(method='scf.UHF', basis='sto-3g',
-                              multiplicity=3, charge=0)
+# specify the qchem calculator
+qc2data.molecule.calc = PySCF()  # default => RHF/STO-3G
 
 # run calculation and save qchem data in the hdf5 file
 qc2data.run()
 
 # define activate space
-n_active_electrons = (4, 2)  # => (n_alpha, n_beta)
-n_active_spatial_orbitals = 5
+n_active_electrons = (1, 1)  # => (n_alpha, n_beta)
+n_active_spatial_orbitals = 2
 
 # define the type of fermionic-to-qubit transformation
-mapper = JordanWignerMapper()
+mapper = BravyiKitaevMapper()
 
 # set up qubit Hamiltonian and core energy based on given activate space
 e_core, qubit_op = qc2data.get_qubit_hamiltonian(n_active_electrons,
@@ -58,12 +56,11 @@ reference_state = HartreeFock(
 
 # print(reference_state.draw())
 
-ansatz = UCC(
-    num_spatial_orbitals=n_active_spatial_orbitals,
-    num_particles=n_active_electrons,
-    qubit_mapper=mapper,
-    initial_state=reference_state,
-    excitations='sdtq'
+ansatz = UCCSD(
+    n_active_spatial_orbitals,
+    n_active_electrons,
+    mapper,
+    initial_state=reference_state
 )
 
 # print(ansatz.draw())
