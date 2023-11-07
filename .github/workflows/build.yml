@@ -28,11 +28,12 @@ jobs:
       - name: Set up conda environment
         uses: conda-incubator/setup-miniconda@v2
         with:
+          python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
       - name: Activate conda environment
         shell: bash -l {0}
         run: |
-          conda activate my-env
+          conda activate test
       - name: Python info
         shell: bash -l {0}
         run: |
@@ -66,8 +67,8 @@ jobs:
       - name: Run unit tests
         run: |
           pytest -v --pyargs tests/unit_tests
-      #- name: Run integration tests
-      #  run: |
-      #    pytest -v --pyargs tests/integration_tests
+      - name: Run integration tests
+        run: |
+          pytest -v --pyargs tests/integration_tests
       - name: Verify that we can build the package
         run: python3 setup.py sdist bdist_wheel
