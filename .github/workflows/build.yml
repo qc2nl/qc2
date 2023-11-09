@@ -19,17 +19,29 @@ jobs:
       matrix:
         os: ['ubuntu-latest', 'macos-latest'] #, 'windows-latest']
         python-version: ['3.11'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        include:
+          - os: ubuntu-latest
+            CONDA_OS: linux-64
+          - os: macos-latest
+            CONDA_OS: osx-64
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up conda environment
+      #- uses: actions/checkout@v3
+      #- name: Set up Python ${{ matrix.python-version }}
+      #  uses: actions/setup-python@v3
+      #  with:
+      #    python-version: ${{ matrix.python-version }}
+      - name: Set up conda environment with Python ${{ matrix.python-version }}
         uses: conda-incubator/setup-miniconda@v2
         with:
+          miniconda-version: "latest"
+          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          environment-file: environment.yml
+      - name: Conda info
+        shell: bash -l {0}
+        run: conda info
+      - name: Conda list
+        shell: bash -l {0}
+        run: conda list
       - name: Activate conda environment
         shell: bash -l {0}
         run: |
@@ -41,8 +53,17 @@ jobs:
           python3 --version
       - name: Upgrade pip and install dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools
-          python3 -m pip install .[dev,publishing,psi4,pennylane]
+          conda install -c psi4 psi4
+      #conda config --append channels conda-forge
+      #conda install psi4
+      #python3 -m pip install .[dev,publishing,pennylane]
+      #python3 -m pip install --upgrade pip setuptools
+      #- name: Install psi4 for tests
+      #  run: |
+      #    conda install --yes psi4-dev -c psi4/label/dev -c psi4
+        #conda config --add channels http://conda.anaconda.org/psi4
+        #export PSI4_DIR = `which psi4`
+        #echo $PSI4_DIR
       #- name: Setup GNU Fortran
       #  uses: modflowpy/install-gfortran-action@v1
       #- name: Rose install for tests
