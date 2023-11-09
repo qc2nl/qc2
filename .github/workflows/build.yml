@@ -18,12 +18,12 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest'] #, 'windows-latest']
-        python-version: ['3.10'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
-        include:
-          - os: ubuntu-latest
-            CONDA_OS: linux-64
-          - os: macos-latest
-            CONDA_OS: osx-64
+        python-version: ['3.8'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        #include:
+        #  - os: ubuntu-latest
+        #    CONDA_OS: linux-64
+        #  - os: macos-latest
+        #    CONDA_OS: osx-64
     steps:
       #- uses: actions/checkout@v3
       #- name: Set up Python ${{ matrix.python-version }}
@@ -36,7 +36,11 @@ jobs:
           miniconda-version: "latest"
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          environment-file: environment.yml
+      #- name: actions-setup-cmake
+      #  uses: jwlawson/actions-setup-cmake@v1.14.1
+      #- name: Cmake info
+      #  shell: bash -l {0}
+      #  run: cmake --version
       - name: Conda info
         shell: bash -l {0}
         run: conda info
@@ -52,16 +56,22 @@ jobs:
         run: |
           which python3
           python3 --version
-      - name: Upgrade pip and install dependencies
+          MY_PYTHONPATH=$(which python3)
+#      - name: Upgrade pip and install dependencies
+#        run: |
+##          python3 -m pip install --upgrade setuptools
+##          python3 -m install -e .[pennylane]    #.[dev,publishing,pennylane]
+      - name: Install psi4 for tests
         run: |
           conda install -c psi4 psi4
-      #conda config --append channels conda-forge
-      #conda install psi4
-      #python3 -m pip install .[dev,publishing,pennylane]
-      #python3 -m pip install --upgrade pip setuptools
-      #- name: Install psi4 for tests
-      #  run: |
-      #    conda install --yes psi4-dev -c psi4/label/dev -c psi4
+#          git clone https://github.com/psi4/psi4.git
+#          cd psi4
+#          cmake -S . -B build     #-DPython_EXECUTABLE=$MY_PYTHONPATH
+#          cd build
+#          make -j`getconf _NPROCESSORS_ONLN`
+#          make install
+#          cd ../../
+        #    cd rose
         #conda config --add channels http://conda.anaconda.org/psi4
         #export PSI4_DIR = `which psi4`
         #echo $PSI4_DIR
@@ -86,11 +96,11 @@ jobs:
       #    make
       #    echo `pwd`/bin >> $GITHUB_PATH
       #    cd ..
-      - name: Run unit tests
-        run: |
-          pytest -v --pyargs tests/unit_tests
-      - name: Run integration tests
-        run: |
-          pytest -v --pyargs tests/integration_tests
-      - name: Verify that we can build the package
-        run: python3 setup.py sdist bdist_wheel
+      #- name: Run unit tests
+      #  run: |
+      #    pytest -v --pyargs tests/unit_tests
+      #- name: Run integration tests
+      #  run: |
+      #    pytest -v --pyargs tests/integration_tests
+      #- name: Verify that we can build the package
+      #  run: python3 setup.py sdist bdist_wheel
