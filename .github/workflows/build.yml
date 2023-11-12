@@ -75,7 +75,8 @@ jobs:
           $CONDA/bin/python3 -m pip install .[dev,publishing,pennylane]
       - name: Setting up psi4 environment variables
         run: |
-          echo `which psi4`/bin >> $GITHUB_PATH
+          which psi4
+          echo `which psi4` >> $GITHUB_PATH
       #- name: Setup GNU Fortran
       #  uses: modflowpy/install-gfortran-action@v1
       #- name: Rose install for tests
