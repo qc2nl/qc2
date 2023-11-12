@@ -69,10 +69,10 @@ jobs:
           python3 --version
           MY_PYTHONPATH=$(which python3)
           which psi4
-#      - name: Upgrade pip and install dependencies
-#        run: |
-##          python3 -m pip install --upgrade setuptools
-##          python3 -m install -e .[pennylane]    #.[dev,publishing,pennylane]
+      - name: Install qc2
+        run: |
+          python3 -m install .[dev,publishing,pennylane]
+#          python3 -m pip install --upgrade setuptools
 #      - name: Install psi4 for tests
 #        run: |
 #          conda install -c psi4 psi4
