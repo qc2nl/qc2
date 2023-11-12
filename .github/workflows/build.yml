@@ -30,12 +30,26 @@ jobs:
       #  uses: actions/setup-python@v3
       #  with:
       #    python-version: ${{ matrix.python-version }}
+      - name: Write Conda environment file
+        run: |
+          cat > environment.yml << EOF
+          name: test
+          channels:
+            - psi4
+            - conda-forge
+            - defaults
+          dependencies:
+            - psi4
+          EOF
       - name: Set up conda environment with Python ${{ matrix.python-version }}
         uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+          activate-environment: test
+          auto-activate-base: false
+          environment-file: environment.yml
       #- name: actions-setup-cmake
       #  uses: jwlawson/actions-setup-cmake@v1.14.1
       #- name: Cmake info
@@ -43,27 +57,25 @@ jobs:
       #  run: cmake --version
       - name: Conda info
         shell: bash -l {0}
-        run: conda info
-      - name: Conda list
-        shell: bash -l {0}
-        run: conda list
-      - name: Activate conda environment
-        shell: bash -l {0}
         run: |
-          conda activate test
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
       - name: Python info
         shell: bash -l {0}
         run: |
           which python3
           python3 --version
           MY_PYTHONPATH=$(which python3)
+          which psi4
 #      - name: Upgrade pip and install dependencies
 #        run: |
 ##          python3 -m pip install --upgrade setuptools
 ##          python3 -m install -e .[pennylane]    #.[dev,publishing,pennylane]
-      - name: Install psi4 for tests
-        run: |
-          conda install -c psi4 psi4
+#      - name: Install psi4 for tests
+#        run: |
+#          conda install -c psi4 psi4
 #          git clone https://github.com/psi4/psi4.git
 #          cd psi4
 #          cmake -S . -B build     #-DPython_EXECUTABLE=$MY_PYTHONPATH
