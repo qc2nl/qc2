@@ -71,7 +71,7 @@ jobs:
           which psi4
       - name: Install qc2
         run: |
-          python3 -m install .[dev,publishing,pennylane]
+          python3 -m pip install .[dev,publishing,pennylane]
 #          python3 -m pip install --upgrade setuptools
 #      - name: Install psi4 for tests
 #        run: |
