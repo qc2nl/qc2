@@ -71,12 +71,8 @@ jobs:
           $CONDA/bin/python3 --version
       - name: Install qc2
         run: |
-          $CONDA/bin/python3 -m pip install --upgrade setuptools
-          $CONDA/bin/python3 -m pip install .[dev,publishing,pennylane]
-      - name: Setting up psi4 environment variables
-        run: |
-          which psi4
-          echo `which psi4` >> $GITHUB_PATH
+          python3 -m pip install --upgrade setuptools
+          python3 -m pip install .[dev,publishing,pennylane]
       #- name: Setup GNU Fortran
       #  uses: modflowpy/install-gfortran-action@v1
       #- name: Rose install for tests
