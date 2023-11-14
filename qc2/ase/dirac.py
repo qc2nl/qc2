@@ -65,7 +65,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             directory (str, optional): Working directory in which
                 to perform calculations. Defaults to '.'.
 
-        Example of a typical ASE-DIRAC input:
+        **Example**
 
         >>> from ase import Atoms
         >>> from ase.build import molecule
@@ -183,7 +183,8 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         Returns:
             None
 
-        Example:
+        **Example**
+
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
         >>>
@@ -354,7 +355,8 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         Returns:
             `QCSchema` or `FCIDump` dataclasses containing qchem data.
 
-        Example:
+        **Example**
+
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
         >>>
@@ -392,16 +394,16 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             see: https://github.com/bsenjean/Openfermion-Dirac.
 
         Returns:
-            A tuple containing the following:
+            A tuple containing `np.ndarray` types:
                 - e_core (Union[float, complex]): Nuclear repulsion energy.
                 - spinor (Dict[int, Union[float, complex]]): Dictionary of
-                    spinor values with their corresponding indices.
+                  spinor values with their corresponding indices.
                 - one_body_int (Dict[Tuple[int, int], Union[float, complex]]):
-                    Dictionary of one-body integrals with their corresponding
-                    indices as tuples.
+                  Dictionary of one-body integrals with their corresponding
+                  indices as tuples.
                 - two_body_int (Dict[Tuple[int, int, int, int],
-                    Union[float, complex]]): Dictionary of two-body integrals
-                    with their corresponding indices as tuples.
+                  Union[float, complex]]): Dictionary of two-body integrals
+                  with their corresponding indices as tuples.
         """
         self._get_dirac_fcidump()
 
@@ -561,15 +563,15 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             see: https://github.com/bsenjean/Openfermion-Dirac.
 
         Returns:
-            A tuple containing the following:
+            A tuple containing `np.ndarray` types:
                 - one_body_coefficients_a & one_body_coefficients_b:
-                    Numpy arrays containing alpha and beta components
-                    of the one-body integrals.
+                  Numpy arrays containing alpha and beta components
+                  of the one-body integrals.
                 - two_body_coefficients_aa, two_body_coefficients_bb,
-                    two_body_coefficients_ab & two_body_coefficients_ba:
-                    Numpy arrays containing alpha-alpha, beta-beta,
-                    alpha-beta & beta-alpha components of the two-body
-                    integrals.
+                  two_body_coefficients_ab & two_body_coefficients_ba:
+                  Numpy arrays containing alpha-alpha, beta-beta,
+                  alpha-beta & beta-alpha components of the two-body
+                  integrals.
         """
         # tolerance to consider number zero.
         EQ_TOLERANCE = 1e-8
