@@ -1,7 +1,4 @@
-"""
-This module implements the abstract base class for qc2 ase calculators.
-"""
-
+"""This module implements the abstract base class for qc2 ase calculators."""
 from abc import ABC
 from typing import Tuple, Any, Union
 import os
@@ -15,8 +12,12 @@ from qiskit_nature.second_q.formats.fcidump import FCIDump
 
 
 class BaseQc2ASECalculator(ABC):
-    """Abstract base class for the qc2 ASE calculators."""
+    """Abstract base class for all qc2 ASE calculators."""
     def __init__(self) -> None:
+        """:class:`BaseQc2ASECalculator` class constructor.
+
+        Astract base class for all qc2 ASE calculators.
+        """
         # format in which to read/write qchem data
         self._implemented_formats = ["qcschema", "fcidump"]
         self._schema_format = None
@@ -85,33 +86,35 @@ class BaseQc2ASECalculator(ABC):
 
         Notes:
             Can also be evaluated on-the-fly as:
+
             .. math::
                 S = (C^{T})^{-1} \times C^{-1}
-                where, C is the matrix of mo coefficients.
+
+            where, :math:`C` is the matrix of mo coefficients.
 
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
     def instantiate_qcschema(self, *args, **kwargs) -> QCSchema:
-        """Creates an instance of QCSchema dataclass"""
+        """Creates an instance of QCSchema dataclass."""
         return QCSchema(*args, **kwargs)
 
     def instantiate_qctopology(self, *args, **kwargs) -> QCTopology:
-        """Creates an instance of QCTopology dataclass"""
+        """Creates an instance of QCTopology dataclass."""
         return QCTopology(*args, **kwargs)
 
     def instantiate_qcproperties(self, *args, **kwargs) -> QCProperties:
-        """Creates an instance of QCProperties dataclass"""
+        """Creates an instance of QCProperties dataclass."""
         return QCProperties(*args, **kwargs)
 
     def instantiate_qcmodel(self, *args, **kwargs) -> QCModel:
-        """Creates an instance of QCModel dataclass"""
+        """Creates an instance of QCModel dataclass."""
         return QCModel(*args, **kwargs)
 
     def instantiate_qcprovenance(self, *args, **kwargs) -> QCProvenance:
-        """Creates an instance of QCProvenance dataclass"""
+        """Creates an instance of QCProvenance dataclass."""
         return QCProvenance(*args, **kwargs)
 
     def instantiate_qcwavefunction(self, *args, **kwargs) -> QCWavefunction:
-        """Creates an instance of QCProvenance dataclass"""
+        """Creates an instance of QCProvenance dataclass."""
         return QCWavefunction(*args, **kwargs)
