@@ -97,7 +97,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             directory (str, optional): Working directory in which
                 to perform calculations. Defaults to '.'.
 
-        Example of a typical ASE-PySCF input:
+        **Example**
 
         >>> from ase import Atoms
         >>> from ase.build import molecule
@@ -128,16 +128,16 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
         Notes:
             - Scalar relativistic corrections can be added with
-                'relativistic = True' keyword. If selected,
-                the scf object will be decorated by x2c() method, e.g.,
-                mf = scf.RHF(mol).x2c().
-                'relativistic' is False by default.
+              'relativistic = True' keyword. If selected,
+              the scf object will be decorated by x2c() method, e.g.,
+              mf = scf.RHF(mol).x2c().
+              'relativistic' is False by default.
             - pyscf.scf.addons functions can also be included, e.g.:
-                if scf_addons='frac_occ' keyword is added, then
-                mf = scf.addons.frac_occ(mf).
-                'scf_addons' is None by default.
+              if scf_addons='frac_occ' keyword is added, then
+              mf = scf.addons.frac_occ(mf).
+              'scf_addons' is None by default.
             - Basic implementation based on the class Psi4(Calculator);
-                see, e.g., ase/ase/calculators/psi4.py.
+              see, e.g., ase/ase/calculators/psi4.py.
         """
         # initializing base class Calculator.
         # see ase/ase/calculators/calculator.py.
@@ -235,7 +235,8 @@ class PySCF(Calculator, BaseQc2ASECalculator):
                   system_changes: List[str] = all_changes) -> None:
         """This method is the core responsible for the actual calculation.
 
-        Note: Implementation based on Calculator.calculate() method.
+        Notes:
+            Implementation based on Calculator.calculate() method.
             see also ase/ase/calculators/calculator.py.
 
         Args:
@@ -349,7 +350,8 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         Returns:
             None
 
-        Example:
+        **Example**
+
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
         >>>
@@ -474,7 +476,8 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         Returns:
             `QCSchema` or `FCIDump` dataclasses containing qchem data.
 
-        Example:
+        **Example**
+
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
         >>>
@@ -497,13 +500,13 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         """Retrieves 1- & 2-body integrals in MO basis from PySCF routines.
 
         Returns:
-            A tuple containing the following:
+            A tuple containing `np.ndarray` types:
                 - one_body_int_a & one_body_int_b: Numpy arrays containing
-                    alpha and beta components of the one-body integrals.
+                  alpha and beta components of the one-body integrals.
                 - two_body_int_aa, two_body_int_bb, two_body_int_ab
-                    & two_body_int_ba: Numpy arrays containing
-                    alpha-alpha, beta-beta, alpha-beta & beta-alpha
-                    components of the two-body integrals.
+                  & two_body_int_ba: Numpy arrays containing
+                  alpha-alpha, beta-beta, alpha-beta & beta-alpha
+                  components of the two-body integrals.
         """
         # define alpha and beta MO coeffients
         alpha_coeff, beta_coeff = self.get_molecular_orbitals_coefficients()
