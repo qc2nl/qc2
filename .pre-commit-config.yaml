@@ -14,7 +14,9 @@ repos:
     rev: 6.3.0
     hooks:
     -   id: pydocstyle                # pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
-        args: ["--convention=google"]
+        args: [
+            "--convention=google",
+            "--add-ignore=D412"]
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
