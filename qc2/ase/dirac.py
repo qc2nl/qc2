@@ -353,7 +353,8 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             files are read following the qcschema or fcidump formats.
 
         Returns:
-            `QCSchema` or `FCIDump` dataclasses containing qchem data.
+            Instances of :class:`QCSchema` or :class:`FCIDump`
+            dataclasses containing qchem data.
 
         **Example**
 
@@ -387,7 +388,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         Dict[Tuple[int, int], Union[float, complex]],
         Dict[Tuple[int, int, int, int], Union[float, complex]]
     ]:
-        """Retrieves 1- and 2-body integrals in MO basis from DIRAC FCIDUMP.
+        """Retrieves 1- and 2-body integrals in MO basis from ``FCIDUMP``.
 
         Notes:
             Adapted from Openfermion-Dirac:
@@ -522,9 +523,10 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         """Helper routine to generate DIRAC FCIDUMP file.
 
         Notes:
-            Requires MRCONEE MDCINT files obtained using
-            **DIRAC .4INDEX, **MOLTRA .ACTIVE all and
-            'pam ... --get="MRCONEE MDCINT"' options.
+            Requires ``MRCONEE`` and ``MDCINT`` files
+            obtained using
+            ``**DIRAC .4INDEX``, ``**MOLTRA .ACTIVE all`` and
+            ``pam ... --get="MRCONEE MDCINT"`` options.
 
         Raises:
             EnvironmentError: If the command execution fails.
