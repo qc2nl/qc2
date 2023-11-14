@@ -30,7 +30,7 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
     def __init__(self, *args, **kwargs) -> None:
         """Psi4-ASE calculator.
 
-        Example of a typical ASE-Psi4 input:
+        **Example**
 
         >>> from ase import Atoms
         >>> from ase.build import molecule
@@ -74,7 +74,8 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         Returns:
             None
 
-        Example:
+        **Example**
+
         >>> from ase.build import molecule
         >>> from qc2.ase import Psi4
         >>>
@@ -203,7 +204,8 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         Returns:
             `QCSchema` or `FCIDump` dataclasses containing qchem data.
 
-        Example:
+        **Example**
+
         >>> from ase.build import molecule
         >>> from qc2.ase import Psi4
         >>>
@@ -226,13 +228,13 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         """Retrieves 1- & 2-body integrals in MO basis from Psi4 routines.
 
         Returns:
-            A tuple containing the following:
+            A tuple containing `np.ndarray` types:
                 - one_body_int_a & one_body_int_b: Numpy arrays containing
-                    alpha and beta components of the one-body integrals.
+                  alpha and beta components of the one-body integrals.
                 - two_body_int_aa, two_body_int_bb, two_body_int_ab
-                    & two_body_int_ba: Numpy arrays containing
-                    alpha-alpha, beta-beta, alpha-beta & beta-alpha
-                    components of the two-body integrals.
+                  & two_body_int_ba: Numpy arrays containing
+                  alpha-alpha, beta-beta, alpha-beta & beta-alpha
+                  components of the two-body integrals.
         """
         # define alpha and beta MO coeffients
         alpha_coeff, beta_coeff = self.get_molecular_orbitals_coefficients()
