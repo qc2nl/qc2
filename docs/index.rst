@@ -12,8 +12,10 @@ About qc2
 
 qc2 is a modular software designed to seamlessly integrate traditional computational chemistry codes
 and quantum computing frameworks.
+
 It is specifically crafted for hybrid quantum-classical workflows
-such as the variational quantum eigensolver (VQE) :cite:p:`REV_VQE:2022,REV_QC4QC:2019`.
+such as the variational quantum eigensolver (VQE) algorithm :cite:p:`REV_VQE:2022,REV_QC4QC:2019`.
+
 The software relies on custom `ASE calculators <https://wiki.fysik.dtu.dk/ase/>`_ as well as formatted data files
 (*e.g.*, `QCSchema <https://molssi.org/software/qcschema-2/>`_) to efficiently offload 1- and 2-electron
 integrals needed by various Python quantum computing libraries.
@@ -23,8 +25,17 @@ a collaboration between `Netherlands eScience Center <https://www.esciencecenter
 `Vrije Universiteit Amsterdam (VU) <https://vu.nl/nl>`_ and `SURF <https://www.surf.nl/>`_.
 
 
-Current state of qc2
-====================
+Current status of qc2
+=====================
+
+In its current version, qc2 can perform VQE calculations using
+both `Qiskit Nature <https://qiskit.org/ecosystem/nature/>`_ and `PennyLane <https://pennylane.ai/>`_,
+along with the following computational chemistry codes:
+
+* `PySCF <https://pyscf.org/>`_
+* `Psi4 <https://psicode.org/>`_
+* `DIRAC <https://www.diracprogram.org/>`_
+* `ROSE <https://gitlab.com/quantum_rose/rose>`_ [#f1]_
 
 
 The QCforQC team
@@ -38,11 +49,12 @@ members:
 * Luuk Visscher - Vrije Universiteit Amsterdam
 * Ariana Torres - SURF
 
-.. Emails to add
+.. Emails to add later, if needed
   [n.renaud@esciencecenter.nl](mailto:n.renaud@esciencecenter.nl)
   [c.rocha@esciencecenter.nl](mailto:c.rocha@esciencecenter.nl)
   [ariana.torres@surf.nl](mailto:ariana.torres@surf.nl)
   [l.visscher@vu.nl](mailto:l.visscher@vu.nl)
+
 
 .. toctree::
   :maxdepth: 2
@@ -64,3 +76,7 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. rubric:: Footnotes
+
+.. [#f1] For further information, see :cite:`ROSE:2021`. The current qc2-ASE ROSE calculator only works with PySCF and Psi4 as molecular orbitals generators.
