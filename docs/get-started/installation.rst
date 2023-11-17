@@ -13,7 +13,7 @@ Once a local copy of the qc2 repository has been obtained, qc2 can be installed 
         conda create -n qc2 python=3.11 # python version optional
         conda activate qc2
 
-To install qc2 in a editable/develop mode:
+To install qc2 in an editable/develop mode:
 
 .. code-block:: console
 

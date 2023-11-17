@@ -76,6 +76,9 @@ members:
   :caption: Contents:
 
   get-started/index
+  ase/index
+  qc2data/index
+  tutorials/index
 
 
 Bibliography
