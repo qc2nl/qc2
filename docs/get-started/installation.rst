@@ -1,5 +1,5 @@
-Install
-=======
+Installation instructions
+=========================
 
 Once a local copy of the qc2 repository has been obtained, qc2 can be installed via `pip`.
 

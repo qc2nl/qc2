@@ -1,5 +1,5 @@
-Download
-========
+Downloading qc2
+===============
 
 `Git <https://git-scm.com/>`_ is the version control system adopted within our project.
 The qc2 software is stored on the Git-supporting server `GitHub <https://github.com/>`_, and can be accessed via
