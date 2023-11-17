@@ -1,5 +1,5 @@
 .. qc2 documentation master file, created by
-   sphinx-quickstart on Wed May  5 22:45:36 2021.
+   sphinx-quickstart on Wed May 5 22:45:36 2021.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
@@ -11,14 +11,20 @@ About qc2
 =========
 
 qc2 is a modular software designed to seamlessly integrate traditional computational chemistry codes
-and quantum computing frameworks. It is specifically crafted for hybrid classical-quantum workflows
-and relies on custom `ASE calculators <https://wiki.fysik.dtu.dk/ase/>`_ as well as formatted data files
+and quantum computing frameworks.
+It is specifically crafted for hybrid quantum-classical workflows
+such as the variational quantum eigensolver (VQE) :cite:p:`REV_VQE:2022,REV_QC4QC:2019`.
+The software relies on custom `ASE calculators <https://wiki.fysik.dtu.dk/ase/>`_ as well as formatted data files
 (*e.g.*, `QCSchema <https://molssi.org/software/qcschema-2/>`_) to efficiently offload 1- and 2-electron
 integrals needed by various Python quantum computing libraries.
 
 The qc2 software is a direct outcome of the `QCforQC project <https://research-software-directory.org/projects/qcforqc>`_,
 a collaboration between `Netherlands eScience Center <https://www.esciencecenter.nl/>`_,
 `Vrije Universiteit Amsterdam (VU) <https://vu.nl/nl>`_ and `SURF <https://www.surf.nl/>`_.
+
+
+Current state of qc2
+====================
 
 
 The QCforQC team
@@ -43,6 +49,13 @@ members:
   :caption: Contents:
 
   get-started/index
+
+
+Bibliography
+============
+
+.. bibliography::
+   :cited:
 
 
 Indices and tables
