@@ -1,0 +1,62 @@
+Install
+=======
+
+Once a local copy of the qc2 repository has been obtained, qc2 can be installed via `pip`.
+
+.. note::
+
+    Before installation, you may want to create a local conda environment to accommodate all qc2 dependencies. To do so,
+    follow the steps:
+
+    .. code-block:: console
+
+        conda create -n qc2 python=3.11 # python version optional
+        conda activate qc2
+
+To install qc2 in a editable/develop mode:
+
+.. code-block:: console
+
+    cd qc2
+    python3 -m pip install -e .
+
+In its current version, qc2 is compatible with
+both `Qiskit Nature <https://qiskit.org/ecosystem/nature/>`_ and `Pennylane <https://pennylane.ai/>`_.
+However, the latter is currently an optional dependency. To install Pennylane alongside qc2
+and perform all built-in Pennylane-based automatic testings,
+follow these steps:
+
+.. code-block:: console
+
+    cd qc2
+    python3 -m pip install -e .[pennylane]
+
+
+.. note::
+
+    If you are using Mac zsh shell, use instead:
+
+    .. code-block:: console
+
+        cd qc2
+        python3 -m pip install -e ".[pennylane]"
+
+
+If you want to test your installation and run qc2's suite of automatic testings,
+run `pytest` while in the main qc2 directory, *e.g.*,
+
+    .. code-block:: console
+
+        pytest -v
+
+
+Note on ASE calculators
+-----------------------
+
+The automatic testing by `pytest` attempts to run tests for all supported quantum chemistry programs via
+their corresponding qc2-ASE calculators. These tests will of course only run if you have preinstalled these codes on
+you local machine/workstation; please
+consult the documentation of each supported code for the best install procedure.
+
+Examples on how to use all supported qc2-ASE calculators and quantum computing libraries are provided
+in the ``examples`` directory.
