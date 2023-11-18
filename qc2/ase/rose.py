@@ -91,6 +91,9 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
     def load(self, datafile: str) -> FCIDump:
         """Loads electronic structure data from a fcidump datafile.
 
+        Args:
+            datafile (str): fcidump file to read the data from.
+
         Returns:
             Instance of :class:`FCIDump` dataclass containing qchem data.
 

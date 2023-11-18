@@ -344,11 +344,11 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         Args:
             datafile (Union[h5py.File, str]): file to save the data to.
 
-        Notes:
-            files are written following the QCSchema or FCIDump formats.
-
         Returns:
             None
+
+        Notes:
+            files are written following the QCSchema or FCIDump formats.
 
         **Example**
 
@@ -470,12 +470,15 @@ class PySCF(Calculator, BaseQc2ASECalculator):
     ]:
         """Loads electronic structure data from a datafile.
 
-        Notes:
-            files are read following the qcschema or fcidump formats.
+        Args:
+            datafile (Union[h5py.File, str]): file to read the data from.
 
         Returns:
             Instances of :class:`QCSchema` or :class:`FCIDump`
             dataclasses containing qchem data.
+
+        Notes:
+            files are read following the qcschema or fcidump formats.
 
         **Example**
 
@@ -558,7 +561,13 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         )
 
     def get_integrals_ao_basis(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Retrieves 1- & 2-e integrals in AO basis from PySCF routines."""
+        """Retrieves 1- & 2-e integrals in AO basis from PySCF routines.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                Tuple containing the 1-electron integrals
+                and the 2-electron integrals in the AO basis.
+        """
         one_e_int = self.mol.intor('int1e_kin') + self.mol.intor('int1e_nuc')
         two_e_int = self.mol.intor("int2e", aosym=1)
         return one_e_int, two_e_int
@@ -566,7 +575,13 @@ class PySCF(Calculator, BaseQc2ASECalculator):
     def get_molecular_orbitals_coefficients(self) -> Tuple[
         np.ndarray, np.ndarray
     ]:
-        """Retrieves alpha and beta MO coeffs from PySCF routines."""
+        """Retrieves alpha and beta MO coeffs from PySCF routines.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                Tuple containing the alpha and beta
+                MO coefficients.
+        """
         return self._expand_mo_object(
             self.mf.mo_coeff, array_dimension=3
         )
@@ -574,13 +589,24 @@ class PySCF(Calculator, BaseQc2ASECalculator):
     def get_molecular_orbitals_energies(self) -> Tuple[
         np.ndarray, np.ndarray
     ]:
-        """Retrieves alpha and beta MO energies from PySCF routines."""
+        """Retrieves alpha and beta MO energies from PySCF routines.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                Tuple containing the alpha and beta
+                MO energies.
+        """
         return self._expand_mo_object(
             self.mf.mo_energy, array_dimension=2
         )
 
     def get_overlap_matrix(self) -> np.ndarray:
-        """Retrieves overlap matrix from PySCF routines."""
+        """Retrieves overlap matrix from PySCF routines.
+
+        Returns:
+            np.ndarray:
+                The overlap matrix.
+        """
         return self.mf.get_ovlp()
 
     def _expand_mo_object(
@@ -592,9 +618,6 @@ class PySCF(Calculator, BaseQc2ASECalculator):
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Expands the mo object into alpha- and beta-spin components.
 
-        Notes:
-            Adapted from Qiskit-Nature pyscfdriver.py.
-
         Args:
             mo_object: the molecular orbital object to expand.
             array_dimension:  This argument specifies the dimension of the
@@ -604,6 +627,9 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
         Returns:
             The (alpha, beta) tuple of MO data.
+
+        Notes:
+            Adapted from Qiskit-Nature pyscfdriver.py.
         """
         if isinstance(mo_object, tuple):
             return mo_object
