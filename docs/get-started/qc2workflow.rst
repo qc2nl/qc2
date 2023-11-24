@@ -3,7 +3,7 @@ qc2 workflow
 
 .. _code_workflow:
 
-.. figure:: qc2_workflow.drawio.png
+.. figure:: ../qc2_workflow.drawio.png
     :align: center
     :alt: Code workflow diagram
 
