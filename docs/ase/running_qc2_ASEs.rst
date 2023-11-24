@@ -143,7 +143,7 @@ you can read data from this file and save it into an instance of ``FCIdump`` dat
     fcidump = mol.calc.load('h2o.fcidump')
 
 Note that a `dummy` (generic) calculator has been attached to the ASE ``Atoms`` object (``mol``).
-The importance of :class:`qc2.ase.BaseQc2ASECalculator` will be emphasized in :ref:`build_ASEs`.
+The importance of :class:`qc2.ase.qc2_ase_base_class.BaseQc2ASECalculator` will be emphasized in :ref:`build_ASEs`.
 
 .. note::
 
