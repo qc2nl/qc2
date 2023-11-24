@@ -7,6 +7,8 @@ Welcome to qc2's documentation!
 ==========================================================
 
 
+.. _about_section:
+
 About qc2
 =========
 
@@ -44,7 +46,7 @@ along with the following computational chemistry programs:
 * `ROSE <https://gitlab.com/quantum_rose/rose>`_ [#f1]_
 
 For these programs, custom qc2-ASE calculators are developed that
-implement additional methods to retrieve and dump qchem data into formatted data files.
+implement additional methods to retrieve and dump qchem data into formatted data files; see :ref:`ase_section`.
 
 .. note::
 
@@ -63,7 +65,7 @@ members:
 * Luuk Visscher - Vrije Universiteit Amsterdam
 * Ariana Torres - SURF
 
-.. Emails to add later, if needed
+.. Emails to be added later, if needed
   [n.renaud@esciencecenter.nl](mailto:n.renaud@esciencecenter.nl)
   [c.rocha@esciencecenter.nl](mailto:c.rocha@esciencecenter.nl)
   [ariana.torres@surf.nl](mailto:ariana.torres@surf.nl)

@@ -22,7 +22,7 @@ To install qc2 in an editable/develop mode:
 
 In its current version, qc2 is compatible with
 both `Qiskit Nature <https://qiskit.org/ecosystem/nature/>`_ and `Pennylane <https://pennylane.ai/>`_.
-However, the latter is currently an optional dependency. To install Pennylane alongside qc2
+However, the latter is an optional dependency. To install Pennylane alongside qc2
 and perform all built-in Pennylane-based automatic testings,
 follow these steps:
 
@@ -54,9 +54,10 @@ Note on ASE calculators
 -----------------------
 
 The automatic testing by `pytest` attempts to run tests for all supported quantum chemistry programs via
-their corresponding qc2-ASE calculators. These tests will of course only run if you have preinstalled these codes on
-you local machine/workstation; please
-consult the documentation of each supported code for the best install procedure.
+their corresponding qc2-ASE calculators. These tests will of course only run if you have preinstalled
+these qchem codes on
+your local machine/workstation; please
+consult the documentation of each supported quantum chemistry program for the best install procedure.
 
 Examples on how to use all supported qc2-ASE calculators and quantum computing libraries are provided
 in the ``examples`` directory.
