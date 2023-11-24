@@ -3,7 +3,7 @@ Running stand-alone qc2-ASE calculations
 
 .. note::
 
-    You do not plan to use qc2-ASE calculators alone, you not need to
+    If you do not plan to use qc2-ASE calculators alone, you do not need to
     worry about all the details provided in this section.
     When using qc2, most of the qc2-ASE features mentioned below are
     naturally abstracted within :class:`qc2.data.data.qc2Data`; see :ref:`qc2data_section`.
