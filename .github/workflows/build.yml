@@ -73,6 +73,11 @@ jobs:
         run: |
           python3 -m pip install --upgrade setuptools
           python3 -m pip install .[dev,publishing,pennylane]
+      - name: Configure psi4
+        run : |
+          echo "$CONDA/bin/" >> $GITHUB_PATH
+          echo "PYTHONPATH=$CONDA/bin/lib" >> $GITHUB_ENV
+          psi4 --help
       #- name: Setup GNU Fortran
       #  uses: modflowpy/install-gfortran-action@v1
       #- name: Rose install for tests
