@@ -2,6 +2,7 @@
 *.egg-info
 *.eggs
 .ipynb_checkpoints
+timer.dat
 
 build
 dist
