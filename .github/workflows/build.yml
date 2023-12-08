@@ -26,7 +26,7 @@ jobs:
           update-conda: true
           python-version: ${{ matrix.python-version }}
           conda-channels: psi4, conda-forge, anaconda
-      - name: Check Conda and Python info
+      - name: Check Conda and Python
         run: |
           conda --version
           conda info
@@ -35,23 +35,6 @@ jobs:
       - name: Install PSI4
         run: |
           conda install -c psi4 psi4
-      #- name: actions-setup-cmake
-      #  uses: jwlawson/actions-setup-cmake@v1.14.1
-      #- name: Cmake info
-      #  shell: bash -l {0}
-      #  run: cmake --version
-      #- name: Conda info
-      #  shell: bash -l {0}
-      #  run: |
-      #    conda info
-      #    conda list
-      #    conda config --show-sources
-      #    conda config --show
-      #- name: Python info
-      #  shell: bash -l {0}
-      #  run: |
-      #    which python
-      #    python --version
       - name: Install qc2
         run: |
           python -m pip install .[dev,publishing,pennylane]
@@ -91,8 +74,9 @@ jobs:
       ##    echo `pwd`/bin >> $GITHUB_PATH
       ##    cd ..
       - name: Run unit tests
-        run: |
-          pytest -v tests/unit_tests
+        env:
+          CONDA_PREFIX: /usr/share/miniconda
+        run: pytest -v tests/unit_tests
       ##- name: Run integration tests
       ##  run: |
       ##    pytest -v --pyargs tests/integration_tests
