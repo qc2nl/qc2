@@ -17,7 +17,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macOS-latest]
         python-version: [3.8]
-    name: Build for Python ${{ matrix.python-version }}
+    name: Build for ${{ matrix.os }} and Python ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup conda
@@ -26,13 +26,13 @@ jobs:
           update-conda: true
           python-version: ${{ matrix.python-version }}
           conda-channels: psi4, conda-forge, anaconda
-      - name: Check conda
+      - name: Check Conda and Python info
         run: |
           conda --version
-          echo "$CONDA_PREFIX"
-      - name: Check Python
-        run: which python
-      - name: Install conda packages
+          conda info
+          python --version
+          which python
+      - name: Install PSI4
         run: |
           conda install -c psi4 psi4
       #- name: actions-setup-cmake
@@ -52,10 +52,9 @@ jobs:
       #  run: |
       #    which python
       #    python --version
-      #- name: Install qc2
-      #  run: |
-      #    python3 -m install --upgrade setuptools
-      #    python3 -m install .[dev,publishing,pennylane]
+      - name: Install qc2
+        run: |
+          python -m pip install .[dev,publishing,pennylane]
       ##- name: Setting up PSI4
       ##  shell: bash -l {0}
       ##  run : |
@@ -89,9 +88,9 @@ jobs:
       ##    make
       ##    echo `pwd`/bin >> $GITHUB_PATH
       ##    cd ..
-      #- name: Run unit tests
-      #  run: |
-      #    pytest -v --pyargs tests/unit_tests
+      - name: Run unit tests
+        run: |
+          pytest -v tests/unit_tests
       ##- name: Run integration tests
       ##  run: |
       ##    pytest -v --pyargs tests/integration_tests
