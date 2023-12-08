@@ -12,73 +12,106 @@ on:
 jobs:
 
   build:
+    name: Build for (${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macOS-latest]
-        python-version: [3.8]
-    name: Build for ${{ matrix.os }} and Python ${{ matrix.python-version }}
+        os: ['ubuntu-latest', 'macos-latest'] #, 'windows-latest']
+        python-version: ['3.9'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        #include:
+        #  - os: ubuntu-latest
+        #    CONDA_OS: linux-64
+        #  - os: macos-latest
+        #    CONDA_OS: osx-64
     steps:
       - uses: actions/checkout@v4
-      - name: Setup conda
-        uses: s-weigand/setup-conda@v1
+      #- name: Set up Python ${{ matrix.python-version }}
+      #  uses: actions/setup-python@v3
+      #  with:
+      #    python-version: ${{ matrix.python-version }}
+      - name: Write Conda environment file for PSI4
+        run: |
+          cat > environment.yml << EOF
+          name: test
+          channels:
+            - psi4  # to instal the latest nightly build of PSI4 add the 'psi4/label/dev' channel and maybe 'conda-forge/label/libint_dev'
+            - defaults
+          dependencies:
+            - psi4
+          EOF
+      - name: Set up conda environment with Python ${{ matrix.python-version }}
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          update-conda: true
+          miniconda-version: "latest"
+          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          conda-channels: psi4, conda-forge, anaconda
-      - name: Check Conda and Python
-        run: |
-          conda --version
-          conda info
-          python --version
-          which python
-      - name: Install PSI4
-        run: |
-          conda install -c psi4 psi4
-      - name: Install qc2
-        run: |
-          python -m pip install .[dev,publishing,pennylane]
-        env:
-          CONDA_PREFIX: /usr/share/miniconda
-      ##- name: Setting up PSI4
-      ##  shell: bash -l {0}
-      ##  run : |
-      ##   echo "PYTHONPATH=$CONDA_PREFIX/lib:$PYTHONPATH" >> $GITHUB_ENV
-      ##   echo "$CONDA_PREFIX/bin" >> $GITHUB_PATH
-      #- name: PSI4 info
+          activate-environment: test
+          auto-activate-base: false
+          environment-file: environment.yml
+      #- name: actions-setup-cmake
+      #  uses: jwlawson/actions-setup-cmake@v1.14.1
+      #- name: Cmake info
       #  shell: bash -l {0}
-      #  run : |
-      #    which psi4
-      #    psi4 --version
-      #    python3 -c "import psi4"
-      ##- name: Setup GNU Fortran
-      ##  uses: modflowpy/install-gfortran-action@v1
-      ##- name: Rose install for tests
-      ##  run: |
-      ##    git clone https://git@gitlab.com:Cmurilochem/rose.git  # https://gitlab.com/quantum_rose/rose.git
-      ##    cd rose
-      ##    git checkout ROSE_ase_calculator
-      ##    cmake -S . -B build
-      ##    cmake --build build
-      ##    cmake --install build
-      ##    echo `pwd`/bin >> $GITHUB_PATH
-      ##    cd ..
-      ##- name: DIRAC install for tests
-      ##  run: |
-      ##    zenodo_get -d 10.5281/zenodo.7670749
-      ##    tar -xvf DIRAC-23.0-Source.tgz
-      ##    cd DIRAC-23.0-Source
-      ##    ./setup
-      ##    cd build
-      ##    make
-      ##    echo `pwd`/bin >> $GITHUB_PATH
-      ##    cd ..
+      #  run: cmake --version
+      - name: Conda info
+        shell: bash -l {0}
+        run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
+      - name: Python info
+        shell: bash -l {0}
+        run: |
+          which python3
+          python --version
+      - name: Install qc2
+        env:
+          CONDA_PREFIX: $CONDA_PREFIX
+        run: | #python3 -m pip install --upgrade setuptools
+          python -m pip install -e .[pennylane] # [dev,publishing,pennylane]
+          pip list
+      - name: PSI4 info
+        shell: bash -l {0}
+        env:
+          CONDA_PREFIX: $CONDA_PREFIX
+        run : |
+          which psi4
+          psi4 --version
+          echo "$CONDA_PREFIX"
+          ls $CONDA_PREFIX/lib/
+          python -c "import h5py"
+          python -c "import psi4"
+      #- name: Setup GNU Fortran
+      #  uses: modflowpy/install-gfortran-action@v1
+      #- name: Rose install for tests
+      #  run: |
+      #    git clone https://git@gitlab.com:Cmurilochem/rose.git  # https://gitlab.com/quantum_rose/rose.git
+      #    cd rose
+      #    git checkout ROSE_ase_calculator
+      #    cmake -S . -B build
+      #    cmake --build build
+      #    cmake --install build
+      #    echo `pwd`/bin >> $GITHUB_PATH
+      #    cd ..
+      #- name: DIRAC install for tests
+      #  run: |
+      #    zenodo_get -d 10.5281/zenodo.7670749
+      #    tar -xvf DIRAC-23.0-Source.tgz
+      #    cd DIRAC-23.0-Source
+      #    ./setup
+      #    cd build
+      #    make
+      #    echo `pwd`/bin >> $GITHUB_PATH
+      #    cd ..
       - name: Run unit tests
         env:
-          CONDA_PREFIX: /usr/share/miniconda
-        run: pytest -v tests/unit_tests
-      ##- name: Run integration tests
-      ##  run: |
-      ##    pytest -v --pyargs tests/integration_tests
-      ##- name: Verify that we can build the package
-      ##  run: python3 setup.py sdist bdist_wheel
+          CONDA_PREFIX: $CONDA_PREFIX
+        run: |
+          python -m pytest -v --pyargs tests/unit_tests
+      #- name: Run integration tests
+      #  run: |
+      #    pytest -v --pyargs tests/integration_tests
+      #- name: Verify that we can build the package
+      #  run: python3 setup.py sdist bdist_wheel
