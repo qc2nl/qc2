@@ -65,12 +65,12 @@ jobs:
         shell: bash -l {0}
         run: |
           which python3
-          python --version
+          python3 --version
       - name: Install qc2
         env:
           CONDA_PREFIX: $CONDA_PREFIX
         run: | #python3 -m pip install --upgrade setuptools
-          python -m pip install -e .[pennylane] # [dev,publishing,pennylane]
+          python3 -m pip install .[dev,publishing,pennylane]
           pip list
       - name: PSI4 info
         shell: bash -l {0}
@@ -81,8 +81,8 @@ jobs:
           psi4 --version
           echo "$CONDA_PREFIX"
           ls $CONDA_PREFIX/lib/
-          python -c "import h5py"
-          python -c "import psi4"
+          python3 -c "import h5py"
+          python3 -c "import psi4"
       #- name: Setup GNU Fortran
       #  uses: modflowpy/install-gfortran-action@v1
       #- name: Rose install for tests
@@ -109,7 +109,7 @@ jobs:
         env:
           CONDA_PREFIX: $CONDA_PREFIX
         run: |
-          python -m pytest -v --pyargs tests/unit_tests
+          python3 -m pytest -v --pyargs tests/unit_tests
       #- name: Run integration tests
       #  run: |
       #    pytest -v --pyargs tests/integration_tests
