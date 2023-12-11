@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest'] #, 'windows-latest']
-        python-version: ['3.9'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.11'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         #include:
         #  - os: ubuntu-latest
         #    CONDA_OS: linux-64
@@ -30,25 +30,24 @@ jobs:
       #  uses: actions/setup-python@v3
       #  with:
       #    python-version: ${{ matrix.python-version }}
-      - name: Write Conda environment file for PSI4
-        run: |
-          cat > environment.yml << EOF
-          name: test
-          channels:
-            - psi4  # to instal the latest nightly build of PSI4 add the 'psi4/label/dev' channel and maybe 'conda-forge/label/libint_dev'
-            - defaults
-          dependencies:
-            - psi4
-          EOF
+      #- name: Write Conda environment file for PSI4
+      #  run: |
+      #    cat > environment.yml << EOF
+      #    name: test
+      #    channels:
+      #      - psi4  # to instal the latest nightly build of PSI4 add the 'psi4/label/dev' channel and maybe 'conda-forge/label/libint_dev'
+      #      - defaults
+      #    dependencies:
+      #      - psi4
+      #    EOF
       - name: Set up conda environment with Python ${{ matrix.python-version }}
         uses: conda-incubator/setup-miniconda@v3
         with:
-          miniconda-version: "latest"
+          miniconda-version: latest
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           activate-environment: test
-          auto-activate-base: false
-          environment-file: environment.yml
+          auto-activate-base: false   # environment-file: environment.yml # conda-solver: classic
       #- name: actions-setup-cmake
       #  uses: jwlawson/actions-setup-cmake@v1.14.1
       #- name: Cmake info
@@ -64,25 +63,23 @@ jobs:
       - name: Python info
         shell: bash -l {0}
         run: |
-          which python3
-          python3 --version
+          which python
+          which pip
+          python --version
+          python -c "import sys; print(sys.path)"
       - name: Install qc2
-        env:
-          CONDA_PREFIX: $CONDA_PREFIX
-        run: | #python3 -m pip install --upgrade setuptools
-          python3 -m pip install .[dev,publishing,pennylane]
-          pip list
-      - name: PSI4 info
-        shell: bash -l {0}
-        env:
-          CONDA_PREFIX: $CONDA_PREFIX
-        run : |
+        run: |
+         python -m pip install .[dev,publishing,pennylane]
+      #- name: Testing h5py
+      #  run : |
+      #    python -m pip install h5py
+      - name: PSI4 install for tests
+        run : | #conda install -c conda-forge/label/libint_dev -c conda-forge psi4>=1.8
+          conda install -c psi4 psi4
+          python -c "import h5py"
           which psi4
           psi4 --version
-          echo "$CONDA_PREFIX"
-          ls $CONDA_PREFIX/lib/
-          python3 -c "import h5py"
-          python3 -c "import psi4"
+          python -c "import psi4"
       #- name: Setup GNU Fortran
       #  uses: modflowpy/install-gfortran-action@v1
       #- name: Rose install for tests
@@ -105,13 +102,11 @@ jobs:
       #    make
       #    echo `pwd`/bin >> $GITHUB_PATH
       #    cd ..
-      - name: Run unit tests
-        env:
-          CONDA_PREFIX: $CONDA_PREFIX
-        run: |
-          python3 -m pytest -v --pyargs tests/unit_tests
-      #- name: Run integration tests
+      #- name: Run unit tests
       #  run: |
-      #    pytest -v --pyargs tests/integration_tests
+      #    pytest -v --pyargs tests/unit_tests
+      - name: Run integration tests
+        run: |
+          pytest -v --pyargs tests/integration_tests
       #- name: Verify that we can build the package
       #  run: python3 setup.py sdist bdist_wheel
