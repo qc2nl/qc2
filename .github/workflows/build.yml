@@ -69,10 +69,10 @@ jobs:
           conda activate test
           if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
             conda install -c anaconda cmake
-            conda install -c conda-forge clang_osx-64 clangxx_osx-64 gfortran_osx-64
+            conda install -c conda-forge gfortran_osx-64  #clang_osx-64 clangxx_osx-64
           else
             conda install -c anaconda cmake
-            conda install -c conda-forge gcc_linux-64 gxx_linux-64 gfortran_linux-64
+            conda install -c conda-forge gfortran_linux-64  #gcc_linux-64 gxx_linux-64
           fi
       - name: ROSE install for tests
         shell: bash -l {0}
