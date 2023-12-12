@@ -1,8 +1,11 @@
 on:
+  # uncoment the two line below to run the workflow for every even day of the month at 24:00h
+  #schedule:
+  #  - cron: "0 24 */2 * *"
   push:
     branches:
     - main
-  # uncomment below if the workflow must run for every push in the PR branch
+  # uncomment below if the workflow must run for every push to a PR pointing to the main branch
   pull_request:
     branches:
     - main
@@ -60,29 +63,38 @@ jobs:
           which psi4
           psi4 --version
           python -c "import psi4"
-      #- name: Setup GNU Fortran
-      #  uses: modflowpy/install-gfortran-action@v1
-      #- name: Rose install for tests
+      - name: Install Cmake and compilers for ROSE and DIRAC installation
+        shell: bash -l {0}
+        run: |
+          conda activate test
+          conda install -c anaconda cmake
+          conda install -c conda-forge gcc gxx gfortran
+          cmake --version
+          gcc --version
+          gfortran --version
+          g++ --version
+      - name: ROSE install for tests
+        shell: bash -l {0}
+        run: |
+          conda activate test
+          git clone https://gitlab.com/Cmurilochem/rose.git  # https://gitlab.com/quantum_rose/rose.git
+          cd rose
+          git checkout ROSE_ase_calculator
+          cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
+          cmake --build build
+          cmake --install build
+          echo `pwd`/bin >> $GITHUB_PATH
+          cd ..
+      #- name: DIRAC install for tests
       #  shell: bash -l {0}
       #  run: |
       #    conda activate test
-      #    git clone https://git@gitlab.com:Cmurilochem/rose.git  # https://gitlab.com/quantum_rose/rose.git
-      #    cd rose
-      #    git checkout ROSE_ase_calculator
-      #    cmake -S . -B build
-      #    cmake --build build
-      #    cmake --install build
-      #    echo `pwd`/bin >> $GITHUB_PATH
-      #    cd ..
-      #- name: DIRAC install for tests
-      #  run: |
-      #    zenodo_get -d 10.5281/zenodo.7670749
-      #    tar -xvf DIRAC-23.0-Source.tgz
-      #    cd DIRAC-23.0-Source
-      #    ./setup
+      #    git clone --recursive --branch v23.0 https://gitlab.com/dirac/dirac.git
+      #    cd dirac
+      #    ./setup --prefix=$CONDA_PREFIX --pcmsolver=OFF --exatensor=OFF
       #    cd build
-      #    make
-      #    echo `pwd`/bin >> $GITHUB_PATH
+      #    make  #make -j  #echo `pwd`/bin >> $GITHUB_PATH
+      #    make install
       #    cd ..
       - name: Run unit tests
         shell: bash -l {0}
