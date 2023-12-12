@@ -1,7 +1,7 @@
 on:
   # uncoment the two line below to run the workflow for every even day of the month at 24:00h
-  #schedule:
-  #  - cron: "0 24 */2 * *"
+  schedule:
+    - cron: '0 0 */2 * *'
   push:
     branches:
     - main
@@ -106,5 +106,5 @@ jobs:
         run: |
           conda activate test
           pytest -v --pyargs tests/integration_tests
-      #- name: Verify that we can build the package
-      #  run: python setup.py sdist bdist_wheel
+      - name: Verify that we can build the package
+        run: python setup.py sdist bdist_wheel
