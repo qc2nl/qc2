@@ -68,11 +68,9 @@ jobs:
         run: |
           conda activate test
           conda install -c anaconda cmake
-          conda install -c conda-forge gcc gxx gfortran
+          conda install -c conda-forge gfortran
           cmake --version
-          gcc --version
           gfortran --version
-          g++ --version
       - name: ROSE install for tests
         shell: bash -l {0}
         run: |
@@ -93,8 +91,9 @@ jobs:
       #    cd dirac
       #    ./setup --prefix=$CONDA_PREFIX --pcmsolver=OFF --exatensor=OFF
       #    cd build
-      #    make  #make -j  #echo `pwd`/bin >> $GITHUB_PATH
+      #    make  #make -j
       #    make install
+      #    echo `pwd`/bin >> $GITHUB_PATH
       #    cd ..
       - name: Run unit tests
         shell: bash -l {0}
