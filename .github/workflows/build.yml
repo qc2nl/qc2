@@ -55,7 +55,7 @@ jobs:
         shell: bash -l {0}
         run : |
           conda activate test
-          conda install psi4 -c conda-forge/label/libint_dev -c conda-forge
+          conda install psi4 -c conda-forge/label/libint_dev -c conda-forge # these conda channels my change in the future
       - name: PSI4 info
         shell: bash -l {0}
         run : |
@@ -67,17 +67,20 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate test
-          conda install -c anaconda cmake
-          conda install -c conda-forge gfortran
-          cmake --version
-          gfortran --version
+          if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+            conda install -c anaconda cmake
+            conda install -c conda-forge clang_osx-64 clangxx_osx-64 gfortran_osx-64
+          else
+            conda install -c anaconda cmake
+            conda install -c conda-forge gcc_linux-64 gxx_linux-64 gfortran_linux-64
+          fi
       - name: ROSE install for tests
         shell: bash -l {0}
         run: |
           conda activate test
           git clone https://gitlab.com/Cmurilochem/rose.git  # https://gitlab.com/quantum_rose/rose.git
           cd rose
-          git checkout ROSE_ase_calculator
+          git checkout ROSE_ase_calculator # this change in branch is only preliminary with future merge request
           cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
           cmake --build build
           cmake --install build
@@ -91,7 +94,7 @@ jobs:
       #    cd dirac
       #    ./setup --prefix=$CONDA_PREFIX --pcmsolver=OFF --exatensor=OFF
       #    cd build
-      #    make  #make -j
+      #    make -j
       #    make install
       #    echo `pwd`/bin >> $GITHUB_PATH
       #    cd ..
