@@ -33,41 +33,39 @@ An example is given below:
     qc2data.run()
 
 Please note that, before invoking the :meth:`~qc2.data.data.qc2Data.run` method, it is necessary to attach a qc2-ASE calculator to ``qc2data.molecule``
-via the ASE ``calc`` attribute.
-
-As described in the documentation for :ref:`run_ase`, we can use any implemented calculator.
-By doing so, :meth:`~qc2.data.data.qc2Data.run` will then execute the calculator and automatically save the relevant qchem data into ``h2.hdf5``.
+via the ASE ``calc`` attribute. As described in :ref:`run_ase`, we can attach any implemented calculator.
+:meth:`~qc2.data.data.qc2Data.run` will then execute the calculator and automatically save the relevant qchem data into ``h2.hdf5``.
 
 .. important::
 
-   If you plan to use qc2 in conjunction with the qc2-ASE ROSE calculator, instantiate :class:`~qc2.data.data.qc2Data`
+   If you plan to use qc2 with the qc2-ASE ROSE calculator, instantiate :class:`~qc2.data.data.qc2Data`
    with an empty ``molecule`` argument or set ``molecule = Atoms()``. See the example code below:
 
-.. code-block:: python
-    :linenos:
-    :emphasize-lines: 11-12
+    .. code-block:: python
+        :linenos:
+        :emphasize-lines: 11-12
 
-    from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
-    from qc2.data import qc2Data
+        from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
+        from qc2.data import qc2Data
 
-    # define ROSE target molecule and fragments
-    molecule = ROSETargetMolecule(...)
-    frag1 = ROSEFragment(...)
-    fragn = ROSEFragment(...)
+        # define ROSE target molecule and fragments
+        molecule = ROSETargetMolecule(...)
+        frag1 = ROSEFragment(...)
+        fragn = ROSEFragment(...)
 
-    # instantiate qc2Data - no Atoms() needed
-    qc2data = qc2Data(
-        filename='ibo.fcidump',
-        schema='fcidump'
-    )
+        # instantiate qc2Data - no Atoms() needed
+        qc2data = qc2Data(
+            filename='ibo.fcidump',
+            schema='fcidump'
+        )
 
-    # attach ROSE calculator to an empty Atoms()
-    qc2data.molecule.calc = ROSE(
-        rose_calc_type='atom_frag',
-        rose_target=molecule,
-        rose_frags=[frag1, ..., fragn],
-        rose_mo_calculator='pyscf'
-    )
+        # attach ROSE calculator to an empty Atoms()
+        qc2data.molecule.calc = ROSE(
+            rose_calc_type='atom_frag',
+            rose_target=molecule,
+            rose_frags=[frag1, ..., fragn],
+            rose_mo_calculator='pyscf'
+        )
 
-    # run ROSE calculator
-    qc2data.run()
+        # run ROSE calculator
+        qc2data.run()

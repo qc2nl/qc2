@@ -45,10 +45,9 @@ follow these steps:
 If you want to test your installation and run qc2's suite of automatic testings,
 run `pytest` while in the main qc2 directory, *e.g.*,
 
-    .. code-block:: console
+.. code-block:: console
 
-        pytest -v
-
+    pytest -v
 
 Note on ASE calculators
 -----------------------

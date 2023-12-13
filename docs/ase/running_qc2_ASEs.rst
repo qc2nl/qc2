@@ -17,6 +17,7 @@ The first step to run qc2-ASE calculations is to
 import the necessary ``ase`` and :mod:`qc2.ase` packages:
 
 .. code-block:: python
+    :linenos:
 
     from ase import Atoms
     from qc2.ase import Psi4
