@@ -63,8 +63,16 @@ An schematic example demonstrating how this has been done for `Psi4 <https://psi
 
         ....
 
-The minimum set of methods that should be implemented in order to run simple
-VQE calculations with qc2 includes: [#f1]_
+Examples of full implementations of all such additional methods can be found
+in :class:`qc2.ase.pyscf.PySCF` and :class:`qc2.ase.psi4.Psi4`.
+
+.. note::
+
+    Not all such methods need to be implemented for you to run simple VQE calculations with qc2.
+    This is the reason why they are not explicitly marked with the ``@abstract`` decorator in the
+    :class:`qc2.ase.qc2_ase_base_class.BaseQc2ASECalculator` class.
+
+The minimum set that should be implemented includes: [#f1]_
 
 * :meth:`qc2.ase.qc2_ase_base_class.BaseQc2ASECalculator.save`
 * :meth:`qc2.ase.qc2_ase_base_class.BaseQc2ASECalculator.load`
@@ -83,15 +91,7 @@ Indeed, the calculation of integrals and molecular orbital properties,
 as well as the way they are stored, are specific to each quantum chemistry program and should be implemented accordingly.
 Examples of such implementations can be found in the :mod:`qc2.ase` module.
 
-
-.. note::
-
-    Not all such methods need to be implemented for you to run simple VQE calculations with qc2.
-    This is the reason why they are not explicitly marked with the ``@abstract`` decorator in the
-    :class:`qc2.ase.qc2_ase_base_class.BaseQc2ASECalculator` class.
-
-
-.. note::
+.. important::
 
     In :class:`qc2.ase.qc2_ase_base_class.BaseQc2ASECalculator`, there is also a set of
     helper methods designed to simplify the process of implementing

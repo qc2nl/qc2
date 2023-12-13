@@ -17,9 +17,11 @@ except ImportError:
 
 from .dirac import DIRAC
 
-from .qc2_ase_base_class import BaseQc2ASECalculator
-
 __all__ = [
-    'PySCF', 'ROSE', 'ROSETargetMolecule', 'ROSEFragment',
-    'DIRAC', 'Psi4', 'BaseQc2ASECalculator'
+    'PySCF',
+    'ROSE',
+    'ROSETargetMolecule',
+    'ROSEFragment',
+    'DIRAC',
+    'Psi4'
 ]

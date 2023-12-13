@@ -129,7 +129,7 @@ you can read data from this file and save it into an instance of ``FCIdump`` dat
     :emphasize-lines: 8, 10, 13
 
     from ase.build import molecule
-    from qc2.ase import BaseQc2ASECalculator
+    from qc2.ase.qc2_ase_base_class import BaseQc2ASECalculator
 
     # set target molecule
     mol = molecule('H2O')

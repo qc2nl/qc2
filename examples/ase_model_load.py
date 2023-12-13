@@ -3,7 +3,7 @@
 This run loads the data from a fcidump formatted file.
 """
 from ase.build import molecule
-from qc2.ase import BaseQc2ASECalculator
+from qc2.ase.qc2_ase_base_class import BaseQc2ASECalculator
 
 # set target molecule
 mol = molecule('H2O')
