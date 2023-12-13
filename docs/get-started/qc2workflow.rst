@@ -1,3 +1,5 @@
+.. _qc2workflow_section:
+
 qc2 workflow
 ============
 
