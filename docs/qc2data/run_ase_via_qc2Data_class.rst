@@ -38,8 +38,12 @@ via the ASE ``calc`` attribute. As described in :ref:`run_ase`, we can attach an
 
 .. important::
 
-   If you plan to use qc2 with the qc2-ASE ROSE calculator, instantiate :class:`~qc2.data.data.qc2Data`
-   with an empty ``molecule`` argument or set ``molecule = Atoms()``. See the example code below:
+   If you intend to use qc2 in conjunction with :class:`~qc2.ase.rose.ROSE`, you should instantiate :class:`~qc2.data.data.qc2Data`
+   with an empty ``molecule`` parameter [#f1]_.
+   Indeed, differently from standard `ASE calculators <https://wiki.fysik.dtu.dk/ase/>`_,
+   :class:`~qc2.ase.rose.ROSE` relies on custom dataclasses for reading molecular information and
+   does not depend on information typically contained in `ASE Atoms <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#module-ase.atoms>`_.
+   See the example code below:
 
     .. code-block:: python
         :linenos:
@@ -69,3 +73,7 @@ via the ASE ``calc`` attribute. As described in :ref:`run_ase`, we can attach an
 
         # run ROSE calculator
         qc2data.run()
+
+.. rubric:: Footnotes
+
+.. [#f1] If this is done, :class:`~qc2.data.data.qc2Data` automatically sets ``molecule`` to an empty ``Atoms()`` object.
