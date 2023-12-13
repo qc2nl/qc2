@@ -23,12 +23,14 @@ We start with a very simple example:
         schema='qcschema'
     )
 
-where the first argument ``molecule`` represents an instance of `ASE Atoms <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#module-ase.atoms>`_.
+Here, the first argument ``molecule`` represents an instance of `ASE Atoms <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#module-ase.atoms>`_.
 If this attribute is not provided, ``molecule`` will default to an empty ``Atoms()`` object.
 
 In the code snippet above, ``schema`` and ``filename`` are used to specify the format and name of the file in which qchem data is saved.
-The available options for ``schema`` are ``qcschema`` and ``fcidump``, which determine whether the filename should have the extensions `*.hdf5` (or `*.h5`) and `*.fcidump`, respectively.
-Here is an example using ``fcidump`` format:
+These arguments will later be passed to a chosen qc2-ASE calculator, as discussed in :ref:`save_data_ase_sub`.
+Similarly to :attr:`~qc2.ase.qc2_ase_base_class.BaseQc2ASECalculator.schema_format`, the available options for the ``schema`` argument are ``qcschema`` or ``fcidump``, which determine whether the filename should have the extensions `*.hdf5` (`*.h5`) or `*.fcidump`, respectively.
+
+Here is an example of how to instantiate :class:`~qc2.data.data.qc2Data` to save data according to ``fcidump`` format:
 
 .. code-block:: python
     :linenos:
