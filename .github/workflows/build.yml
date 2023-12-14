@@ -67,7 +67,8 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate test
-          conda install -c anaconda cmake
+          conda install -c anaconda cmake mkl
+          conda update mkl
           conda install -c conda-forge gfortran
         #  if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
         #    conda install -c anaconda cmake
