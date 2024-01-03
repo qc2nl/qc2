@@ -74,6 +74,7 @@ jobs:
           conda activate test
           conda install -c anaconda cmake
           if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+            conda install mkl -c intel
             conda install -c conda-forge gfortran clang clangxx  # conda install -c conda-forge gfortran_osx-64 clang_osx-64 clangxx_osx-64
           else
             conda install -c conda-forge gfortran gcc gxx  # conda install -c conda-forge gfortran_linux-64 gcc_linux-64 gxx_linux-64
