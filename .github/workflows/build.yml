@@ -20,6 +20,11 @@ jobs:
       matrix:
         os: ['ubuntu-latest', 'macos-latest'] #, 'windows-latest']
         python-version: ['3.9'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        include:
+          - os: ubuntu-latest
+            CONDA_OS: linux-64
+          - os: macos-latest
+            CONDA_OS: osx-64
     steps:
       - uses: actions/checkout@v4
       - name: Set up conda environment with Python ${{ matrix.python-version }}
@@ -67,16 +72,12 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate test
-          conda install -c anaconda cmake mkl
-          conda update mkl
-          conda install -c conda-forge gfortran
-        #  if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
-        #    conda install -c anaconda cmake
-        #    conda install -c conda-forge gfortran_osx-64 clang_osx-64 clangxx_osx-64
-        #  else
-        #    conda install -c anaconda cmake
-        #    conda install -c conda-forge gfortran_linux-64 gcc_linux-64 gxx_linux-64
-        #  fi
+          conda install -c anaconda cmake
+          if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+            conda install -c conda-forge gfortran clang clangxx  # conda install -c conda-forge gfortran_osx-64 clang_osx-64 clangxx_osx-64
+          else
+            conda install -c conda-forge gfortran gcc gxx  # conda install -c conda-forge gfortran_linux-64 gcc_linux-64 gxx_linux-64
+          fi
       - name: ROSE install for tests
         shell: bash -l {0}
         run: |
