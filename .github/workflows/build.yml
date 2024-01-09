@@ -54,6 +54,7 @@ jobs:
         shell: bash -l {0}
         run : |
           conda activate test
+          python -m pip install --upgrade setuptools
           python -m pip install .[dev,publishing,pennylane]
       - name: PSI4 install for tests
         shell: bash -l {0}
@@ -101,7 +102,7 @@ jobs:
       #    conda activate test
       #    git clone --recursive --branch v23.0 https://gitlab.com/dirac/dirac.git
       #    cd dirac
-      #    ./setup --prefix=$CONDA_PREFIX --pcmsolver=OFF --exatensor=OFF
+      #    ./setup --prefix=$CONDA_PREFIX --blas=$CONDA_PREFIX/lib/libblas.so --lapack=$CONDA_PREFIX/lib/liblapack.so --pcmsolver=OFF --exatensor=OFF
       #    cd build
       #    make -j
       #    make install
@@ -118,4 +119,6 @@ jobs:
           conda activate test
           pytest -v --pyargs tests/integration_tests
       - name: Verify that we can build the package
-        run: python setup.py sdist bdist_wheel
+        run: |
+          conda activate test
+          python setup.py sdist bdist_wheel
