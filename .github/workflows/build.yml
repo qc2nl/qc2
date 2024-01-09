@@ -101,7 +101,10 @@ jobs:
       #    conda activate test
       #    git clone --recursive --branch v23.0 https://gitlab.com/dirac/dirac.git
       #    cd dirac
-      #    ./setup --prefix=$CONDA_PREFIX --blas=$CONDA_PREFIX/lib/libblas.so --lapack=$CONDA_PREFIX/lib/liblapack.so --pcmsolver=OFF --exatensor=OFF
+      #    if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+      #      ./setup --prefix=$CONDA_PREFIX --blas=$CONDA_PREFIX/lib/libblas.dylib --lapack=$CONDA_PREFIX/lib/liblapack.dylib --pcmsolver=OFF --exatensor=OFF
+      #    else
+      #      ./setup --prefix=$CONDA_PREFIX --blas=$CONDA_PREFIX/lib/libblas.so --lapack=$CONDA_PREFIX/lib/liblapack.so --pcmsolver=OFF --exatensor=OFF
       #    cd build
       #    make -j
       #    make install
