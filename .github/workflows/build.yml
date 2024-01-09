@@ -54,7 +54,6 @@ jobs:
         shell: bash -l {0}
         run : |
           conda activate test
-          python -m pip install --upgrade setuptools
           python -m pip install .[dev,publishing,pennylane]
       - name: PSI4 install for tests
         shell: bash -l {0}
@@ -76,9 +75,9 @@ jobs:
           conda install conda-forge::blas
           conda install conda-forge::lapack
           if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
-            conda install -c conda-forge gfortran clang clangxx  # conda install -c conda-forge gfortran_osx-64 clang_osx-64 clangxx_osx-64
+            conda install -c conda-forge gfortran clang clangxx
           else
-            conda install -c conda-forge gfortran gcc gxx  # conda install -c conda-forge gfortran_linux-64 gcc_linux-64 gxx_linux-64
+            conda install -c conda-forge gfortran gcc gxx
           fi
       - name: ROSE install for tests
         shell: bash -l {0}
@@ -119,6 +118,7 @@ jobs:
           conda activate test
           pytest -v --pyargs tests/integration_tests
       - name: Verify that we can build the package
+        shell: bash -l {0}
         run: |
           conda activate test
           python setup.py sdist bdist_wheel
