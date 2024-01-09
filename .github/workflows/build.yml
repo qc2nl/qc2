@@ -50,7 +50,6 @@ jobs:
           which python
           which pip
           python --version
-          python -c "import sys; print(sys.path)"
       - name: Install qc2
         shell: bash -l {0}
         run : |
@@ -73,9 +72,9 @@ jobs:
         run: |
           conda activate test
           conda install -c anaconda cmake
+          conda install conda-forge::blas
+          conda install conda-forge::lapack
           if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
-            conda install conda-forge::blas
-            conda install conda-forge::lapack
             conda install -c conda-forge gfortran clang clangxx  # conda install -c conda-forge gfortran_osx-64 clang_osx-64 clangxx_osx-64
           else
             conda install -c conda-forge gfortran gcc gxx  # conda install -c conda-forge gfortran_linux-64 gcc_linux-64 gxx_linux-64
@@ -86,8 +85,12 @@ jobs:
           conda activate test
           git clone https://gitlab.com/Cmurilochem/rose.git  # https://gitlab.com/quantum_rose/rose.git
           cd rose
-          git checkout ROSE_ase_calculator # this change in branch is only preliminary with future merge request
-          cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
+          git checkout ROSE_ase_calculator # this change in branch is only provisory
+          if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBLAS_LIBRARIES=$CONDA_PREFIX/lib/libblas.dylib -DLAPACK_LIBRARIES=$CONDA_PREFIX/lib/liblapack.dylib
+          else
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBLAS_LIBRARIES=$CONDA_PREFIX/lib/libblas.so -DLAPACK_LIBRARIES=$CONDA_PREFIX/lib/liblapack.so
+          fi
           cmake --build build
           cmake --install build
           echo `pwd`/bin >> $GITHUB_PATH
