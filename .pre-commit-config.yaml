@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
     -   id: trailing-whitespace       # trims trailing whitespace
     -   id: end-of-file-fixer         # ensures that a file is either empty, or ends with one newline.
@@ -19,6 +19,6 @@ repos:
             "--add-ignore=D412",
             "--add-ignore=D212"]
 -   repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
+    rev: 7.0.0
     hooks:
     -   id: flake8                    # python linting tool that checks your Python codebase for errors, styling issues and complexity

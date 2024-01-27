@@ -47,7 +47,8 @@ extensions = [
     "autoapi.extension",
     "myst_parser",
     "sphinxcontrib.bibtex",
-    "sphinx_copybutton"
+    "sphinx_copybutton",
+    "nbsphinx"
 ]
 
 # bibliography file

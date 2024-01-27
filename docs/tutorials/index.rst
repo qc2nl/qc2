@@ -6,3 +6,5 @@ Tutorials
 
 .. toctree::
   :maxdepth: 1
+
+  water_vqe_example_qiskit
