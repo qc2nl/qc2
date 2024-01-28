@@ -17,7 +17,12 @@ except ImportError:
 
 from .dirac import DIRAC
 
+try:
+    from .ams import AMS
+except ImportError:
+    pass
+
 __all__ = [
     'PySCF', 'ROSE', 'ROSETargetMolecule', 'ROSEFragment',
-    'DIRAC', 'Psi4'
+    'DIRAC', 'Psi4', 'AMS'
 ]
