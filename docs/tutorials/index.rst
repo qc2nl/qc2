@@ -8,3 +8,4 @@ Tutorials
   :maxdepth: 1
 
   water_vqe_example_qiskit
+  water_vqe_example_pennylane
