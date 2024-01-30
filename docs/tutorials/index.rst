@@ -3,6 +3,8 @@
 Tutorials
 =========
 
+In this tutorial section, we provide example Jupyter notebooks demonstrating how users can fully utilize qc2 along
+with quantum computing SDKs to run hybrid quantum-classical workflows. Additional examples can also be found in the ``examples`` directory.
 
 .. toctree::
   :maxdepth: 1
