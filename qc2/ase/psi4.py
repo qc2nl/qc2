@@ -30,7 +30,7 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
     def __init__(self, *args, **kwargs) -> None:
         """Psi4-ASE calculator.
 
-        Example of a typical ASE-Psi4 input:
+        **Example**
 
         >>> from ase import Atoms
         >>> from ase.build import molecule
@@ -68,13 +68,14 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         Args:
             datafile (Union[h5py.File, str]): file to save the data to.
 
-        Notes:
-            files are written following the QCSchema or FCIDump formats.
-
         Returns:
             None
 
-        Example:
+        Notes:
+            files are written following the QCSchema or FCIDump formats.
+
+        **Example**
+
         >>> from ase.build import molecule
         >>> from qc2.ase import Psi4
         >>>
@@ -197,13 +198,18 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
     ]:
         """Loads electronic structure data from a datafile.
 
+        Args:
+            datafile (Union[h5py.File, str]): file to read the data from.
+
+        Returns:
+            Instances of :class:`QCSchema` or :class:`FCIDump`
+            dataclasses containing qchem data.
+
         Notes:
             files are read following the qcschema or fcidump formats.
 
-        Returns:
-            `QCSchema` or `FCIDump` dataclasses containing qchem data.
+        **Example**
 
-        Example:
         >>> from ase.build import molecule
         >>> from qc2.ase import Psi4
         >>>
@@ -226,13 +232,13 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         """Retrieves 1- & 2-body integrals in MO basis from Psi4 routines.
 
         Returns:
-            A tuple containing the following:
+            A tuple containing `np.ndarray` types:
                 - one_body_int_a & one_body_int_b: Numpy arrays containing
-                    alpha and beta components of the one-body integrals.
+                  alpha and beta components of the one-body integrals.
                 - two_body_int_aa, two_body_int_bb, two_body_int_ab
-                    & two_body_int_ba: Numpy arrays containing
-                    alpha-alpha, beta-beta, alpha-beta & beta-alpha
-                    components of the two-body integrals.
+                  & two_body_int_ba: Numpy arrays containing
+                  alpha-alpha, beta-beta, alpha-beta & beta-alpha
+                  components of the two-body integrals.
         """
         # define alpha and beta MO coeffients
         alpha_coeff, beta_coeff = self.get_molecular_orbitals_coefficients()
@@ -275,7 +281,13 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         )
 
     def get_integrals_ao_basis(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Retrieves 1- & 2-e integrals in AO basis from Psi4 routines."""
+        """Retrieves 1- & 2-e integrals in AO basis from Psi4 routines.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                Tuple containing the 1-electron integrals
+                and the 2-electron integrals in the AO basis.
+        """
         one_e_int = np.asarray(self.mints.ao_kinetic()) + \
             np.asarray(self.mints.ao_potential())
         two_e_int = np.asarray(self.mints.ao_eri())
@@ -284,18 +296,35 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
     def get_molecular_orbitals_coefficients(self) -> Tuple[
         np.ndarray, np.ndarray
     ]:
-        """Retrieves alpha and beta MO coeffs from Psi4 routines."""
+        """Retrieves alpha and beta MO coeffs from Psi4 routines.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                Tuple containing the alpha and beta
+                MO coefficients.
+        """
         return np.asarray(self.scf_wfn.Ca()), np.asarray(self.scf_wfn.Cb())
 
     def get_molecular_orbitals_energies(self) -> Tuple[
         np.ndarray, np.ndarray
     ]:
-        """Retrieves alpha and beta MO energies from Psi4 routines."""
+        """Retrieves alpha and beta MO energies from Psi4 routines.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                Tuple containing the alpha and beta
+                MO energies.
+        """
         return (
             np.asarray(self.scf_wfn.epsilon_a()),
             np.asarray(self.scf_wfn.epsilon_b())
         )
 
     def get_overlap_matrix(self) -> np.ndarray:
-        """Retrieves overlap matrix from Psi4 routines."""
+        """Retrieves overlap matrix from Psi4 routines.
+
+        Returns:
+            np.ndarray:
+                The overlap matrix.
+        """
         return np.asarray(self.mints.ao_overlap())

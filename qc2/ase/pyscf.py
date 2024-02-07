@@ -97,7 +97,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             directory (str, optional): Working directory in which
                 to perform calculations. Defaults to '.'.
 
-        Example of a typical ASE-PySCF input:
+        **Example**
 
         >>> from ase import Atoms
         >>> from ase.build import molecule
@@ -128,16 +128,16 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
         Notes:
             - Scalar relativistic corrections can be added with
-                'relativistic = True' keyword. If selected,
-                the scf object will be decorated by x2c() method, e.g.,
-                mf = scf.RHF(mol).x2c().
-                'relativistic' is False by default.
+              'relativistic = True' keyword. If selected,
+              the scf object will be decorated by x2c() method, e.g.,
+              mf = scf.RHF(mol).x2c().
+              'relativistic' is False by default.
             - pyscf.scf.addons functions can also be included, e.g.:
-                if scf_addons='frac_occ' keyword is added, then
-                mf = scf.addons.frac_occ(mf).
-                'scf_addons' is None by default.
+              if scf_addons='frac_occ' keyword is added, then
+              mf = scf.addons.frac_occ(mf).
+              'scf_addons' is None by default.
             - Basic implementation based on the class Psi4(Calculator);
-                see, e.g., ase/ase/calculators/psi4.py.
+              see, e.g., ase/ase/calculators/psi4.py.
         """
         # initializing base class Calculator.
         # see ase/ase/calculators/calculator.py.
@@ -235,7 +235,8 @@ class PySCF(Calculator, BaseQc2ASECalculator):
                   system_changes: List[str] = all_changes) -> None:
         """This method is the core responsible for the actual calculation.
 
-        Note: Implementation based on Calculator.calculate() method.
+        Notes:
+            Implementation based on Calculator.calculate() method.
             see also ase/ase/calculators/calculator.py.
 
         Args:
@@ -343,13 +344,14 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         Args:
             datafile (Union[h5py.File, str]): file to save the data to.
 
-        Notes:
-            files are written following the QCSchema or FCIDump formats.
-
         Returns:
             None
 
-        Example:
+        Notes:
+            files are written following the QCSchema or FCIDump formats.
+
+        **Example**
+
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
         >>>
@@ -468,13 +470,18 @@ class PySCF(Calculator, BaseQc2ASECalculator):
     ]:
         """Loads electronic structure data from a datafile.
 
+        Args:
+            datafile (Union[h5py.File, str]): file to read the data from.
+
+        Returns:
+            Instances of :class:`QCSchema` or :class:`FCIDump`
+            dataclasses containing qchem data.
+
         Notes:
             files are read following the qcschema or fcidump formats.
 
-        Returns:
-            `QCSchema` or `FCIDump` dataclasses containing qchem data.
+        **Example**
 
-        Example:
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
         >>>
@@ -497,13 +504,13 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         """Retrieves 1- & 2-body integrals in MO basis from PySCF routines.
 
         Returns:
-            A tuple containing the following:
+            A tuple containing `np.ndarray` types:
                 - one_body_int_a & one_body_int_b: Numpy arrays containing
-                    alpha and beta components of the one-body integrals.
+                  alpha and beta components of the one-body integrals.
                 - two_body_int_aa, two_body_int_bb, two_body_int_ab
-                    & two_body_int_ba: Numpy arrays containing
-                    alpha-alpha, beta-beta, alpha-beta & beta-alpha
-                    components of the two-body integrals.
+                  & two_body_int_ba: Numpy arrays containing
+                  alpha-alpha, beta-beta, alpha-beta & beta-alpha
+                  components of the two-body integrals.
         """
         # define alpha and beta MO coeffients
         alpha_coeff, beta_coeff = self.get_molecular_orbitals_coefficients()
@@ -554,7 +561,13 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         )
 
     def get_integrals_ao_basis(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Retrieves 1- & 2-e integrals in AO basis from PySCF routines."""
+        """Retrieves 1- & 2-e integrals in AO basis from PySCF routines.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                Tuple containing the 1-electron integrals
+                and the 2-electron integrals in the AO basis.
+        """
         one_e_int = self.mol.intor('int1e_kin') + self.mol.intor('int1e_nuc')
         two_e_int = self.mol.intor("int2e", aosym=1)
         return one_e_int, two_e_int
@@ -562,7 +575,13 @@ class PySCF(Calculator, BaseQc2ASECalculator):
     def get_molecular_orbitals_coefficients(self) -> Tuple[
         np.ndarray, np.ndarray
     ]:
-        """Retrieves alpha and beta MO coeffs from PySCF routines."""
+        """Retrieves alpha and beta MO coeffs from PySCF routines.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                Tuple containing the alpha and beta
+                MO coefficients.
+        """
         return self._expand_mo_object(
             self.mf.mo_coeff, array_dimension=3
         )
@@ -570,13 +589,24 @@ class PySCF(Calculator, BaseQc2ASECalculator):
     def get_molecular_orbitals_energies(self) -> Tuple[
         np.ndarray, np.ndarray
     ]:
-        """Retrieves alpha and beta MO energies from PySCF routines."""
+        """Retrieves alpha and beta MO energies from PySCF routines.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+                Tuple containing the alpha and beta
+                MO energies.
+        """
         return self._expand_mo_object(
             self.mf.mo_energy, array_dimension=2
         )
 
     def get_overlap_matrix(self) -> np.ndarray:
-        """Retrieves overlap matrix from PySCF routines."""
+        """Retrieves overlap matrix from PySCF routines.
+
+        Returns:
+            np.ndarray:
+                The overlap matrix.
+        """
         return self.mf.get_ovlp()
 
     def _expand_mo_object(
@@ -588,9 +618,6 @@ class PySCF(Calculator, BaseQc2ASECalculator):
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Expands the mo object into alpha- and beta-spin components.
 
-        Notes:
-            Adapted from Qiskit-Nature pyscfdriver.py.
-
         Args:
             mo_object: the molecular orbital object to expand.
             array_dimension:  This argument specifies the dimension of the
@@ -600,6 +627,9 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
         Returns:
             The (alpha, beta) tuple of MO data.
+
+        Notes:
+            Adapted from Qiskit-Nature pyscfdriver.py.
         """
         if isinstance(mo_object, tuple):
             return mo_object

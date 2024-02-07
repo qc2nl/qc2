@@ -33,13 +33,14 @@ class qc2Data:
 
     Attributes:
         _schema (str): Format in which to save qchem data.
-            Options are 'qcschema' or 'fcidump'. Defaults to 'qcschema'
+            Options are ``qcschema`` or ``fcidump``.
+            Defaults to ``qcschema``.
 
-        _filename (str): The path to the HDF5 file used to save qchem and
-            quantum computing data.
+        _filename (str): The path to the HDF5 or fcidump file used
+            to save/read qchem data.
 
-        _molecule (Optional[Atoms]): An optional attribute representing the
-            molecular structure as an `ase.atoms.Atoms` instance.
+        _molecule (Atoms): Attribute representing the
+            molecular structure as an ASE :class:`ase.atoms.Atoms` instance.
     """
     def __init__(
             self,
@@ -48,26 +49,27 @@ class qc2Data:
             *,
             schema: str = 'qcschema'
     ):
-        """Initializes the `qc2Data` instance.
+        """Initializes the ``qc2Data`` class instance.
 
         Args:
-            filename (str): The path to the data file to save qchem and
-                quantum computing data.
-            molecule (Optional[Atoms]): An optional `ase.atoms.Atoms` instance
-                representing the target molecule.
+            filename (str): The path to the data file to save/read qchem
+                data.
+            molecule (Atoms): An optional :class:`ase.atoms.Atoms`
+                instance representing the target molecule.
             schema (Optional[str]): An optional attribute defining the format
-                in which to save qchem data. Options are 'qcschema' or
-                'fcidump'. Defaults to 'qcschema'.
+                in which to save qchem data. Options are ``qcschema`` or
+                ``fcidump``. Defaults to ``qcschema``.
 
-        Example:
+        **Example**
+
         >>> from qc2.data import qc2Data
         >>> from ase.build import molecule
         >>>
         >>> mol = molecule('H2')
+        >>>
         >>> hdf5_file = 'h2.hdf5'
         >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
         >>>
-        >>> mol = molecule('H2')
         >>> fcidump_file = 'h2.fcidump'
         >>> qc2data = qc2Data(fcidump_file, mol, schema='fcidump')
         """
@@ -78,6 +80,20 @@ class qc2Data:
 
         self._molecule = None
         self.molecule = molecule
+
+    @property
+    def molecule(self) -> Atoms:
+        """Returs the molecule attribute.
+
+        Returns:
+            Molecule as an ASE :class:`ase.atoms.Atoms` object.
+        """
+        return self._molecule
+
+    @molecule.setter
+    def molecule(self, *args, **kwargs) -> None:
+        """Sets the molecule attribute."""
+        self._molecule = Atoms(*args, **kwargs)
 
     def _check_filename_extension(self) -> None:
         """Ensures that files have proper extensions."""
@@ -100,34 +116,25 @@ class qc2Data:
                 "*.fcidump extension."
             )
 
-    @property
-    def molecule(self) -> Atoms:
-        """Returs the molecule attribute.
-
-        Returns:
-            Molecule as an ASE Atoms object.
-        """
-        return self._molecule
-
-    @molecule.setter
-    def molecule(self, *args, **kwargs) -> None:
-        """Sets the molecule attribute."""
-        self._molecule = Atoms(*args, **kwargs)
-
     def run(self) -> None:
         """Runs ASE qchem calculator and saves the data into a formated file.
 
-        Example:
-        >>> from qc2.data import qc2Data
+        Returns:
+            None
+
+        **Example**
+
         >>> from ase.build import molecule
+        >>> from qc2.ase import DIRAC
+        >>> from qc2.data import qc2Data
         >>>
         >>> mol = molecule('H2')
+        >>>
         >>> hdf5_file = 'h2.hdf5'
         >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
         >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
         >>> qc2data.run()
         >>>
-        >>> mol = molecule('H2')
         >>> fcidump_file = 'h2.fcidump'
         >>> qc2data = qc2Data(fcidump_file, mol, schema='fcidump')
         >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
@@ -150,18 +157,84 @@ class qc2Data:
         print(f"* Saving qchem data in {self._filename}\n")
 
     def read_schema(self) -> Union[QCSchema, FCIDump]:
-        """Reads data and stores it in `QCSchema` or `FCIDump` instance.
+        """Reads and stores data in :class:`QCSchema` or :class:`FCIDump`.
+
+        Reads and stores the required data from an HDF5 or FCIDump file as
+        either a :class:`QCSchema` or :class:`FCIDump` dataclass instance.
+
+        Returns:
+            Union[QCSchema, FCIDump]:
+                Instance of :class:`QCSchema` or :class:`FCIDump` dataclass.
 
         Notes:
-            see qiskit_nature/second_q/formats/qcschema/qc_schema.py
-                qiskit_nature/second_q/formats/fcidump/fcidump.py
+            See qiskit_nature/second_q/formats for more information on the
+            supported data formats.
+
+        **Example**
+
+        >>> from ase.build import molecule
+        >>> from qc2.ase import DIRAC
+        >>> from qc2.data import qc2Data
+        >>>
+        >>> mol = molecule('H2')
+        >>>
+        >>> hdf5_file = 'h2.hdf5'
+        >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
+        >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
+        >>> qc2data.run()
+        >>> qcschema = qc2data.read_schema()
+        >>>
+        >>> fcidump_file = 'h2.fcidump'
+        >>> qc2data = qc2Data(fcidump_file, mol, schema='fcidump')
+        >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
+        >>> qc2data.run()
+        >>> fcidump = qc2data.read_schema()
         """
         # read required data from the hdf5 or fcidump file
         self._molecule.calc.schema_format = self._schema
         return self._molecule.calc.load(self._filename)
 
     def process_schema(self) -> ElectronicStructureProblem:
-        """Creates an instance of `ElectronicStructureProblem`."""
+        """Creates an instance of :class:`ElectronicStructureProblem`.
+
+        Reads data using the :meth:`~.read_schema` method and converts it into
+        an instance of :class:`ElectronicStructureProblem` based on the
+        specified schema format (``fcidump`` or ``qcschema``).
+
+        Returns:
+            ElectronicStructureProblem:
+              An instance representing
+              the :class:`ElectronicStructureProblem`.
+
+        Notes:
+            - For ``fcidump`` schema, the conversion is done using the
+              `fcidump_to_problem` function from
+              qiskit_nature/second_q/formats/fcidump_translator.py.
+            - For ``qcschema`` schema, the conversion is done using the
+              `qcschema_to_problem` function from
+              qiskit_nature/second_q/formats/qcschema_translator.py.
+            - Dipoles are excluded when converting `QCSchema` data.
+
+        **Example**
+
+        >>> from ase.build import molecule
+        >>> from qc2.ase import DIRAC
+        >>> from qc2.data import qc2Data
+        >>>
+        >>> mol = molecule('H2')
+        >>>
+        >>> hdf5_file = 'h2.hdf5'
+        >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
+        >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
+        >>> qc2data.run()
+        >>> elec_problem = qc2data.process_schema()
+        >>>
+        >>> fcidump_file = 'h2.fcidump'
+        >>> qc2data = qc2Data(fcidump_file, mol, schema='fcidump')
+        >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
+        >>> qc2data.run()
+        >>> elec_problem = qc2data.process_schema()
+        """
         # read data and store it in a `QCSchema` or `FCIDump`
         # dataclass instances
         schema = self.read_schema()
@@ -180,7 +253,48 @@ class qc2Data:
             num_electrons: Union[int, Tuple[int, int]],
             num_spatial_orbitals: int
     ) -> Tuple[ElectronicStructureProblem, float, ElectronicEnergy]:
-        """Builds the active-space reduced Hamiltonian."""
+        """Builds the active-space reduced Hamiltonian.
+
+        Args:
+            num_electrons (Union[int, Tuple[int, int]]): The number of active
+                electrons. If a tuple is provided, it represents alpha and
+                beta active electrons.
+            num_spatial_orbitals (int): The number of spatial orbitals.
+
+        Returns:
+            Tuple[ElectronicStructureProblem, float, ElectronicEnergy]:
+                - es_problem (ElectronicStructureProblem): An instance of the
+                  :class:`ElectronicStructureProblem`.
+                - core_energy (float): The core energy, which includes the
+                  nuclear repulsion energy and the energy of inactive orbitals.
+                - active_space_hamiltonian (ElectronicEnergy):
+                  Instance of :class:`ElectronicEnergy`,
+                  the active-space reduced Hamiltonian.
+
+        Notes:
+            - The active-space reduced Hamiltonian is obtained by transforming
+              the original electronic structure problem's Hamiltonian using
+              an ActiveSpaceTransformer.
+            - The core energy is computed as the sum of the nuclear repulsion
+              energy and the energy of inactive orbitals.
+
+        **Example**
+
+        >>> from ase.build import molecule
+        >>> from qc2.ase import DIRAC
+        >>> from qc2.data import qc2Data
+        >>>
+        >>> mol = molecule('H2')
+        >>> hdf5_file = 'h2.hdf5'
+        >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
+        >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
+        >>> qc2data.run()
+        >>> n_electrons = (1, 1)
+        >>> n_spatial_orbitals = 2
+        >>> (es_problem, e_core, ham) = qc2data.get_active_space_hamiltonian(
+        ...     n_electrons, n_spatial_orbitals
+        ... )
+        """
         # instantiate `ElectronicStructureProblem`
         es_problem = self.process_schema()
 
@@ -236,25 +350,28 @@ class qc2Data:
 
         Returns:
             Tuple[float, ElectronicStructureProblem, FermionicOp]:
-                A tuple containing the following elements:
                 - core_energy (float): The core energy after active space
-                    transformation.
+                  transformation.
                 - es_problem (ElectronicStructureProblem): An instance of the
-                    `ElectronicStructureProblem`.
-                - second_q_op (FermionicOp): An instance of `FermionicOp`
-                    representing the ferm. Hamiltonian in 2nd quantization.
+                  :class:`ElectronicStructureProblem`.
+                - second_q_op (FermionicOp): An instance of
+                  :class:`FermionicOp` representing the ferm. Hamiltonian
+                  in 2nd quantization.
 
         Raises:
-            ValueError: If `num_electrons` or `num_spatial_orbitals` is None.
+            ValueError: If :attr:`num_electrons` or
+                :attr:`num_spatial_orbitals` is None.
 
         Notes:
             Based on the qiskit-nature modules:
             qiskit_nature/second_q/problems/electronic_structure_problem.py
             qiskit_nature/second_q/transformers/active_space_transformer.py
 
-        Example:
-        >>> from qc2.data import qc2Data
+        **Example**
+
         >>> from ase.build import molecule
+        >>> from qc2.ase import DIRAC
+        >>> from qc2.data import qc2Data
         >>>
         >>> mol = molecule('H2')
         >>> hdf5_file = 'h2.hdf5'
@@ -323,23 +440,25 @@ class qc2Data:
 
         Returns:
             Tuple[float, Union[SparsePauliOp, Operator]]:
-                A tuple containing the following elements:
-                - core_energy (float): The core energy after after active
-                    space transformation.
+                - core_energy (float): The core energy after active
+                  space transformation.
                 - qubit_op (Union[SparsePauliOp, Operator]):
-                  - If the format is "qiskit", it returns a `SparsePauliOp`
-                  representing the qubit Hamiltonian in the qiskit format.
-                  - If the format is "pennylane", it returns a `Operator`
-                  instance representing the qubit Hamiltonian in the
-                  PennyLane format.
+                  If the format is ``qiskit``, it returns a
+                  :class:`SparsePauliOp` representing the
+                  qubit Hamiltonian in the qiskit format.
+                  If the format is ``pennylane``, it returns a
+                  :class:`Operator` instance representing the
+                  qubit Hamiltonian in the PennyLane format.
 
         Raises:
-            TypeError: If the provided `format` is not supported (not "qiskit"
-            nor "pennylane").
+            TypeError: If the provided `format` is not supported
+              (not ``qiskit`` nor ``pennylane``).
 
-        Example:
-        >>> from qc2.data import qc2Data
+        **Example**
+
         >>> from ase.build import molecule
+        >>> from qc2.ase import DIRAC
+        >>> from qc2.data import qc2Data
         >>>
         >>> mol = molecule('H2')
         >>> hdf5_file = 'h2.hdf5'

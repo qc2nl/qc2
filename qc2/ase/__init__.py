@@ -18,6 +18,10 @@ except ImportError:
 from .dirac import DIRAC
 
 __all__ = [
-    'PySCF', 'ROSE', 'ROSETargetMolecule', 'ROSEFragment',
-    'DIRAC', 'Psi4'
+    'PySCF',
+    'ROSE',
+    'ROSETargetMolecule',
+    'ROSEFragment',
+    'DIRAC',
+    'Psi4'
 ]

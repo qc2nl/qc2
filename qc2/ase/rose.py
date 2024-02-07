@@ -32,14 +32,14 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
     """An extended ASE calculator for ROSE.
 
     Args:
-        ROSE (ROSE): Original ROSE ASE calculator.
+        ROSE_original (ROSE_original): Original ROSE ASE calculator.
         BaseQc2ASECalculator (BaseQc2ASECalculator): Base class for
             ase calculartors in qc2.
     """
     def __init__(self, *args, **kwargs) -> None:
         """ROSE-ASE calculator.
 
-        Example of a typical ASE-ROSE input:
+        **Example**
 
         >>> from qc2.ase import ROSE
         >>> from qc2.ase import ROSETargetMolecule, ROSEFragment
@@ -91,14 +91,19 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
     def load(self, datafile: str) -> FCIDump:
         """Loads electronic structure data from a fcidump datafile.
 
+        Args:
+            datafile (str): fcidump file to read the data from.
+
         Returns:
-            `FCIDump` dataclass containing qchem data.
+            Instance of :class:`FCIDump` dataclass containing qchem data.
 
         Notes:
-            Can be extended to load `QCSchema` formated hdf5 files inasmuch as
-            the original ROSE-ASE calculator supports it in the future.
+            Can be extended to load ``qcschema`` formated hdf5 files
+            inasmuch as the original ROSE-ASE calculator supports
+            it in the future.
 
-        Example:
+        **Example**
+
         >>> from qc2.ase import ROSE
         >>> from qc2.ase import ROSETargetMolecule, ROSEFragment
         >>>

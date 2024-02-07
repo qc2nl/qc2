@@ -1,16 +1,18 @@
-""""
-Module containing utils for converting Qiskit-Nature operators to Pennylane format.
+"""
+Module containing utils for converting Qiskit operators to Pennylane format.
 
 Notes:
     It representes a major extension of pennylane/qchem/convert.py module.
-    See https://github.com/PennyLaneAI/pennylane/blob/master/pennylane/qchem/convert.py
+    https://github.com/PennyLaneAI/pennylane/blob/master/pennylane/qchem/convert.py
 
     The implemented functions may only be valid to fermionic-to-qubit
     transformed hamiltonians as it accounts for the distinct alpha and beta
-    qubit (wire) distribution between VQE anzatses in Qiskit-Nature and Pennylane.
+    qubit (wire) distribution between VQE anzatses in Qiskit-Nature and
+    Pennylane.
 """
 try:
 
+    import warnings
     import pennylane as qml
     from pennylane import numpy as np
     from pennylane.operation import active_new_opmath, Tensor
@@ -34,7 +36,7 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
 
     Args:
         qubit_operator (qiskit.quantum_info.SparsePauliOp): Qiskit operator
-        representing the qubit electronic Hamiltonian from Qiskit-Nature.
+            representing the qubit electronic Hamiltonian from Qiskit-Nature.
         wires (Wires, list, tuple, dict): Custom wire mapping used to convert
             the qubit operator to an observable terms measurable in PennyLane.
             For types Wires/list/tuple, each item in the iterable represents a
@@ -53,7 +55,7 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
     >>> qubit_op
     SparsePauliOp(['XIIZI', 'IYIIY'],
               coeffs=[1.+0.j, 2.+0.j])
-    >>> _qiskit_nature_to_pennylane(qubit_op, wires=['w0', 'w1', 'w2', 'w3', 'w4'])
+    >>> _qiskit_nature_to_pennylane(qubit_op,wires=['w0','w1','w2','w3','w4'])
     (tensor([1., 2.], requires_grad=False),
     [PauliX(wires=['w2']) @ PauliZ(wires=['w3']),
     PauliY(wires=['w0']) @ PauliY(wires=['w4'])])
@@ -89,7 +91,7 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
             #
             # However, in Pennylane they are represented by alpha-beta
             # sequences. So, organize the term accordingly...
-            n = len(term)//2  # => valid for closed shell singlet systems only ?
+            n = len(term)//2  # => valid for closed shell systems only ?
             term = ''.join([term[i::n] for i in range(n)])
             # this could also be done by using the `_process_wires` function.
 
@@ -110,7 +112,9 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
 
 
 def _pennylane_to_qiskit_nature(coeffs, ops, wires):
-    """Convert a 2-tuple of complex coefficients and PennyLane operations to
+    """Convert Pennylane to Qiskit-Nature formats.
+
+    Convert a 2-tuple of complex coefficients and PennyLane operations to
     Qiskit ``SparsePauliOp``.
 
     Args:
@@ -134,8 +138,13 @@ def _pennylane_to_qiskit_nature(coeffs, ops, wires):
         this function could be alternativelly implemented using
         ``SparsePauliOp.from_sparse_list()`` in place of
         ``SparsePauliOp.from_list()``,
-        e.g., op = SparsePauliOp.from_sparse_list(
-                    [("ZX", [1, 4], 1), ("YY", [0, 3], 2)], num_qubits=5),
+        e.g.,
+
+        .. code-block:: python
+
+            op = SparsePauliOp.from_sparse_list(
+                [("ZX", [1, 4], 1), ("YY", [0, 3], 2)], num_qubits=5)
+
         with the requirement that users provide the total number of qubits.
 
     **Example**
@@ -197,7 +206,9 @@ def _pennylane_to_qiskit_nature(coeffs, ops, wires):
 def _qiskit_nature_pennylane_equivalent(
     qiskit_qubit_operator, pennylane_qubit_operator, wires=None
 ):
-    """Check equivalence between Qiskit :class:`~.SparsePauliOp` and Pennylane
+    """Check functionality of :func:`_pennylane_to_qiskit_nature`.
+
+    Check equivalence between Qiskit :class:`~.SparsePauliOp` and Pennylane
     VQE ``Hamiltonian`` (Tensor product of Pauli matrices).
 
     Equality is based on Qiskit :class:`~.SparsePauliOp`'s equality.
@@ -224,7 +235,7 @@ def _qiskit_nature_pennylane_equivalent(
 
 def import_operator(qubit_observable, format="openfermion",
                     wires=None, tol=1e010):
-    """Convert an external operator to a PennyLane operator.
+    r"""Convert an external operator to a PennyLane operator.
 
     The external format currently supported is openfermion and qiskit.
 
@@ -246,7 +257,7 @@ def import_operator(qubit_observable, format="openfermion",
 
     Returns:
         (.Operator): PennyLane operator representing any operator expressed as
-        linear comb of Pauli words, e.g., :math:`\sum_{k=0}^{N-1} c_k O_k`
+        linear comb of Pauli words, e.g., :math:`\\sum_{k=0}^{N-1} c_k O_k`
 
     **Example**
 

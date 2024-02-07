@@ -65,7 +65,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
             directory (str, optional): Working directory in which
                 to perform calculations. Defaults to '.'.
 
-        Example of a typical ASE-DIRAC input:
+        **Example**
 
         >>> from ase import Atoms
         >>> from ase.build import molecule
@@ -177,13 +177,14 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         Args:
             datafile (Union[h5py.File, str]): file to save the data to.
 
-        Notes:
-            files are written following the QCSchema or FCIDump formats.
-
         Returns:
             None
 
-        Example:
+        Notes:
+            files are written following the QCSchema or FCIDump formats.
+
+        **Example**
+
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
         >>>
@@ -348,13 +349,18 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
     ]:
         """Loads electronic structure data from a datafile.
 
+        Args:
+            datafile (Union[h5py.File, str]): file to read the data from.
+
+        Returns:
+            Instances of :class:`QCSchema` or :class:`FCIDump`
+            dataclasses containing qchem data.
+
         Notes:
             files are read following the qcschema or fcidump formats.
 
-        Returns:
-            `QCSchema` or `FCIDump` dataclasses containing qchem data.
+        **Example**
 
-        Example:
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
         >>>
@@ -385,23 +391,23 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         Dict[Tuple[int, int], Union[float, complex]],
         Dict[Tuple[int, int, int, int], Union[float, complex]]
     ]:
-        """Retrieves 1- and 2-body integrals in MO basis from DIRAC FCIDUMP.
+        """Retrieves 1- and 2-body integrals in MO basis from ``FCIDUMP``.
+
+        Returns:
+            A tuple containing `np.ndarray` types:
+                - e_core (Union[float, complex]): Nuclear repulsion energy.
+                - spinor (Dict[int, Union[float, complex]]): Dictionary of
+                  spinor values with their corresponding indices.
+                - one_body_int (Dict[Tuple[int, int], Union[float, complex]]):
+                  Dictionary of one-body integrals with their corresponding
+                  indices as tuples.
+                - two_body_int (Dict[Tuple[int, int, int, int],
+                  Union[float, complex]]): Dictionary of two-body integrals
+                  with their corresponding indices as tuples.
 
         Notes:
             Adapted from Openfermion-Dirac:
             see: https://github.com/bsenjean/Openfermion-Dirac.
-
-        Returns:
-            A tuple containing the following:
-                - e_core (Union[float, complex]): Nuclear repulsion energy.
-                - spinor (Dict[int, Union[float, complex]]): Dictionary of
-                    spinor values with their corresponding indices.
-                - one_body_int (Dict[Tuple[int, int], Union[float, complex]]):
-                    Dictionary of one-body integrals with their corresponding
-                    indices as tuples.
-                - two_body_int (Dict[Tuple[int, int, int, int],
-                    Union[float, complex]]): Dictionary of two-body integrals
-                    with their corresponding indices as tuples.
         """
         self._get_dirac_fcidump()
 
@@ -519,15 +525,16 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
     def _get_dirac_fcidump(self) -> None:
         """Helper routine to generate DIRAC FCIDUMP file.
 
-        Notes:
-            Requires MRCONEE MDCINT files obtained using
-            **DIRAC .4INDEX, **MOLTRA .ACTIVE all and
-            'pam ... --get="MRCONEE MDCINT"' options.
-
         Raises:
             EnvironmentError: If the command execution fails.
             CalculationFailed: If the calculator fails with
                 a non-zero error code.
+
+        Notes:
+            Requires ``MRCONEE`` and ``MDCINT`` files
+            obtained using
+            ``**DIRAC .4INDEX``, ``**MOLTRA .ACTIVE all`` and
+            ``pam ... --get="MRCONEE MDCINT"`` options.
         """
         command = "dirac_mointegral_export.x fcidump"
         try:
@@ -556,20 +563,20 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
                np.ndarray, np.ndarray, np.ndarray]:
         """Helper routine to format DIRAC FCIDUMP integrals.
 
+        Returns:
+            A tuple containing `np.ndarray` types:
+                - one_body_coefficients_a & one_body_coefficients_b:
+                  Numpy arrays containing alpha and beta components
+                  of the one-body integrals.
+                - two_body_coefficients_aa, two_body_coefficients_bb,
+                  two_body_coefficients_ab & two_body_coefficients_ba:
+                  Numpy arrays containing alpha-alpha, beta-beta,
+                  alpha-beta & beta-alpha components of the two-body
+                  integrals.
+
         Notes:
             Adapted from Openfermion-Dirac:
             see: https://github.com/bsenjean/Openfermion-Dirac.
-
-        Returns:
-            A tuple containing the following:
-                - one_body_coefficients_a & one_body_coefficients_b:
-                    Numpy arrays containing alpha and beta components
-                    of the one-body integrals.
-                - two_body_coefficients_aa, two_body_coefficients_bb,
-                    two_body_coefficients_ab & two_body_coefficients_ba:
-                    Numpy arrays containing alpha-alpha, beta-beta,
-                    alpha-beta & beta-alpha components of the two-body
-                    integrals.
         """
         # tolerance to consider number zero.
         EQ_TOLERANCE = 1e-8

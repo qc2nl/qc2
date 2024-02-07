@@ -1,4 +1,4 @@
-# Configuration file for the Sphinx documentation builder.
+"""Configuration file for the Sphinx documentation builder."""
 #
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
@@ -46,7 +46,13 @@ extensions = [
     "sphinx.ext.viewcode",
     "autoapi.extension",
     "myst_parser",
+    "sphinxcontrib.bibtex",
+    "sphinx_copybutton",
+    "nbsphinx"
 ]
+
+# bibliography file
+bibtex_bibfiles = ['references.bib']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -69,6 +75,11 @@ autoapi_dirs = ['../qc2']
 # a list of builtin themes.
 #
 html_theme = "sphinx_rtd_theme"
+html_logo = "red_trans_back_qc2_logo.png"
+html_theme_options = {
+    'logo_only': True,
+    'display_version': True,
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -79,10 +90,10 @@ html_theme = "sphinx_rtd_theme"
 # -- Options for Intersphinx
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
-                       # Commonly used libraries, uncomment when used in package
-                       # 'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-                       # 'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
-                       # 'scikit-learn': ('https://scikit-learn.org/stable/', None),
-                       # 'matplotlib': ('https://matplotlib.org/stable/', None),
-                       # 'pandas': ('http://pandas.pydata.org/docs/', None),
                        }
+# Commonly used libraries, uncomment when used in package
+# 'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+# 'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
+# 'scikit-learn': ('https://scikit-learn.org/stable/', None),
+# 'matplotlib': ('https://matplotlib.org/stable/', None),
+# 'pandas': ('http://pandas.pydata.org/docs/', None),
