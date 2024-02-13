@@ -1,12 +1,14 @@
-name: Python package
-
 on:
+  # uncoment the two line below to run the workflow for every even day of the month at 24:00h
+  schedule:
+    - cron: '0 0 */2 * *'
   push:
     branches:
     - main
-  pull_request:
-    branches:
-    - main
+  # uncomment below if the workflow must run for every push to a PR pointing to the main branch
+  #pull_request:
+  #  branches:
+  #  - main
 
 jobs:
 
@@ -17,45 +19,109 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest'] #, 'windows-latest']
-        python-version: ['3.8'] #['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.9'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        include:
+          - os: ubuntu-latest
+            CONDA_OS: linux-64
+          - os: macos-latest
+            CONDA_OS: osx-64
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+      - uses: actions/checkout@v4
+      - name: Set up conda environment with Python ${{ matrix.python-version }}
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          miniconda-version: "latest"
+          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+          activate-environment: test
+          auto-activate-base: false
+      - name: Conda info
+        shell: bash -l {0}
+        run: |
+          conda activate test
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
       - name: Python info
         shell: bash -l {0}
         run: |
-          which python3
-          python3 --version
-      - name: Upgrade pip and install dependencies
+          conda activate test
+          which python
+          which pip
+          python --version
+      - name: Install qc2
+        shell: bash -l {0}
+        run : |
+          conda activate test
+          python -m pip install .[dev,publishing,pennylane]
+      - name: PSI4 install for tests
+        shell: bash -l {0}
+        run : |
+          conda activate test
+          conda install psi4 -c conda-forge/label/libint_dev -c conda-forge # these conda channels my change in the future
+      - name: PSI4 info
+        shell: bash -l {0}
+        run : |
+          conda activate test
+          which psi4
+          psi4 --version
+          python -c "import psi4"
+      - name: Install Cmake and compilers for ROSE and DIRAC installation
+        shell: bash -l {0}
         run: |
-          python3 -m pip install --upgrade pip setuptools
-          python3 -m pip install .[dev,publishing]
-      #- name: Setup GNU Fortran
-      #  uses: modflowpy/install-gfortran-action@v1
-      #- name: Rose install for tests
-      #  run: |
-      #    git clone https://gitlab.com/quantum_rose/rose.git
-      #    cd rose
-      #    cmake -S . -B build
-      #    cmake --build build
-      #    cmake --install build
-      #    echo `pwd`/bin >> $GITHUB_PATH
-      #    cd ..
+          conda activate test
+          conda install -c anaconda cmake
+          conda install conda-forge::blas
+          conda install conda-forge::lapack
+          if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+            conda install -c conda-forge gfortran clang clangxx
+          else
+            conda install -c conda-forge gfortran gcc gxx
+          fi
+      - name: ROSE install for tests
+        shell: bash -l {0}
+        run: |
+          conda activate test
+          git clone https://gitlab.com/Cmurilochem/rose.git  # https://gitlab.com/quantum_rose/rose.git
+          cd rose
+          git checkout ROSE_ase_calculator # this change in branch is only provisory
+          if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBLAS_LIBRARIES=$CONDA_PREFIX/lib/libblas.dylib -DLAPACK_LIBRARIES=$CONDA_PREFIX/lib/liblapack.dylib
+          else
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBLAS_LIBRARIES=$CONDA_PREFIX/lib/libblas.so -DLAPACK_LIBRARIES=$CONDA_PREFIX/lib/liblapack.so
+          fi
+          cmake --build build
+          cmake --install build
+          echo `pwd`/bin >> $GITHUB_PATH
+          cd ..
       #- name: DIRAC install for tests
+      #  shell: bash -l {0}
       #  run: |
-      #    zenodo_get -d 10.5281/zenodo.7670749
-      #    tar -xvf DIRAC-23.0-Source.tgz
-      #    cd DIRAC-23.0-Source
-      #    ./setup
+      #    conda activate test
+      #    git clone --recursive --branch v23.0 https://gitlab.com/dirac/dirac.git
+      #    cd dirac
+      #    if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+      #      ./setup --prefix=$CONDA_PREFIX --blas=$CONDA_PREFIX/lib/libblas.dylib --lapack=$CONDA_PREFIX/lib/liblapack.dylib --pcmsolver=OFF --exatensor=OFF
+      #    else
+      #      ./setup --prefix=$CONDA_PREFIX --blas=$CONDA_PREFIX/lib/libblas.so --lapack=$CONDA_PREFIX/lib/liblapack.so --pcmsolver=OFF --exatensor=OFF
       #    cd build
-      #    make
+      #    make -j
+      #    make install
       #    echo `pwd`/bin >> $GITHUB_PATH
       #    cd ..
       - name: Run unit tests
+        shell: bash -l {0}
+        run : |
+          conda activate test
+          python -m pytest -v --pyargs tests/unit_tests
+      - name: Run integration tests
+        shell: bash -l {0}
         run: |
-          pytest -v -k 'test_my_module or test_pyscf or test_qc2data'
+          conda activate test
+          pytest -v --pyargs tests/integration_tests
       - name: Verify that we can build the package
-        run: python3 setup.py sdist bdist_wheel
+        shell: bash -l {0}
+        run: |
+          conda activate test
+          python setup.py sdist bdist_wheel

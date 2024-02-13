@@ -5,12 +5,15 @@ import re
 from collections import OrderedDict
 
 from ase.calculators.calculator import InputError
-from ase.calculators.singlepoint import SinglePointCalculator
 from ase.units import Ha
 
 
-def _update_dict(dictionary: Dict[str, Any], key: str, value: Any) -> Dict[str, Any]:
-    """Updates a dictionary with a new key-value pair and places it at the first position.
+def _update_dict(
+        dictionary: Dict[str, Any],
+        key: str,
+        value: Any
+) -> Dict[str, Any]:
+    """Updates a dict with a new key-value pair and put it at first position.
 
     Args:
         dictionary: The original dictionary to be updated.
@@ -18,16 +21,18 @@ def _update_dict(dictionary: Dict[str, Any], key: str, value: Any) -> Dict[str, 
         value: The value of the new element to be added.
 
     Returns:
-        The updated dictionary with the new key-value pair at the first position.
+        The updated dictionary with the new key-value pair at first position.
     """
     ordered_dict = OrderedDict(dictionary)
     ordered_dict[key] = value
-    updated_dict = OrderedDict([(key, ordered_dict[key]) for key in reversed(ordered_dict)])
+    updated_dict = OrderedDict(
+        [(key, ordered_dict[key]) for key in reversed(ordered_dict)]
+    )
     return updated_dict
 
 
 def _replace_underscores(dictionary: Dict[str, Any]) -> Dict[str, Any]:
-    """Recursively replaces underscores in dictionary keys and values with spaces.
+    """Recursively replaces underscores in dict keys and values with spaces.
 
     Args:
         dictionary: The dictionary to be processed.
@@ -56,7 +61,9 @@ def _format_value(arg: Any) -> str:
     if isinstance(arg, dict):
         formatted_values = []
         for key, val in arg.items():
-            formatted_values.append('{}\n{}'.format(str(key).upper(), str(val)))
+            formatted_values.append(
+                '{}\n{}'.format(str(key).upper(), str(val))
+            )
         format_str = '\n'.join(formatted_values)
     elif isinstance(arg, (float, int, str)):
         if not arg:
@@ -85,7 +92,10 @@ def _write_block(name: str, args: Dict[str, Any]) -> str:
         elif key.startswith('*'):
             out.append('{}\n{}'.format(key.upper(), _format_value(value)))
         else:
-            raise InputError('Check input! Options and subsections must start with . and *, respectively')
+            raise InputError(
+                'Check input! Options and subsections '
+                'must start with . and *, respectively'
+            )
     return '\n'.join(out)
 
 
@@ -109,7 +119,7 @@ def write_dirac_in(input_filename: str, **params: Dict[str, Any]):
     out += [_write_block(*item) for item in tmp_params.items()]
     out.append('*END OF INPUT')
 
-    with open (input_filename, 'w') as file:
+    with open(input_filename, 'w') as file:
         file.write('\n'.join(out))
 
 
