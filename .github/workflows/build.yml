@@ -6,9 +6,9 @@ on:
     branches:
     - main
   # uncomment below if the workflow must run for every push to a PR pointing to the main branch
-  #pull_request:
-  #  branches:
-  #  - main
+  pull_request:
+    branches:
+    - main
 
 jobs:
 
