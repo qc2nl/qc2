@@ -1,0 +1,8 @@
+sphinx
+sphinx_rtd_theme
+sphinx-autoapi
+sphinxcontrib-bibtex
+sphinx-copybutton
+nbsphinx
+tox
+myst_parser
