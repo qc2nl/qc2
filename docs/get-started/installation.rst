@@ -49,6 +49,18 @@ run `pytest` while in the main qc2 directory, *e.g.*,
 
     pytest -v
 
+
+Another option, particularly suitable for those interested in contributing to qc2,
+is to include the `dev` option in your installation, as follows:
+
+.. code-block:: console
+
+    cd qc2
+    python3 -m pip install -e .[pennylane,dev]
+
+This will install a set of additional packages such as ``isort`` and ``sphinx``,
+enabling users to contribute to the project following best practices.
+
 Note on ASE calculators
 -----------------------
 

@@ -2,7 +2,9 @@
 *.egg-info
 *.eggs
 .ipynb_checkpoints
-timer.dat
+*.hdf5
+*.fcidump
+*.dat
 
 build
 dist

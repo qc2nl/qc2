@@ -2,13 +2,12 @@ import subprocess
 import shutil
 import pytest
 
-from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
-from qiskit_nature.second_q.mappers import JordanWignerMapper
-from qiskit_algorithms.minimum_eigensolvers import VQE
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 
 from qc2.data import qc2Data
+from qc2.algorithms.qiskit import VQE
+from qc2.algorithms.utils import ActiveSpace
 
 try:
     from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
@@ -88,39 +87,26 @@ def vqe_calculation():
     # run the calculator
     qc2data.run()
 
-    # define active space
-    n_active_electrons = (2, 2)  # => (n_alpha, n_beta)
-    n_active_spatial_orbitals = 3
-
-    # define the type of fermionic-to-qubit transformation
-    mapper = JordanWignerMapper()
-
-    # set up qubit Hamiltonian and core energy based on given active space
-    e_core, qubit_op = qc2data.get_qubit_hamiltonian(
-        n_active_electrons, n_active_spatial_orbitals, mapper, format='qiskit'
+    # set up VQE calc
+    qc2data.algorithm = VQE(
+        active_space=ActiveSpace(
+            num_active_electrons=(2, 2),
+            num_active_spatial_orbitals=3
+        ),
+        mapper="jw",
+        optimizer=SLSQP(),
+        estimator=Estimator(),
     )
 
-    reference_state = HartreeFock(
-        n_active_spatial_orbitals, n_active_electrons, mapper
-    )
+    # run vqe
+    results = qc2data.algorithm.run()
 
-    ansatz = UCCSD(
-        n_active_spatial_orbitals, n_active_electrons,
-        mapper, initial_state=reference_state
-    )
-
-    vqe_solver = VQE(Estimator(), ansatz, SLSQP())
-    vqe_solver.initial_point = [0.0] * ansatz.num_parameters
-    result = vqe_solver.compute_minimum_eigenvalue(qubit_op)
-
-    return result.eigenvalue, e_core
+    return results.optimal_energy
 
 
 def test_vqe_calculation(vqe_calculation):
     """Check that the final vqe energy is correct."""
-    calculated_electronic_energy, e_core = vqe_calculation
-    calculated_energy = calculated_electronic_energy + e_core
-    assert calculated_energy == pytest.approx(-75.1697111770602, rel=1e-6)
+    assert vqe_calculation == pytest.approx(-75.1697111770602, rel=1e-6)
 
 
 if __name__ == '__main__':

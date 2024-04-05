@@ -7,10 +7,9 @@ We start with a very simple example:
 
 .. code-block:: python
     :linenos:
-    :emphasize-lines: 10-12
+    :emphasize-lines: 9-11
 
     from ase.build import molecule
-    from qc2.ase import PySCF
     from qc2.data import qc2Data
 
     # set ASE Atoms object
@@ -34,10 +33,9 @@ Here is an example of how to instantiate :class:`~qc2.data.data.qc2Data` to save
 
 .. code-block:: python
     :linenos:
-    :emphasize-lines: 10-12
+    :emphasize-lines: 9-11
 
     from ase.build import molecule
-    from qc2.ase import PySCF
     from qc2.data import qc2Data
 
     # instantiate ASE Atoms object
