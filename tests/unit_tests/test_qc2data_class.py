@@ -10,7 +10,6 @@ from qiskit_nature.second_q.problems import ElectronicStructureProblem
 from qiskit_nature.second_q.hamiltonians import ElectronicEnergy
 from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature.second_q.formats.fcidump import FCIDump
-from qiskit_nature.second_q.problems import ElectronicBasis
 
 from qc2.data.data import qc2Data
 from qc2.ase.pyscf import PySCF
@@ -147,11 +146,11 @@ def test_get_qubit_hamiltonian_qiskit(qc2_data_fcidump_instance):
 
 def test_get_qubit_hamiltonian_pennylane(qc2_data_qcschema_instance):
     """Test case # 7 - Building qubit Hamiltonian using pennylane format."""
+    qc2_data_qcschema_instance.run()
     if not pennylane_available:
         pytest.skip()
     num_electrons = (1, 1)
     num_spatial_orbitals = 2
-    qc2_data_qcschema_instance.run()
     core_energy, qubit_op = qc2_data_qcschema_instance.get_qubit_hamiltonian(
         num_electrons=num_electrons, num_spatial_orbitals=num_spatial_orbitals,
         format="pennylane"

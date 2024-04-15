@@ -1,6 +1,5 @@
 import os
 import pytest
-import numpy as np
 
 from ase.build import molecule
 
@@ -9,11 +8,13 @@ from qc2.ase import PySCF
 from qc2.algorithms.utils import ActiveSpace
 
 try:
-    import pennylane as qml
     from pennylane import numpy as np
     from qc2.algorithms.pennylane import oo_VQE
 except ImportError:
-    pytest.skip()
+    pytest.skip(
+        "Skipping PennyLane tests...",
+        allow_module_level=True
+    )
 
 
 @pytest.fixture
