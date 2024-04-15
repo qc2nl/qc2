@@ -13,6 +13,15 @@ Once a local copy of the qc2 repository has been obtained, qc2 can be installed 
         conda create -n qc2 python=3.11 # python version optional
         conda activate qc2
 
+
+    If you prefer, we can alternatively create a python virtual environment by using:
+
+    .. code-block:: console
+
+        python3 -m venv venv_qc2
+        source venv_qc2/bin/activate
+
+
 To install qc2 in an editable/develop mode:
 
 .. code-block:: console
