@@ -57,7 +57,7 @@ class qc2Data:
 
     def __init__(
         self,
-        filename: str,
+        filename: str = "qchem_data.hdf5",
         molecule: Atoms = Atoms(),
         algorithm: BaseAlgorithm = BaseAlgorithm(),
         *,
@@ -67,7 +67,7 @@ class qc2Data:
 
         Args:
             filename (str): The path to the data file to save/read qchem
-                data.
+                data. Defaults to ``qchem_data.hdf5``
             molecule (Atoms): An optional :class:`ase.atoms.Atoms`
                 instance representing the target molecule.
             algorithm (BaseAlgorithm): Algorithm to be run.
@@ -148,7 +148,8 @@ class qc2Data:
         file_extension = os.path.splitext(self._filename)[1]
 
         # check extension
-        if self._schema == "qcschema" and file_extension not in [".hdf5", ".h5"]:
+        if (self._schema == "qcschema"
+                and file_extension not in [".hdf5", ".h5"]):
             raise ValueError(
                 f"{file_extension} is not a valid extension. "
                 "For QCSchema format provide a file with "
