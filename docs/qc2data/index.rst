@@ -12,3 +12,4 @@ In this section, we will provide general guidelines on how to instantiate it and
   ./instantiating_qc2Data_class.rst
   ./run_ase_via_qc2Data_class.rst
   ./get_qubit_hamiltonian.rst
+  ./run_algorithms_via_qc2Data_class.rst

@@ -8,8 +8,6 @@
 [![RSD](https://img.shields.io/badge/rsd-qc2-00a3e3.svg)](https://www.research-software.nl/software/qc2)
 [![workflow pypi badge](https://img.shields.io/pypi/v/qc2.svg?colorB=blue)](https://pypi.python.org/project/qc2/)
 
-
-
 <!-- | fair-software.eu recommendations | |
 | :-- | :--  |
 | (1/5) code repository              | [![github repo badge](https://img.shields.io/badge/github-repo-000.svg?logo=github&labelColor=gray&color=blue)](git@github.com:qc2nl/qc2) |
@@ -28,6 +26,21 @@
 | SonarCloud                         | [![sonarcloud](git@github.com:qc2nl/qc2/actions/workflows/sonarcloud.yml/badge.svg)](git@github.com:qc2nl/qc2/actions/workflows/sonarcloud.yml) |
 | MarkDown link checker              | [![markdown-link-check](git@github.com:qc2nl/qc2/actions/workflows/markdown-link-check.yml/badge.svg)](git@github.com:qc2nl/qc2/actions/workflows/markdown-link-check.yml) | -->
 
+## About qc2
+
+qc2 is a modular software designed to seamlessly integrate traditional computational chemistry codes
+and quantum computing frameworks.
+It is specifically crafted for hybrid quantum-classical workflows
+such as the variational quantum eigensolver (VQE) algorithm.
+The software relies on custom [ASE calculators](https://wiki.fysik.dtu.dk/ase/) as well as formatted data files
+(*e.g.*, [QCSchema](https://molssi.org/software/qcschema-2/) or [FCIDUMP](https://www.sciencedirect.com/science/article/abs/pii/0010465589900337?via%3Dihub)) to efficiently offload 1- and 2-electron
+integrals needed by various Python quantum computing libraries.
+
+The qc2 software is a direct outcome of the [QCforQC project](https://research-software-directory.org/projects/qcforqc),
+a collaboration between [Netherlands eScience Center](https://www.esciencecenter.nl/),
+[Vrije Universiteit Amsterdam (VU)](https://research.vu.nl/en/persons/luuk-visscher) and [SURF](https://www.surf.nl/en/themes/quantum).
+
+To access qc2's capabilities and current status, please refer to its documentation at https://qc2.readthedocs.io.
 
 ## Installation
 
@@ -39,7 +52,7 @@ cd qc2
 python3 -m pip install -e .
 ```
 
-In this current version, qc2 can perform `VQE` calculations using both `Qiskit` and `Pennylane`. However, the latter is an optional dependency. To install `Pennylane` and perform automatic testing with it, follow these steps:
+In this current version, qc2 can perform hybrid quantum-classical calculations using both [Qiskit Nature](https://qiskit.org/ecosystem/nature/) and [PennyLane](https://pennylane.ai/). However, the latter is an optional dependency. To install `Pennylane` and perform automatic testing with it, follow these steps:
 ```console
 git clone git@github.com:qc2nl/qc2.git
 cd qc2
