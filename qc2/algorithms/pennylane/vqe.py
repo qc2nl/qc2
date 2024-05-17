@@ -325,7 +325,7 @@ class VQE(VQEBASE):
 
             # update lists with intermediate data
             energy = corr_energy + self.e_core
-            energy_l.append(energy.numpy())
+            energy_l.append(energy)
             theta_l.append(theta.numpy().tolist())
 
             if self.verbose is not None:
@@ -333,7 +333,7 @@ class VQE(VQEBASE):
                     print(f"iter = {n:03}, energy = {energy_l[-1]:.12f} Ha")
 
             if n > 1:
-                if abs(energy_l[-1] - energy_l[-2]) < self.conv_tol:                    
+                if abs(energy_l[-1] - energy_l[-2]) < self.conv_tol:
                     # instantiate VQEResults
                     results = VQEResults()
                     results.optimizer_evals = n
@@ -350,7 +350,8 @@ class VQE(VQEBASE):
                         print("* Inactive core "
                               f"energy (Hartree): {self.e_core:.12f}")
                         print(">>> Total ground state "
-                              f"energy (Hartree): {results.optimal_energy:.12f}\n")
+                              "energy (Hartree): "
+                              f"{results.optimal_energy:.12f}\n")
                     break
         # in case of non-convergence
         else:
