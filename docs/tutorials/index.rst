@@ -11,4 +11,5 @@ with quantum computing SDKs to run hybrid quantum-classical workflows. Additiona
 
   water_vqe_example_qiskit
   water_vqe_example_pennylane
-  pec_h2_ibmq_qiskit_runtime
+  formaldimine
+  adv_options_pec_h2_ibmq_qiskit_runtime

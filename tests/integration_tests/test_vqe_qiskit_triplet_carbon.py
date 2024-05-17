@@ -2,13 +2,15 @@ import os
 import glob
 import pytest
 from ase import Atoms
-from qc2.data import qc2Data
-from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
+
 from qiskit_nature.second_q.mappers import JordanWignerMapper
-from qiskit_algorithms.minimum_eigensolvers import VQE
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
+
+from qc2.data import qc2Data
 from qc2.ase import PySCF
+from qc2.algorithms.qiskit import VQE
+from qc2.algorithms.utils import ActiveSpace
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -28,37 +30,32 @@ def clean_up_files():
 def vqe_result():
     """Create input for atomic C and and save/load data using QCSchema."""
     # Input data
-    mol = Atoms('C')
-    hdf5_file = 'carbon_ase_pyscf_qiskit.hdf5'
+    mol = Atoms("C")
+    hdf5_file = "carbon_ase_pyscf_qiskit.hdf5"
 
-    qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
+    qc2data = qc2Data(hdf5_file, mol, schema="qcschema")
     qc2data.molecule.calc = PySCF(
         method='scf.UHF', basis='sto-3g', multiplicity=3, charge=0
     )
     qc2data.run()
 
-    n_active_electrons = (4, 2)  # => (n_alpha, n_beta)
-    n_active_spatial_orbitals = 5
-    mapper = JordanWignerMapper()
+    # set up VQE calc
+    qc2data.algorithm = VQE(
+        active_space=ActiveSpace(
+            num_active_electrons=(4, 2),
+            num_active_spatial_orbitals=5
+        ),
+        mapper="jw",
+        optimizer=SLSQP(),
+        estimator=Estimator(),
+    )
 
-    e_core, qubit_op = qc2data.get_qubit_hamiltonian(
-        n_active_electrons, n_active_spatial_orbitals, mapper, format='qiskit'
-    )
-    reference_state = HartreeFock(
-        n_active_spatial_orbitals, n_active_electrons, mapper
-    )
-    ansatz = UCC(
-        num_spatial_orbitals=n_active_spatial_orbitals,
-        num_particles=n_active_electrons,
-        qubit_mapper=mapper, initial_state=reference_state, excitations='sdtq'
-    )
-    vqe_solver = VQE(Estimator(), ansatz, SLSQP())
-    vqe_solver.initial_point = [0.0] * ansatz.num_parameters
-    result = vqe_solver.compute_minimum_eigenvalue(qubit_op)
-    return result.eigenvalue + e_core
+    # run vqe
+    results = qc2data.algorithm.run()
+
+    return results.optimal_energy
 
 
-@pytest.mark.skip(reason="Takes a long time because of the TQ excitations...")
 def test_total_ground_state_energy(vqe_result):
     """Check that the final vqe energy corresponds to one at FCI/sto-3g."""
     expected_energy = -37.218733550636

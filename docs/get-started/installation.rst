@@ -13,6 +13,15 @@ Once a local copy of the qc2 repository has been obtained, qc2 can be installed 
         conda create -n qc2 python=3.11 # python version optional
         conda activate qc2
 
+
+    If you prefer, we can alternatively create a python virtual environment by using:
+
+    .. code-block:: console
+
+        python3 -m venv venv_qc2
+        source venv_qc2/bin/activate
+
+
 To install qc2 in an editable/develop mode:
 
 .. code-block:: console
@@ -48,6 +57,18 @@ run `pytest` while in the main qc2 directory, *e.g.*,
 .. code-block:: console
 
     pytest -v
+
+
+Another option, particularly suitable for those interested in contributing to qc2,
+is to include the `dev` option in your installation, as follows:
+
+.. code-block:: console
+
+    cd qc2
+    python3 -m pip install -e .[pennylane,dev]
+
+This will install a set of additional packages such as ``isort`` and ``sphinx``,
+enabling users to contribute to the project following best practices.
 
 Note on ASE calculators
 -----------------------

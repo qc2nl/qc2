@@ -5,7 +5,7 @@ Building your own qc2-ASE calculator
 
 .. _qc2_ase_base_class:
 
-.. figure:: ../qc2_ase_base_class.drawio.png
+.. figure:: ../figures/qc2_ase_base_class.drawio.png
     :scale: 80%
     :align: center
     :alt: Code workflow diagram
