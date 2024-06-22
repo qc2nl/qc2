@@ -99,7 +99,7 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
                 return qml.prod(
                     qml.pauli.string_to_pauli_word(term, wire_map=wire_map))
 
-            return qml.pauli.string_to_pauli_word(term, wire_map=wire_map)
+            return Tensor(qml.pauli.string_to_pauli_word(term, wire_map=wire_map))
 
         return qml.Identity(wires[0])
 
@@ -108,7 +108,7 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
           for term, coef in qubit_operator.to_list()]
     )
 
-    return np.real(np.array(coeffs, requires_grad=False)), list(ops)
+    return np.array(coeffs).real, list(ops)
 
 
 def _pennylane_to_qiskit_nature(coeffs, ops, wires):
@@ -190,10 +190,10 @@ def _pennylane_to_qiskit_nature(coeffs, ops, wires):
     for coeff, op in zip(coeffs, ops):
         if isinstance(op, (Tensor, Prod, SProd, Hamiltonian)):
             string = qml.pauli.pauli_word_to_string(op, wire_map=wire_map)
-            n = len(string)//3  # => valid for closed shell singlets only
+            n = len(string)//2  # => valid for closed shell singlets only
             string = ''.join([string[i::n] for i in range(n)])
             string = string[::-1]
-            q_op_list.append((string, coeff.unwrap()))
+            q_op_list.append((string, coeff))
         if isinstance(op, Sum):
             # print(coeff, op.simplify(), op._build_pauli_rep(), op.terms())
             raise ValueError(

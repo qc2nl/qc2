@@ -6,9 +6,9 @@ on:
     branches:
     - main
   # uncomment below if the workflow must run for every push to a PR pointing to the main branch
-  #pull_request:
-  #  branches:
-  #  - main
+  pull_request:
+    branches:
+    - main
 
 jobs:
 
@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest'] #, 'windows-latest']
-        python-version: ['3.9'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.11'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         include:
           - os: ubuntu-latest
             CONDA_OS: linux-64
@@ -67,39 +67,44 @@ jobs:
           which psi4
           psi4 --version
           python -c "import psi4"
-      - name: Install Cmake and compilers for ROSE and DIRAC installation
-        shell: bash -l {0}
-        run: |
-          conda activate test
-          conda install -c anaconda cmake
-          conda install conda-forge::blas
-          conda install conda-forge::lapack
-          if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
-            conda install -c conda-forge gfortran clang clangxx
-          else
-            conda install -c conda-forge gfortran gcc gxx
-          fi
-      - name: ROSE install for tests
-        shell: bash -l {0}
-        run: |
-          conda activate test
-          git clone https://gitlab.com/Cmurilochem/rose.git  # https://gitlab.com/quantum_rose/rose.git
-          cd rose
-          git checkout ROSE_ase_calculator # this change in branch is only provisory
-          if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
-            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBLAS_LIBRARIES=$CONDA_PREFIX/lib/libblas.dylib -DLAPACK_LIBRARIES=$CONDA_PREFIX/lib/liblapack.dylib
-          else
-            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBLAS_LIBRARIES=$CONDA_PREFIX/lib/libblas.so -DLAPACK_LIBRARIES=$CONDA_PREFIX/lib/liblapack.so
-          fi
-          cmake --build build
-          cmake --install build
-          echo `pwd`/bin >> $GITHUB_PATH
-          cd ..
+      #- name: Install Cmake and compilers for ROSE and DIRAC installation
+      #  shell: bash -l {0}
+      #  run: |
+      #    conda activate test
+      #    conda install -c anaconda cmake
+      #    conda install conda-forge::blas
+      #    conda install conda-forge::lapack
+      #    if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+      #      conda install -c conda-forge gfortran clang clangxx
+      #    else
+      #      conda install -c conda-forge gfortran gcc gxx
+      #    fi
+      #- name: install HDF5 libraries
+      #  shell: bash -l {0}
+      #  run: |
+      #    conda activate test
+      #    conda install -c anaconda hdf5
+      #- name: ROSE install for tests
+      #  shell: bash -l {0}
+      #  run: |
+      #    conda activate test
+      #    git clone https://gitlab.com/quantum_rose/rose.git
+      #    cd rose
+      #    if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+      #      cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBLAS_LIBRARIES=$CONDA_PREFIX/lib/libblas.dylib -DLAPACK_LIBRARIES=$CONDA_PREFIX/lib/liblapack.dylib
+      #    else
+      #      cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBLAS_LIBRARIES=$CONDA_PREFIX/lib/libblas.so -DLAPACK_LIBRARIES=$CONDA_PREFIX/lib/liblapack.so
+      #    fi
+      #    cmake --build build
+      #    cmake --install build
+      #    echo `pwd`/bin >> $GITHUB_PATH
+      #    pip install ./ase_rose
+      #    cd ..
       #- name: DIRAC install for tests
       #  shell: bash -l {0}
       #  run: |
       #    conda activate test
-      #    git clone --recursive --branch v23.0 https://gitlab.com/dirac/dirac.git
+      #    git clone --depth 1 --recursive https://gitlab.com/dirac/dirac.git
       #    cd dirac
       #    if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
       #      ./setup --prefix=$CONDA_PREFIX --blas=$CONDA_PREFIX/lib/libblas.dylib --lapack=$CONDA_PREFIX/lib/liblapack.dylib --pcmsolver=OFF --exatensor=OFF

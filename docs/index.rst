@@ -14,7 +14,7 @@ About qc2
 
 .. _code_structure:
 
-.. figure:: qc2nl.drawio.png
+.. figure:: figures/qc2nl.drawio.png
     :align: center
     :alt: Code structure diagram
 
@@ -36,7 +36,7 @@ a collaboration between `Netherlands eScience Center <https://www.esciencecenter
 Current status of qc2
 =====================
 
-In its current version, qc2 can perform VQE calculations using
+In its current version, qc2 can run hybrid quantum-classical computations using
 both `Qiskit Nature <https://qiskit.org/ecosystem/nature/>`_ and `PennyLane <https://pennylane.ai/>`_,
 along with the following computational chemistry programs:
 
@@ -53,6 +53,12 @@ implement additional methods to retrieve and dump qchem data into formatted data
   qc2-ASE calculators for `ADF <https://www.scm.com/>`_ and `MOLCAS <https://www.molcas.org/>`_ are
   currently under development and will be available soon.
 
+Current implemented algorithms are:
+
+* :ref:`vqe_class`
+* :ref:`oo_vqe_class` (orbitally-optimized VQE) :cite:p:`Sokolov:2020,Mizukami:2020,Yalouz:2021,Zhao:2023`
+
+For further details; see :code:`qc2/algorithms` module and :ref:`algorithms_section` section.
 
 The QCforQC team
 ================
@@ -78,6 +84,7 @@ members:
 
   get-started/index
   ase/index
+  algorithms/index
   qc2data/index
   tutorials/index
 
