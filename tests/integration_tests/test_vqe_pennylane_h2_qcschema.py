@@ -8,11 +8,12 @@ from qc2.algorithms.utils import ActiveSpace
 
 try:
     import pennylane as qml
-    from pennylane import numpy as np
     from qc2.algorithms.pennylane import VQE
 except ImportError:
-    pytest.skip("Skipping Pennylane tests...",
-                allow_module_level=True)
+    pytest.skip(
+        "Skipping PennyLane tests...",
+        allow_module_level=True
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)

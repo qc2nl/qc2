@@ -23,7 +23,7 @@ try:
 
 except ImportError as Error:
     raise ImportError(
-        "This feature requires Pennylane. "
+        "This feature requires PennyLane. "
         "It can be installed with: pip install pennylane."
         ) from Error
 
@@ -99,7 +99,9 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
                 return qml.prod(
                     qml.pauli.string_to_pauli_word(term, wire_map=wire_map))
 
-            return Tensor(qml.pauli.string_to_pauli_word(term, wire_map=wire_map))
+            return Tensor(qml.pauli.string_to_pauli_word(
+                term, wire_map=wire_map
+            ))
 
         return qml.Identity(wires[0])
 
