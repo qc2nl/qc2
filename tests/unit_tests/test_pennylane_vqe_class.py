@@ -1,7 +1,6 @@
 from typing import Callable
 import os
 import pytest
-import numpy as np
 
 from ase.build import molecule
 
@@ -14,7 +13,10 @@ try:
     from pennylane import numpy as np
     from qc2.algorithms.pennylane import VQE
 except ImportError:
-    pytest.skip()
+    pytest.skip(
+        "Skipping PennyLane tests...",
+        allow_module_level=True
+    )
 
 
 @pytest.fixture
@@ -109,4 +111,3 @@ def test_run_method(vqe):
     assert all(num != 0 for num in results.optimal_params)
     assert all(isinstance(num, float) for num in results.energy)
     assert all(isinstance(num, list) for num in results.parameters)
-

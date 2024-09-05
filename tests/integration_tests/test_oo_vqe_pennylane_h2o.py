@@ -7,8 +7,15 @@ from ase.build import molecule
 
 from qc2.ase import PySCF
 from qc2.data import qc2Data
-from qc2.algorithms.pennylane import oo_VQE
 from qc2.algorithms.utils import ActiveSpace
+
+try:
+    from qc2.algorithms.pennylane import oo_VQE
+except ImportError:
+    pytest.skip(
+        "Skipping PennyLane tests...",
+        allow_module_level=True
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)
