@@ -3,6 +3,7 @@
 <!-- (Customize these badges with your own links, and check https://shields.io/ or https://badgen.net/ to see which other badges are available.) -->
 [![Build Status](https://github.com/qc2nl/qc2/actions/workflows/build.yml/badge.svg)](https://github.com/qc2nl/qc2/actions)
 [![Documentation Status](https://readthedocs.org/projects/qc2/badge/?version=latest)](https://qc2.readthedocs.io/en/latest/?badge=latest)
+[![codecov](https://codecov.io/gh/qc2nl/qc2/graph/badge.svg?token=FV8JW9QZ1V)](https://codecov.io/gh/qc2nl/qc2)
 [![DOI](https://zenodo.org/badge/608545357.svg)](https://doi.org/10.5281/zenodo.14186370)
 
 <!-- [![fair-software badge](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu) -->
