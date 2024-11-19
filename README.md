@@ -4,9 +4,10 @@
 [![Build Status](https://github.com/qc2nl/qc2/actions/workflows/build.yml/badge.svg)](https://github.com/qc2nl/qc2/actions)
 [![Documentation Status](https://readthedocs.org/projects/qc2/badge/?version=latest)](https://qc2.readthedocs.io/en/latest/?badge=latest)
 [![DOI](https://zenodo.org/badge/608545357.svg)](https://doi.org/10.5281/zenodo.14186370)
-[![fair-software badge](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu)
-[![RSD](https://img.shields.io/badge/rsd-qc2-00a3e3.svg)](https://www.research-software.nl/software/qc2)
-[![workflow pypi badge](https://img.shields.io/pypi/v/qc2.svg?colorB=blue)](https://pypi.python.org/project/qc2/)
+
+<!-- [![fair-software badge](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B-yellow)](https://fair-software.eu) -->
+<!-- [![RSD](https://img.shields.io/badge/rsd-qc2-00a3e3.svg)](https://www.research-software.nl/software/qc2) -->
+<!-- [![workflow pypi badge](https://img.shields.io/pypi/v/qc2.svg?colorB=blue)](https://pypi.python.org/project/qc2/) -->
 
 <!-- | fair-software.eu recommendations | |
 | :-- | :--  |
