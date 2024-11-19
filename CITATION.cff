@@ -3,16 +3,32 @@
 cff-version: "1.2.0"
 title: "qc2"
 authors:
-  -
-    family-names: Renaud
+  - family-names: Renaud
     given-names: Nicolas
-    orcid: "https://orcid.org/0000-0000-0000-0000"
-date-released: 20??-MM-DD
-doi: <insert your DOI here>
-version: "0.1.0"
+    email: n.renaud@esciencecenter.nl
+    affiliation: Netherlands eScience Center
+    orcid: "https://orcid.org/0000-0001-9589-2694"
+  - family-names: Romero Rocha
+    given-names: Carlos Murilo
+    email: c.rocha@esciencecenter.nl
+    affiliation: Netherlands eScience Center
+    orcid: "https://orcid.org/0000-0002-4118-8308"
+identifiers:
+    - type: url
+      value: https://blog.esciencecenter.nl/quantum-computing-for-quantum-chemistry-with-qc2-69ee18ef2969
+      description: Quantum Computing for Quantum Chemistry with qc2
+    - type: doi
+      value: 10.5281/zenodo.XXXXXXX
+      description: Concept DOI for Zenodo deposition
+date-released: 2024-11-19
+version: "v1.1.2"
 repository-code: "git@github.com:qc2nl/qc2"
+abstract: >-
+    qc2 is a modular software designed to seamlessly integrate
+    traditional computational chemistry codes and quantum computing
+    frameworks.
 keywords:
   - quantum computing
-  - quantum chemistry 
-message: "If you use this software, please cite it using these metadata."
+  - quantum chemistry
+message: "If you use this software, please cite it using the metadata from this file."
 license: Apache-2.0
