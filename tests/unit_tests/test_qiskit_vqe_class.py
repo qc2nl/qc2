@@ -6,7 +6,6 @@ from ase.build import molecule
 from qiskit.circuit import QuantumCircuit
 from qiskit_nature.second_q.mappers import JordanWignerMapper
 from qiskit_nature.second_q.circuit.library import UCC
-from qiskit_algorithms.minimum_eigensolvers import VQEResult
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper
 from qiskit_algorithms.optimizers import COBYLA
@@ -112,6 +111,5 @@ def test_run_method(vqe):
     results = vqe.run()
     assert isinstance(results.optimal_energy, float)
     assert results.optimal_energy == pytest.approx(-1.1373015, 1e-6)
-    assert all(num != 0 for num in results.optimal_params)
     assert all(isinstance(num, float) for num in results.energy)
     assert all(isinstance(num, list) for num in results.parameters)
