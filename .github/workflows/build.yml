@@ -1,3 +1,5 @@
+name: tests
+
 on:
   # uncoment the two line below to run the workflow for every even day of the month at 24:00h
   schedule:
@@ -118,13 +120,11 @@ jobs:
       - name: Run unit tests
         shell: bash -l {0}
         run : |
-          conda activate test
-          python -m pytest -v --pyargs tests/unit_tests
-      - name: Run integration tests
-        shell: bash -l {0}
-        run: |
-          conda activate test
-          pytest -v --pyargs tests/integration_tests
+          python -m pytest --cov --cov-report=xml
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
       - name: Verify that we can build the package
         shell: bash -l {0}
         run: |
