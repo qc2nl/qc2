@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest'] #, 'windows-latest']
-        python-version: ['3.11'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.12'] #['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         include:
           - os: ubuntu-latest
             CONDA_OS: linux-64
@@ -115,16 +115,13 @@ jobs:
       #    make install
       #    echo `pwd`/bin >> $GITHUB_PATH
       #    cd ..
-      - name: Run unit tests
-        shell: bash -l {0}
-        run : |
-          conda activate test
-          python -m pytest -v --pyargs tests/unit_tests
-      - name: Run integration tests
-        shell: bash -l {0}
+      - name: Run tests
         run: |
-          conda activate test
-          pytest -v --pyargs tests/integration_tests
+          pytest --cov --cov-report=xml
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
       - name: Verify that we can build the package
         shell: bash -l {0}
         run: |
