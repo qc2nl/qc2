@@ -1,8 +1,7 @@
 # YAML 1.2
 ---
 cff-version: "1.2.0"
-title: "qc2"
-authors:
+title: "qc2: Modular Software for Seamless Integration of Quantum Chemistry and Quantum Computing"
   - family-names: Renaud
     given-names: Nicolas
     email: n.renaud@esciencecenter.nl
@@ -18,7 +17,7 @@ identifiers:
       value: https://blog.esciencecenter.nl/quantum-computing-for-quantum-chemistry-with-qc2-69ee18ef2969
       description: Quantum Computing for Quantum Chemistry with qc2
     - type: doi
-      value: 10.5281/zenodo.XXXXXXX
+      value: 10.5281/zenodo.14186370
       description: Concept DOI for Zenodo deposition
 date-released: 2024-11-19
 version: "v1.1.2"
