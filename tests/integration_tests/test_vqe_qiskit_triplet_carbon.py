@@ -3,9 +3,8 @@ import glob
 import pytest
 from ase import Atoms
 
-from qiskit_nature.second_q.mappers import JordanWignerMapper
 from qiskit_algorithms.optimizers import SLSQP
-from qiskit.primitives import Estimator
+from qiskit.primitives import StatevectorEstimator
 
 from qc2.data import qc2Data
 from qc2.ase import PySCF
@@ -47,7 +46,7 @@ def vqe_result():
         ),
         mapper="jw",
         optimizer=SLSQP(),
-        estimator=Estimator(),
+        estimator=StatevectorEstimator(),
     )
 
     # run vqe

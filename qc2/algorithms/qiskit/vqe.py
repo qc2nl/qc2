@@ -2,14 +2,14 @@
 from typing import List, Dict
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
 from qiskit_nature.second_q.mappers import QubitMapper
-from qiskit_algorithms.minimum_eigensolvers import VQE as vqe_solver
 from qiskit_algorithms.optimizers import SLSQP
-from qiskit.primitives import Estimator
+from qiskit.primitives import StatevectorEstimator
 from qiskit.circuit import QuantumCircuit
 from qc2.algorithms.base.vqe_base import VQEBASE
 from qc2.algorithms.algorithms_results import VQEResults
 from qc2.algorithms.utils.active_space import ActiveSpace
 from qc2.algorithms.utils.mappers import FermionicToQubitMapper
+from qc2.algorithms.qiskit.estimator_run_builder import EstimatorRunBuilder
 
 
 class VQE(VQEBASE):
@@ -97,7 +97,6 @@ class VQE(VQEBASE):
         ... )
         >>> results = qc2data.algorithm.run()
         """
-
         super().__init__(qc2data, "qiskit")
 
         # init active space and mapper
@@ -111,7 +110,9 @@ class VQE(VQEBASE):
         )
 
         # init circuit
-        self.estimator = Estimator() if estimator is None else estimator
+        self.estimator = (
+            StatevectorEstimator() if estimator is None else estimator
+        )
         self.optimizer = SLSQP() if optimizer is None else optimizer
         self.reference_state = (
             self._get_default_reference(self.active_space, self.mapper)
@@ -169,7 +170,6 @@ class VQE(VQEBASE):
         Returns:
             UCC: UCC ansatz quantum circuit.
         """
-
         return UCC(
             num_spatial_orbitals=active_space.num_active_spatial_orbitals,
             num_particles=active_space.num_active_electrons,
@@ -190,7 +190,7 @@ class VQE(VQEBASE):
         """
         return [0.0] * nparams
 
-    def run(self, *args, **kwargs) -> VQEResults:
+    def run(self) -> VQEResults:
         """Executes the VQE algorithm.
 
         Args:
@@ -233,46 +233,54 @@ class VQE(VQEBASE):
 
         # create a simple callback to print intermediate results
         intermediate_info = {
-            "nfev": [],
+            "nfev": -1,
             "parameters": [],
             "energy": [],
             "metadata": []
         }
 
-        def callback(
-            nfev: int,
+        def _callback(
             parameters: List,
             energy: float,
             metadata: Dict
         ) -> None:
-            intermediate_info["nfev"].append(nfev)
+            intermediate_info["nfev"] += 1
             intermediate_info["parameters"].append(parameters)
             intermediate_info["energy"].append(energy + self.e_core)
             intermediate_info["metadata"].append(metadata)
             if self.verbose is not None:
-                if nfev % 2 == 0:
+                if intermediate_info["nfev"] % 2 == 0:
                     print(
-                        f"iter = {intermediate_info['nfev'][-1]:03}, "
+                        f"iter = {intermediate_info['nfev']:03}, "
                         f"energy = {intermediate_info['energy'][-1]:.12f} Ha"
                     )
 
-        # instantiate the solver
-        solver = vqe_solver(
-            self.estimator,
-            self.ansatz,
-            self.optimizer,
-            callback=callback,
-            *args,
-            **kwargs
-        )
-        solver.initial_point = self.params
+        def _objective_function(theta: List) -> float:
+            estimator_run = EstimatorRunBuilder(
+                estimator=self.estimator,
+                circuits=[self.ansatz],
+                observables=[self.qubit_op],
+                parameter_sets=[theta],
+            )
+            job = estimator_run.build_run()
+            # fill in callback
+            energy = job.result()[0].data.evs
+            metadata = job.result()[0].metadata
+            _callback(
+                theta,
+                energy,
+                metadata
+            )
+            return energy
 
-        # call the minimizer and save final results
-        qiskit_res = solver.compute_minimum_eigenvalue(self.qubit_op)
+        # call the minimizer
+        qiskit_res = self.optimizer.minimize(
+            fun=_objective_function, x0=self.params
+        )
 
         # instantiate VQEResults
         results = VQEResults()
-        results.optimizer_evals = intermediate_info["nfev"][-1]
+        results.optimizer_evals = intermediate_info["nfev"]
         results.optimal_energy = intermediate_info["energy"][-1]
         results.optimal_params = intermediate_info["parameters"][-1]
         results.energy = intermediate_info["energy"]
@@ -281,10 +289,9 @@ class VQE(VQEBASE):
 
         print("=== QISKIT VQE RESULTS ===")
         print("* Electronic ground state "
-              f"energy (Hartree): {qiskit_res.eigenvalue}")
+              f"energy (Hartree): {qiskit_res.fun}")
         print(f"* Inactive core energy (Hartree): {self.e_core}")
         print(">>> Total ground state "
               f"energy (Hartree): {results.optimal_energy}\n")
 
         return results
-

@@ -6,6 +6,7 @@ from qiskit_nature.second_q.operators import FermionicOp
 from qc2.algorithms.qiskit.vqe import VQE
 from qc2.algorithms.algorithms_results import OOVQEResults
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
+from qc2.algorithms.qiskit.estimator_run_builder import EstimatorRunBuilder
 
 
 class oo_VQE(VQE):
@@ -100,7 +101,7 @@ class oo_VQE(VQE):
         ...         num_active_spatial_orbitals=4
         ...     ),
         ...     optimizer=SLSQP(),
-        ...     estimator=Estimator(),
+        ...     estimator=StatevectorEstimator(),
         ... )
         >>> results = qc2data.algorithm.run()
         """
@@ -151,7 +152,7 @@ class oo_VQE(VQE):
         ...     ),
         ...     mapper="jw",
         ...     optimizer=SLSQP(),
-        ...     estimator=Estimator(),
+        ...     estimator=StatevectorEstimator(),
         ... )
         >>> results = qc2data.algorithm.run()
         """
@@ -221,8 +222,11 @@ class oo_VQE(VQE):
                     if self.verbose is not None:
                         print("optimization finished.\n")
                         print("=== QISKIT oo-VQE RESULTS ===")
-                        print("* Total ground state "
-                              f"energy (Hartree): {results.optimal_energy:.12f}")
+                        print(
+                            "* Total ground state "
+                            "energy (Hartree): "
+                            f"{results.optimal_energy:.12f}"
+                        )
                     break
         # in case of non-convergence
         else:
@@ -254,13 +258,14 @@ class oo_VQE(VQE):
              qubit_op) = self.oo_problem.get_transformed_qubit_hamiltonian(
                  kappa
              )
-            job = self.estimator.run(
-                circuits=self.ansatz,
-                observables=qubit_op,
-                parameter_values=theta
+            estimator_run = EstimatorRunBuilder(
+                estimator=self.estimator,
+                circuits=[self.ansatz],
+                observables=[qubit_op],
+                parameter_sets=[theta],
             )
-            cost = job.result().values + core_energy
-            return cost
+            job = estimator_run.build_run()
+            return job.result()[0].data.evs + core_energy
 
         # optimize theta with kappa fixed
         circuit_optimization_result = self.optimizer.minimize(
@@ -332,25 +337,41 @@ class oo_VQE(VQE):
             if length == 2:
                 iele, jele = (int(ele[1]) for ele in tuple(key[0:2]))
             elif length == 4:
-                iele, jele, kele, lele = (int(ele[1]) for ele in tuple(key[0:4]))
+                iele, jele, kele, lele = (
+                    int(ele[1]) for ele in tuple(key[0:4])
+                )
 
             # get fermionic and qubit representation of each term
             fermionic_ham_temp = FermionicOp.from_terms([(key, 1.0)])
             qubit_ham_temp = self.mapper.map(
                 fermionic_ham_temp, register_length=n_spin_orbitals
             )
+
+            # simplify to remove small imaginary components
+            qubit_ham_temp = qubit_ham_temp.simplify(atol=1e-10)
+
+            # ensure Hermitian operator
+            if not np.allclose(qubit_ham_temp.coeffs.imag, 0, atol=1e-10):
+                hermitian_part = 0.5 * (
+                    qubit_ham_temp + qubit_ham_temp.adjoint()
+                )
+                qubit_ham_temp = hermitian_part.simplify(atol=1e-10)
+
             # calculate expectation values
-            energy_temp = self.estimator.run(
-                circuits=self.ansatz,
-                observables=qubit_ham_temp,
-                parameter_values=theta
-            ).result().values
+            estimator_run = EstimatorRunBuilder(
+                estimator=self.estimator,
+                circuits=[self.ansatz],
+                observables=[qubit_ham_temp],
+                parameter_sets=[theta],
+            )
+            job = estimator_run.build_run()
+            energy_temp = job.result()[0].data.evs
 
             # put the values in np arrays (differentiate 1- and 2-RDM)
             if length == 2:
-                rdm1_spin[iele, jele] = energy_temp[0]
+                rdm1_spin[iele, jele] = energy_temp
             elif length == 4:
-                rdm2_spin[iele, lele, jele, kele] = energy_temp[0]
+                rdm2_spin[iele, lele, jele, kele] = energy_temp
 
         if sum_spin:
             # get spin-free RDMs

@@ -3,7 +3,7 @@ import shutil
 import pytest
 
 from qiskit_algorithms.optimizers import SLSQP
-from qiskit.primitives import Estimator
+from qiskit.primitives import StatevectorEstimator
 
 from qc2.data import qc2Data
 from qc2.algorithms.qiskit import VQE
@@ -95,7 +95,7 @@ def vqe_calculation():
         ),
         mapper="jw",
         optimizer=SLSQP(),
-        estimator=Estimator(),
+        estimator=StatevectorEstimator(),
     )
 
     # run vqe

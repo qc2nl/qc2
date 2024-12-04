@@ -1,5 +1,6 @@
 import os
 import pytest
+import numpy as np
 
 from ase.build import molecule
 
@@ -9,7 +10,7 @@ from qiskit_nature.second_q.circuit.library import UCC
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper
 from qiskit_algorithms.optimizers import COBYLA
-from qiskit.primitives import Estimator
+from qiskit.primitives import StatevectorEstimator
 
 from qc2.data import qc2Data
 from qc2.ase import PySCF
@@ -74,7 +75,7 @@ def test_initialization_with_ansatz():
         ),
         mapper="bk",
         optimizer=COBYLA(),
-        estimator=Estimator(),
+        estimator=StatevectorEstimator(),
     )
     assert isinstance(vqe, VQE)
 
@@ -112,4 +113,4 @@ def test_run_method(vqe):
     assert isinstance(results.optimal_energy, float)
     assert results.optimal_energy == pytest.approx(-1.1373015, 1e-6)
     assert all(isinstance(num, float) for num in results.energy)
-    assert all(isinstance(num, list) for num in results.parameters)
+    assert all(isinstance(num, np.ndarray) for num in results.parameters)

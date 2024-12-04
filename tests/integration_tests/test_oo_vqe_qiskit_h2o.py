@@ -6,7 +6,7 @@ import pytest
 from ase.build import molecule
 
 from qiskit_algorithms.optimizers import SLSQP
-from qiskit.primitives import Estimator
+from qiskit.primitives import StatevectorEstimator
 
 from qc2.data import qc2Data
 
@@ -57,7 +57,7 @@ def oo_vqe_calculation():
             num_active_spatial_orbitals=2
         ),
         optimizer=SLSQP(),
-        estimator=Estimator()
+        estimator=StatevectorEstimator()
     )
 
     # run oo-VQE
