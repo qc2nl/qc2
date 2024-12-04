@@ -5,6 +5,7 @@
 *.hdf5
 *.fcidump
 *.dat
+*.data
 
 build
 dist
