@@ -28,6 +28,8 @@
 | SonarCloud                         | [![sonarcloud](git@github.com:qc2nl/qc2/actions/workflows/sonarcloud.yml/badge.svg)](git@github.com:qc2nl/qc2/actions/workflows/sonarcloud.yml) |
 | MarkDown link checker              | [![markdown-link-check](git@github.com:qc2nl/qc2/actions/workflows/markdown-link-check.yml/badge.svg)](git@github.com:qc2nl/qc2/actions/workflows/markdown-link-check.yml) | -->
 
+![qc2_workflow](https://github.com/user-attachments/assets/bd706085-a433-45c2-bac3-ce6430b30a95)
+
 ## About qc2
 
 qc2 is a modular software designed to seamlessly integrate traditional computational chemistry codes
