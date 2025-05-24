@@ -9,7 +9,7 @@ from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.pennylane.convert import _qiskit_nature_to_pennylane
 
 
-class oo_VQE(VQE):
+class OO_VQE(VQE):
     """Main class for orbital-optimized VQE with PennyLane.
 
     This class is responsible for optimizing both circuit and orbital
@@ -84,7 +84,7 @@ class oo_VQE(VQE):
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
-        >>> from qc2.algorithms.pennylane import oo_VQE
+        >>> from qc2.algorithms.pennylane import OO_VQE
         >>> from qc2.algorithms.utils import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
@@ -93,7 +93,7 @@ class oo_VQE(VQE):
         >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
         >>> qc2data.molecule.calc = PySCF()
         >>> qc2data.run()
-        >>> qc2data.algorithm = oo_VQE(
+        >>> qc2data.algorithm = OO_VQE(
         ...     active_space=ActiveSpace(
         ...         num_active_electrons=(2, 2),
         ...         num_active_spatial_orbitals=4
@@ -155,7 +155,7 @@ class oo_VQE(VQE):
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
-        >>> from qc2.algorithms.pennylane import oo_VQE
+        >>> from qc2.algorithms.pennylane import OO_VQE
         >>> from qc2.algorithms.utils import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
@@ -164,7 +164,7 @@ class oo_VQE(VQE):
         >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
         >>> qc2data.molecule.calc = PySCF()
         >>> qc2data.run()
-        >>> qc2data.algorithm = oo_VQE(
+        >>> qc2data.algorithm = OO_VQE(
         ...     active_space=ActiveSpace(
         ...         num_active_electrons=(2, 2),
         ...         num_active_spatial_orbitals=4

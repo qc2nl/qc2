@@ -57,3 +57,19 @@ class OOVQEResults(VQEResults):
     def orbital_parameters(self, value: List) -> None:
         """Sets list with parameters of all iteration."""
         self._orbital_parameters = value
+
+class SAOOVQEResults(OOVQEResults):
+    """Extends OOVQEResults to provide a results data container for state-averaged oo-VQE."""
+    def __init__(self) -> None:
+        super().__init__()
+        self._optimal_state_weights: Optional[List] = None
+
+    @property
+    def optimal_state_weights(self) -> Optional[List]:
+        """Returns optimal state weights."""
+        return self._optimal_state_weights
+
+    @optimal_state_weights.setter
+    def optimal_state_weights(self, value: List) -> None:
+        """Sets optimal state weights."""
+        self._optimal_state_weights = value 
