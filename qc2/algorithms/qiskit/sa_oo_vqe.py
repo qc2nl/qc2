@@ -1,16 +1,12 @@
 """Module defining SA-OO-VQE algorithm for Qiskit-Nature."""
-from typing import List, Tuple
-import itertools as itt
-import numpy as np
+from typing import List, Union
 from qiskit.circuit import QuantumCircuit
 
-from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
 from qiskit_nature.second_q.mappers import QubitMapper
 
 from qc2.algorithms.qiskit.oo_vqe import OO_VQE
 from qc2.algorithms.algorithms_results import SAOOVQEResults
-from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.algorithms.utils.active_space import ActiveSpace
 
 class SA_OO_VQE(OO_VQE):
@@ -74,6 +70,7 @@ class SA_OO_VQE(OO_VQE):
                 :class:`qiskit_algorithms.SLSQP`.
             reference_state (QuantumCircuit): Reference state for the VQE
                 algorithm. Defaults to :class:`qiskit.HartreeFock`.
+            state_weights (List): List of state weights. Defaults to [0.5, 0.5].
             init_circuit_params (List): List of VQE circuit parameters.
                 Defaults to a list with entries of zero.
             init_orbital_params (List): List of orbital optimization
@@ -125,7 +122,7 @@ class SA_OO_VQE(OO_VQE):
             conv_tol,
             verbose
         )
-        self.state_weights = state_weights
+        self.state_weights = self._get_default_state_weights(state_weights)
 
     @staticmethod
     def _get_default_reference(
@@ -174,6 +171,22 @@ class SA_OO_VQE(OO_VQE):
         )
         for ref in reference_state]
 
+    @staticmethod
+    def _get_default_state_weights(
+        state_weights: Union[None, List[float]]
+    ) -> List[float]:
+        """Set up the default state weights.
+
+        Args:
+            state_weights (List[float]): List of state weights.
+
+        Returns:
+            List[float]: List of state weights.
+        """
+        if state_weights is None:
+            return [0.5, 0.5]
+        return state_weights
+
     def _get_energy_from_parameters(
             self,
             theta: List,
@@ -214,7 +227,7 @@ class SA_OO_VQE(OO_VQE):
         nparam = len(kappa)
         out = [0.0] * nparam
         for qc, weight in zip(self.ansatz, self.state_weights):
-            rdm1, rdm2 = self._get_rdms(self.ansatz, theta)
+            rdm1, rdm2 = self._get_rdms(qc, theta)
             new_kappas, _ = self.oo_problem.orbital_optimization(rdm1, rdm2, kappa)
             out = [out[i] + weight * new_kappas[i] for i in range(nparam)]
         return out
@@ -238,7 +251,7 @@ class SA_OO_VQE(OO_VQE):
         cost = 0.0
         for qc , weight in zip(self.ansatz, self.state_weights):
             job = self.estimator.run(
-                circuits=self.ansatz,
+                circuits=qc,
                 observables=qubit_op,
                 parameter_values=theta
             )
@@ -266,6 +279,7 @@ class SA_OO_VQE(OO_VQE):
         results.optimal_energy = energy_l[-1]
         results.optimal_circuit_params = theta_l[-1]
         results.optimal_orbital_params = kappa_l[-1]
+        results.optimal_state_weights = self.state_weights
         results.energy = energy_l
         results.circuit_parameters = theta_l
         results.orbital_parameters = kappa_l

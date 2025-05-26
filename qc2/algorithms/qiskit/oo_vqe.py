@@ -326,6 +326,7 @@ class OO_VQE(VQE):
         """Calculates 1- and 2-electron reduced density matrices (RDMs).
 
         Args:
+            ansatz (QuantumCircuit): ansatz circuit.
             theta (List): circuit parameters at which
                 RDMs are calculated.
             sum_spin (bool): If True, the spin-summed 1-RDM and 2-RDM will be
