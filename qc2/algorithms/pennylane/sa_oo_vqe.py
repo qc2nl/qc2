@@ -125,21 +125,21 @@ class SA_OO_VQE(OO_VQE):
         )
         self.state_weights = self._get_default_state_weights(state_weights)
 
-        @staticmethod
-        def _get_default_state_weights(
-            state_weights: Union[None, List[float]]
-        ) -> List[float]:
-            """Set up the default state weights.
+    @staticmethod
+    def _get_default_state_weights(
+        state_weights: Union[None, List[float]]
+    ) -> List[float]:
+        """Set up the default state weights.
 
-            Args:
-                state_weights (List[float]): List of state weights.
+        Args:
+            state_weights (List[float]): List of state weights.
 
-            Returns:
-                List[float]: List of state weights.
-            """
-            if state_weights is None:
-                return [0.5, 0.5]
-            return state_weights
+        Returns:
+            List[float]: List of state weights.
+        """
+        if state_weights is None:
+            return [0.5, 0.5]
+        return state_weights
         
 
     @staticmethod

@@ -237,7 +237,7 @@ class OO_VQE(VQE):
                     results = self._store_results(energy_l, theta_l, kappa_l, n)
                     if self.verbose is not None:
                         print("optimization finished.\n")
-                        print("=== PENNYLANE oo-VQE RESULTS ===")
+                        print(f"=== PENNYLANE {self.__class__.__name__} RESULTS ===")
                         print("* Total ground state "
                               f"energy (Hartree): {results.optimal_energy:.12f}")
                     break
