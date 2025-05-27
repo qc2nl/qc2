@@ -1,9 +1,8 @@
 """Tests for the qiskit ansatz"""
 from qiskit_nature.second_q.circuit.library import HartreeFock
 from qiskit_nature.second_q.mappers import JordanWignerMapper
-from qc2.ansatz.qiskit import LUCJ, GateFabric, create_ansatz
+from qc2.ansatz.qiskit import LUCJ, GateFabric
 import pyscf
-import ffsim
 
 def test_gate_fabric():
     num_spatial_orbitals = 4
