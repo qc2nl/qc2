@@ -1,9 +1,10 @@
+from qiskit.circuit.library.blueprintcircuit import BlueprintCircuit
 from qiskit.circuit import QuantumCircuit, Parameter
 from qiskit_nature.second_q.mappers import QubitMapper
 from typing import Optional
 import numpy as np
 
-class GateFabric:
+class GateFabric(BlueprintCircuit):
     """Gate Fabric ansatz implementation for Qiskit."""
 
     def __init__(
@@ -24,71 +25,64 @@ class GateFabric:
             num_layers: Number of Gate Fabric layers
             include_pi: Whether to include pi rotations in the ansatz
         """
+        super().__init__(2 * num_spatial_orbitals, "GateFabric")
         self._num_spatial_orbitals = num_spatial_orbitals
         self._num_particles = num_particles
         self._qubit_mapper = qubit_mapper
         self._num_layers = num_layers
         self._include_pi = include_pi
 
-        # Number of qubits needed for the problem
-        self._num_qubits = 2 * num_spatial_orbitals
 
         # Use provided initial state, default to an empty circuit
-        self._initial_state = initial_state if initial_state is not None else QuantumCircuit(self._num_qubits)
+        self._initial_state = initial_state if initial_state is not None else QuantumCircuit(self.num_qubits)
 
-    def _orbital_rotation(self, circuit: QuantumCircuit, theta: Parameter, qubits: list) -> None:
-        """Implements the orbital rotation gate"""
-        circuit.ry(theta / 2, qubits[1])
-        circuit.cx(qubits[1], qubits[0])
-        circuit.ry(-theta / 2, qubits[1])
-        circuit.cx(qubits[1], qubits[0])
+    def _check_configuration(self, raise_on_failure: bool = True) -> bool:
 
-        circuit.ry(theta / 2, qubits[3])
-        circuit.cx(qubits[3], qubits[2])
-        circuit.ry(-theta / 2, qubits[3])
-        circuit.cx(qubits[3], qubits[2])
+        """Check if the configuration of the NLocal class is valid.
 
-    def _double_excitation(self, circuit: QuantumCircuit, phi: Parameter, qubits: list) -> None:
-        """Implements the double excitation gate"""
-        circuit.cx(qubits[3], qubits[2])
-        circuit.cx(qubits[2], qubits[1])
-        circuit.cx(qubits[1], qubits[0])
+        Args:
+            raise_on_failure: Whether to raise on failure.
 
-        circuit.rz(phi, qubits[0])
-
-        circuit.cx(qubits[1], qubits[0])
-        circuit.cx(qubits[2], qubits[1])
-        circuit.cx(qubits[3], qubits[2])
-
-    def _gate_fabric_layer(self, circuit: QuantumCircuit, parameters: list, wires: list) -> None:
-        """Implements a single layer of Gate Fabric"""
-        n_gates = len(wires) // 2 - 1
-
-        for i in range(n_gates):
-            qubits = wires[i : i + 4]
-
-            if self._include_pi:
-                self._orbital_rotation(circuit, np.pi, qubits)
-
-            self._double_excitation(circuit, parameters[i][0], qubits)
-            self._orbital_rotation(circuit, parameters[i][1], qubits)
-
-    def build(self) -> QuantumCircuit:
-        """Builds the Gate Fabric circuit
-        
         Returns:
-            QuantumCircuit: The constructed circuit
-        """
-        circuit = QuantumCircuit(self._num_qubits)
+            True, if the configuration is valid and the circuit can be constructed. Otherwise
+            an ValueError is raised.
 
+        Raises:
+            ValueError: If the numbr fo qubit is not se.
+            ValueError: If the number of spatial orbitals is lower than the number of particles
+        """
+        valid = True
+        if self.num_qubits is None:
+            valid = False
+            if raise_on_failure:
+                raise ValueError("No number of qubits specified.")
+
+        # check no needed parameters are None
+        if self._num_spatial_orbitals < self._num_particles[0] or self._num_spatial_orbitals < self._num_particles[1]:
+            valid = False
+            if raise_on_failure :
+                raise ValueError("Number of spatial orbitals inferior to number of particles.")
+
+        return valid
+
+    def _build(self) -> None:
+        """Builds the Gate Fabric circuit
+        """
+        if self._is_built:
+            return
+        self._check_configuration()
+        self._build_circuit()
+        self._is_built = True
+
+    def _build_circuit(self):
         # Add initial state preparation
-        circuit.compose(self._initial_state, inplace=True)
+        self.compose(self._initial_state, inplace=True)
 
         # Create parameters
         parameters = []
         for l in range(self._num_layers):
             layer_params = []
-            for g in range(self._num_qubits // 2 - 1):
+            for g in range(self.num_qubits // 2 - 1):
                 theta = Parameter(f'θ_{l}_{g}')
                 phi = Parameter(f'φ_{l}_{g}')
                 layer_params.append([theta, phi])
@@ -96,7 +90,44 @@ class GateFabric:
 
         # Apply Gate Fabric layers
         for layer in range(self._num_layers):
-            self._gate_fabric_layer(circuit, parameters[layer], range(self._num_qubits))
+            self._gate_fabric_layer(parameters[layer], range(self.num_qubits))
 
-        return circuit
+
+    def _orbital_rotation(self, theta: Parameter, qubits: list) -> None:
+        """Implements the orbital rotation gate"""
+        self.ry(theta / 2, qubits[1])
+        self.cx(qubits[1], qubits[0])
+        self.ry(-theta / 2, qubits[1])
+        self.cx(qubits[1], qubits[0])
+
+        self.ry(theta / 2, qubits[3])
+        self.cx(qubits[3], qubits[2])
+        self.ry(-theta / 2, qubits[3])
+        self.cx(qubits[3], qubits[2])
+
+    def _double_excitation(self,  phi: Parameter, qubits: list) -> None:
+        """Implements the double excitation gate"""
+        self.cx(qubits[3], qubits[2])
+        self.cx(qubits[2], qubits[1])
+        self.cx(qubits[1], qubits[0])
+
+        self.rz(phi, qubits[0])
+
+        self.cx(qubits[1], qubits[0])
+        self.cx(qubits[2], qubits[1])
+        self.cx(qubits[3], qubits[2])
+
+    def _gate_fabric_layer(self, parameters: list, wires: list) -> None:
+        """Implements a single layer of Gate Fabric"""
+        n_gates = len(wires) // 2 - 1
+
+        for i in range(n_gates):
+            qubits = wires[i : i + 4]
+
+            if self._include_pi:
+                self._orbital_rotation( np.pi, qubits)
+
+            self._double_excitation(parameters[i][0], qubits)
+            self._orbital_rotation(parameters[i][1], qubits)
+
 

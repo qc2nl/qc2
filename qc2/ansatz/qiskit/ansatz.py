@@ -32,7 +32,7 @@ from lucj_ansatz import LUCJ
 
 
 def create_ansatz(
-    num_spatial_orbitals: int, num_particles, mapper: QubitMapper, ansatz_type: str, mol_data=None, scf=None
+    num_spatial_orbitals: int, num_particles: int, mapper: QubitMapper, ansatz_type: str, mol_data=None, scf=None
 ):
     """
     Creates an ansatz based on the given type.
