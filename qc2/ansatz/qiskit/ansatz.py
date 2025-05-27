@@ -1,9 +1,8 @@
-from qiskit.circuit import QuantumCircuit
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD, SUCCD, PUCCSD, PUCCD
 from qiskit_nature.second_q.mappers import QubitMapper
 from typing import Union
-from qnp_gfa import GateFabric  # Import Gate Fabric ansatz
-from lucj_ansatz import LUCJ  # Import LUCJ ansatz
+from qnp_gfa import GateFabric  
+from lucj_ansatz import LUCJ 
 
 """
 - UCCSD – Unitary Coupled-Cluster ansatz with single and double excitations, 
@@ -33,7 +32,7 @@ from lucj_ansatz import LUCJ  # Import LUCJ ansatz
 
 
 def create_ansatz(
-    num_spatial_orbitals, num_particles, mapper: QubitMapper, ansatz_type: str, mol_data=None, scf=None
+    num_spatial_orbitals: int, num_particles, mapper: QubitMapper, ansatz_type: str, mol_data=None, scf=None
 ):
     """
     Creates an ansatz based on the given type.
