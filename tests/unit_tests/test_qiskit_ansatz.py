@@ -10,3 +10,6 @@ def test_gate_fabric():
     reference_state = HartreeFock(num_spatial_orbitals, num_particles, mapper)
     gate_fabric = GateFabric(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
     assert gate_fabric.num_qubits == 8
+    
+if __name__ == "__main__":
+    test_gate_fabric()
