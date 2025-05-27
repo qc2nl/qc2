@@ -31,10 +31,42 @@ class GateFabric(BlueprintCircuit):
         self._qubit_mapper = qubit_mapper
         self._num_layers = num_layers
         self._include_pi = include_pi
-
-
+        
         # Use provided initial state, default to an empty circuit
         self._initial_state = initial_state if initial_state is not None else QuantumCircuit(self.num_qubits)
+
+    @property
+    def qubit_mapper(self) -> QubitMapper | None:
+        """The qubit operator mapper."""
+        return self._qubit_mapper
+
+    @qubit_mapper.setter
+    def qubit_mapper(self, mapper: QubitMapper | None) -> None:
+        """Sets the qubit operator mapper."""
+        self._invalidate()
+        self._qubit_mapper = mapper
+
+    @property
+    def num_spatial_orbitals(self) -> int:
+        """The number of spatial orbitals."""
+        return self._num_spatial_orbitals
+
+    @num_spatial_orbitals.setter
+    def num_spatial_orbitals(self, n: int) -> None:
+        """Sets the number of spatial orbitals."""
+        self._invalidate()
+        self._num_spatial_orbitals = n
+
+    @property
+    def num_particles(self) -> tuple[int, int]:
+        """The number of particles."""
+        return self._num_particles
+
+    @num_particles.setter
+    def num_particles(self, n: tuple[int, int]) -> None:
+        """Sets the number of particles."""
+        self._invalidate()
+        self._num_particles = n
 
     def _check_configuration(self, raise_on_failure: bool = True) -> bool:
 

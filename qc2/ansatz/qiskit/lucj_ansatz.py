@@ -27,20 +27,51 @@ class LUCJ(BlueprintCircuit):
             n_reps: Number of repetitions in UCJ operator
             initial_state: Initial state circuit (Hartree-Fock if None)
         """
-        super().__init__(2 * num_spatial_orbitals, "LUCJ")
+        
         self.mol_data = mol_data
         self.scf = scf
         self._num_spatial_orbitals = num_spatial_orbitals
         self._num_particles = num_particles
         self.n_reps = n_reps
+        self._set_initial_state(initial_state)
+        super().__init__(2 * num_spatial_orbitals, "LUCJ")
 
+    @property
+    def num_spatial_orbitals(self) -> int:
+        """The number of spatial orbitals."""
+        return self._num_spatial_orbitals
+
+    @num_spatial_orbitals.setter
+    def num_spatial_orbitals(self, n: int) -> None:
+        """Sets the number of spatial orbitals."""
+        self._invalidate()
+        self._num_spatial_orbitals = n
+
+    @property
+    def num_particles(self) -> tuple[int, int]:
+        """The number of particles."""
+        return self._num_particles
+
+    @num_particles.setter
+    def num_particles(self, n: tuple[int, int]) -> None:
+        """Sets the number of particles."""
+        self._invalidate()
+        self._num_particles = n
+
+    def _set_initial_state(self, initial_state: QuantumCircuit) -> None:
+        """
+        Sets the initial state circuit for the LUCJ ansatz.
+
+        Args:
+            initial_state: Initial state circuit (Hartree-Fock if None)
+        """
         if initial_state is None:
             self.initial_state = ffsim.hartree_fock_state(
                 self._num_spatial_orbitals, self._num_particles
         )
         else:
             self.initial_state = initial_state
-
+            
     def _check_configuration(self, raise_on_failure: bool = True) -> bool:
 
         """Check if the configuration of the NLocal class is valid.
