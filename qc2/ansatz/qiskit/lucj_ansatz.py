@@ -1,26 +1,24 @@
+from typing import Iterable
 import numpy as np
 import ffsim
-from pyscf import cc
-from qiskit.circuit.library.blueprintcircuit import BlueprintCircuit
+import pyscf
 from qiskit.circuit import QuantumCircuit
 from typing import Optional
 
 
-class LUCJ(BlueprintCircuit):
+class LUCJ():
     """LUCJ ansatz using Unitary Coupled-Cluster with Jastrow factor."""
 
     def __init__(
         self,
-        mol_data,
-        scf,
-        num_spatial_orbitals: int,
-        num_particles: tuple,
+        mol: pyscf.gto.Mole,
+        active_space: Iterable | None = None,
         n_reps: int = 2,
         initial_state: Optional[QuantumCircuit] = None,
+        name: str | None = "LUCJ",
     ):
         """
         Args:
-            mol_data: Molecular data from ffsim
             scf: Self-consistent field calculation object
             num_spatial_orbitals: Number of spatial orbitals
             num_particles: Tuple of (alpha, beta) electrons
@@ -28,14 +26,14 @@ class LUCJ(BlueprintCircuit):
             initial_state: Initial state circuit (Hartree-Fock if None)
         """
         
-        self.mol_data = mol_data
-        self.scf = scf
-        self._num_spatial_orbitals = num_spatial_orbitals
-        self._num_particles = num_particles
-        self._num_qubits = 2 * num_spatial_orbitals
+       
+        self.mol = mol
+        self.active_space = active_space
+        self._run_scf()
+        self._num_qubits = 2 * self._num_spatial_orbitals
         self.n_reps = n_reps
         self._set_initial_state(initial_state)
-        super().__init__("LUCJ")
+        self._name = name
 
     @property
     def num_qubits(self) -> int:
@@ -45,7 +43,6 @@ class LUCJ(BlueprintCircuit):
     @num_qubits.setter
     def num_qubits(self, n: int) -> None:
         """Sets the number of qubits."""
-        self._invalidate()
         self._num_qubits = n
 
     @property
@@ -56,7 +53,6 @@ class LUCJ(BlueprintCircuit):
     @num_spatial_orbitals.setter
     def num_spatial_orbitals(self, n: int) -> None:
         """Sets the number of spatial orbitals."""
-        self._invalidate()
         self._num_spatial_orbitals = n
 
     @property
@@ -67,8 +63,14 @@ class LUCJ(BlueprintCircuit):
     @num_particles.setter
     def num_particles(self, n: tuple[int, int]) -> None:
         """Sets the number of particles."""
-        self._invalidate()
         self._num_particles = n
+
+    def _run_scf(self):
+        """Runs a self-consistent field calculation."""
+        self.scf = pyscf.scf.RHF(self.mol).run()
+        self.mol_data = ffsim.MolecularData.from_scf(self.scf, active_space=self.active_space)
+        self._num_spatial_orbitals = self.mol_data.norb
+        self._num_particles = self.mol_data.nelec
 
     def _set_initial_state(self, initial_state: QuantumCircuit) -> None:
         """
@@ -83,51 +85,13 @@ class LUCJ(BlueprintCircuit):
         )
         else:
             self.initial_state = initial_state
-            
-    def _check_configuration(self, raise_on_failure: bool = True) -> bool:
+        
 
-        """Check if the configuration of the NLocal class is valid.
-
-        Args:
-            raise_on_failure: Whether to raise on failure.
-
-        Returns:
-            True, if the configuration is valid and the circuit can be constructed. Otherwise
-            an ValueError is raised.
-
-        Raises:
-            ValueError: If the numbr fo qubit is not se.
-            ValueError: If the number of spatial orbitals is lower than the number of particles
-        """
-        valid = True
-        if self.num_qubits is None:
-            valid = False
-            if raise_on_failure:
-                raise ValueError("No number of qubits specified.")
-
-        # check no needed parameters are None
-        if self._num_spatial_orbitals < self._num_particles[0] or self._num_spatial_orbitals < self._num_particles[1]:
-            valid = False
-            if raise_on_failure :
-                raise ValueError("Number of spatial orbitals inferior to number of particles.")
-
-        return valid
-
-    def _build(self) -> None:
-        """Builds the Gate Fabric circuit
-        """
-        if self._is_built:
-            return
-        self._check_configuration()
-        self._build_circuit()
-        self._is_built = True
-
-    def _build_circuit(self) -> None:
+    def get_state(self) -> np.ndarray:
         """Constructs and returns the LUCJ ansatz state."""
         # Get CCSD t2 amplitudes for initializing ansatz
-        ccsd = cc.CCSD(self.scf).run()
+        ccsd = pyscf.cc.CCSD(self.scf, frozen=[i for i in range(self.mol.nao_nr()) if i not in self.active_space]).run()
         operator = ffsim.UCJOpSpinBalanced.from_t_amplitudes(ccsd.t2, n_reps=self.n_reps)
 
         # Apply UCJ operator to reference state
-        self.compose(ffsim.apply_unitary(self.initial_state, operator, norb=self.num_spatial_orbitals, nelec=self.num_particles), inplace=True)
-
+        return ffsim.apply_unitary(self.initial_state, operator, norb=self.num_spatial_orbitals, nelec=self.num_particles)
