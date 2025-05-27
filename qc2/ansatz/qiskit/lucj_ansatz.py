@@ -32,9 +32,21 @@ class LUCJ(BlueprintCircuit):
         self.scf = scf
         self._num_spatial_orbitals = num_spatial_orbitals
         self._num_particles = num_particles
+        self._num_qubits = 2 * num_spatial_orbitals
         self.n_reps = n_reps
         self._set_initial_state(initial_state)
-        super().__init__(2 * num_spatial_orbitals, "LUCJ")
+        super().__init__("LUCJ")
+
+    @property
+    def num_qubits(self) -> int:
+        """The number of qubits."""
+        return self._num_qubits
+
+    @num_qubits.setter
+    def num_qubits(self, n: int) -> None:
+        """Sets the number of qubits."""
+        self._invalidate()
+        self._num_qubits = n
 
     @property
     def num_spatial_orbitals(self) -> int:

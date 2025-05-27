@@ -15,6 +15,7 @@ class GateFabric(BlueprintCircuit):
         initial_state: Optional[QuantumCircuit] = None,
         num_layers: int = 1,
         include_pi: bool = False,
+        name: str | None = "GateFabric",
     ) -> None:
         """
         Args:
@@ -25,13 +26,14 @@ class GateFabric(BlueprintCircuit):
             num_layers: Number of Gate Fabric layers
             include_pi: Whether to include pi rotations in the ansatz
         """
-        super().__init__(2 * num_spatial_orbitals, "GateFabric")
+        super().__init__(name=name)
+        self._num_qubits = 2 * num_spatial_orbitals
         self._num_spatial_orbitals = num_spatial_orbitals
         self._num_particles = num_particles
         self._qubit_mapper = qubit_mapper
         self._num_layers = num_layers
         self._include_pi = include_pi
-        
+
         # Use provided initial state, default to an empty circuit
         self._initial_state = initial_state if initial_state is not None else QuantumCircuit(self.num_qubits)
 
@@ -45,6 +47,17 @@ class GateFabric(BlueprintCircuit):
         """Sets the qubit operator mapper."""
         self._invalidate()
         self._qubit_mapper = mapper
+
+    @property
+    def num_qubits(self) -> int:
+        """The number of qubits."""
+        return self._num_qubits
+
+    @num_qubits.setter
+    def num_qubits(self, n: int) -> None:
+        """Sets the number of qubits."""
+        self._invalidate()
+        self._num_qubits = n
 
     @property
     def num_spatial_orbitals(self) -> int:

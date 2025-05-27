@@ -1,6 +1,5 @@
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD, SUCCD, PUCCSD, PUCCD
 from qiskit_nature.second_q.mappers import QubitMapper
-from typing import Union
 from .qnp_gfa import GateFabric  
 from .lucj_ansatz import LUCJ 
 
@@ -63,14 +62,13 @@ def create_ansatz(
         return PUCCD(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
 
     elif ansatz_type == "GateFabric":
-        gate_fabric = GateFabric(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
-        return gate_fabric.build()
+        return GateFabric(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
+        
 
     elif ansatz_type == "LUCJ":
         if mol_data is None or scf is None:
             raise ValueError("LUCJ requires 'mol_data' and 'scf' objects.")
-        lucj = LUCJ(mol_data, scf, num_spatial_orbitals, num_particles)
-        return lucj.build()
+        return LUCJ(mol_data, scf, num_spatial_orbitals, num_particles)
 
     else:
         raise ValueError("Unsupported ansatz type. Choose from 'UCCSD', 'SUCCD', 'PUCCSD', 'PUCCD', 'GateFabric', or 'LUCJ'.")
