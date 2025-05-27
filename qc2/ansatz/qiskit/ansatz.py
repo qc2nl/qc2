@@ -1,8 +1,8 @@
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD, SUCCD, PUCCSD, PUCCD
 from qiskit_nature.second_q.mappers import QubitMapper
 from typing import Union
-from qnp_gfa import GateFabric  
-from lucj_ansatz import LUCJ 
+from .qnp_gfa import GateFabric  
+from .lucj_ansatz import LUCJ 
 
 """
 - UCCSD – Unitary Coupled-Cluster ansatz with single and double excitations, 
