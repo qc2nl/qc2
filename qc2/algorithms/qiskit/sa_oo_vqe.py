@@ -122,10 +122,26 @@ class SA_OO_VQE(OO_VQE):
             conv_tol,
             verbose
         )
+
+        # create the reference states 
+        self.reference_state = (
+            self._get_default_excited_state_reference()
+            if reference_state is None
+            else reference_state
+        )
+
+        # create the ansatz
+        self.ansatz = self._get_default_excited_state_ansatz(
+            active_space=self.active_space,
+            mapper=self.mapper,
+            reference_state=self.reference_state
+        )
+
+        # create the weights
         self.state_weights = self._get_default_state_weights(state_weights)
 
 
-    def _get_default_reference(
+    def _get_default_excited_state_reference(
         self
     ) -> List[QuantumCircuit]:
         """Set up the default reference state circuit based on Hartree Fock and singlet excitation.
@@ -133,24 +149,22 @@ class SA_OO_VQE(OO_VQE):
         Returns:
             List[QuantumCircuit]: Hartree-Fock circuit as the reference state.
         """
-        return[HartreeFock(
-            self.active_space.num_active_spatial_orbitals,
-            self.active_space.num_active_electrons,
-            self.mapper,
-        ),
-        self._get_excited_state_circuit(self.active_space, self.mapper)
+        hf = self._get_default_reference(self.active_space, self.mapper)
+        return[
+            hf,
+            self._get_excited_state_circuit(hf.copy(), self.active_space)
         ]
     @staticmethod
     def _get_excited_state_circuit(
+            circuit: QuantumCircuit,
             active_space: ActiveSpace,
-            mapper: QubitMapper,
-            excitation: List[List[int, int], List[int, int]] | List[int, int] | None = None
+            excitation: List[List[int]] | List[int] | None = None
     ) -> QuantumCircuit:
         """
         Set up the default excited state circuit based on Hartree Fock and single excitation.
 
         Parameters:
-        excitation (tuple[tuple[int, int], tuple[int, int]] | tuple[int, int] | None): 
+        excitation (List[List[int, int], List[int, int]] | List[int, int] | None): 
             The excitation to be applied to the Hartree-Fock state. If None, the default
             excitation is to excite the highest occupied molecular orbital (HOMO) to the lowest
             unoccupied molecular orbital (LUMO) for both alpha and beta spin orbitals.
@@ -161,25 +175,17 @@ class SA_OO_VQE(OO_VQE):
         norb = active_space.num_active_spatial_orbitals
         nalpha, nbeta = active_space.num_active_electrons
 
-        # default HF circuit
-        circuit = HartreeFock(
-            active_space.num_active_spatial_orbitals,
-            active_space.num_active_electrons,
-            mapper,
-        )
-
         # excitation
         if excitation is None:
             alpha_xt = [nalpha - 1, nalpha]
             beta_xt = [nbeta - 1, nbeta]
-            
         elif isinstance(excitation[0], int):
             alpha_xt = excitation
             beta_xt = excitation
         elif isinstance(excitation[0], tuple):
             alpha_xt, beta_xt = excitation
         else:
-            raise ValueError("excitation must be a Lst of Lists or a List of ints")
+            raise ValueError("excitation must be a List of Lists or a List of ints")
 
         circuit.barrier()
         circuit.h(alpha_xt[1])
@@ -191,7 +197,7 @@ class SA_OO_VQE(OO_VQE):
         return circuit
     
     @staticmethod
-    def _get_default_ansatz(
+    def _get_default_excited_state_ansatz(
         active_space: ActiveSpace,
         mapper: QubitMapper,
         reference_state: QuantumCircuit
