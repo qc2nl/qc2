@@ -124,27 +124,72 @@ class SA_OO_VQE(OO_VQE):
         )
         self.state_weights = self._get_default_state_weights(state_weights)
 
-    @staticmethod
+
     def _get_default_reference(
-        active_space: ActiveSpace, mapper: QubitMapper
+        self
     ) -> List[QuantumCircuit]:
         """Set up the default reference state circuit based on Hartree Fock and singlet excitation.
-
-        Args:
-            active_space (ActiveSpace): description of the active space.
-            mapper (mapper): mapper class instance.
 
         Returns:
             List[QuantumCircuit]: Hartree-Fock circuit as the reference state.
         """
         return[HartreeFock(
+            self.active_space.num_active_spatial_orbitals,
+            self.active_space.num_active_electrons,
+            self.mapper,
+        ),
+        self._get_excited_state_circuit(self.active_space, self.mapper)
+        ]
+    @staticmethod
+    def _get_excited_state_circuit(
+            active_space: ActiveSpace,
+            mapper: QubitMapper,
+            excitation: List[List[int, int], List[int, int]] | List[int, int] | None = None
+    ) -> QuantumCircuit:
+        """
+        Set up the default excited state circuit based on Hartree Fock and single excitation.
+
+        Parameters:
+        excitation (tuple[tuple[int, int], tuple[int, int]] | tuple[int, int] | None): 
+            The excitation to be applied to the Hartree-Fock state. If None, the default
+            excitation is to excite the highest occupied molecular orbital (HOMO) to the lowest
+            unoccupied molecular orbital (LUMO) for both alpha and beta spin orbitals.
+
+        Returns:
+            QuantumCircuit: The excited state circuit.
+        """
+        norb = active_space.num_active_spatial_orbitals
+        nalpha, nbeta = active_space.num_active_electrons
+
+        # default HF circuit
+        circuit = HartreeFock(
             active_space.num_active_spatial_orbitals,
             active_space.num_active_electrons,
             mapper,
-        ),
-        # excited states circuit 
-        ]
+        )
 
+        # excitation
+        if excitation is None:
+            alpha_xt = [nalpha - 1, nalpha]
+            beta_xt = [nbeta - 1, nbeta]
+            
+        elif isinstance(excitation[0], int):
+            alpha_xt = excitation
+            beta_xt = excitation
+        elif isinstance(excitation[0], tuple):
+            alpha_xt, beta_xt = excitation
+        else:
+            raise ValueError("excitation must be a Lst of Lists or a List of ints")
+
+        circuit.barrier()
+        circuit.h(alpha_xt[1])
+        circuit.cx(alpha_xt[1],  beta_xt[1]+norb)
+        circuit.x(alpha_xt[1])
+        circuit.barrier()
+        circuit.cx(alpha_xt[1],alpha_xt[0])
+        circuit.cx(beta_xt[1]+norb,beta_xt[0]+norb)
+        return circuit
+    
     @staticmethod
     def _get_default_ansatz(
         active_space: ActiveSpace,
