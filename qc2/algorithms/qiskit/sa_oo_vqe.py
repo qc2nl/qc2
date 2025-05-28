@@ -277,11 +277,13 @@ class SA_OO_VQE(OO_VQE):
         """
         nparam = len(kappa)
         out = [0.0] * nparam
+        total_cost = 0.0
         for qc, weight in zip(self.ansatz, self.state_weights):
             rdm1, rdm2 = self._get_rdms(qc, theta)
-            new_kappas, _ = self.oo_problem.orbital_optimization(rdm1, rdm2, kappa)
+            new_kappas, cost = self.oo_problem.orbital_optimization(rdm1, rdm2, kappa)
+            total_cost += weight * cost
             out = [out[i] + weight * new_kappas[i] for i in range(nparam)]
-        return out
+        return out, total_cost
 
     def _circuit_optimization_objective_function(self, theta, kappa):
         """
