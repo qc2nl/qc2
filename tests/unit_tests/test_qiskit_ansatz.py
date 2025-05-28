@@ -22,6 +22,7 @@ def test_lucj():
     active_space = range(4, mol.nao_nr())
     lucj = LUCJ(mol, active_space)
     lucj.get_state()
+    lucj._build()
 
 if __name__ == "__main__":
     test_gate_fabric()

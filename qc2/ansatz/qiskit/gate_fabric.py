@@ -99,7 +99,7 @@ class GateFabric(BlueprintCircuit):
             an ValueError is raised.
 
         Raises:
-            ValueError: If the numbr fo qubit is not se.
+            ValueError: If the numbr fo qubit is not set.
             ValueError: If the number of spatial orbitals is lower than the number of particles
         """
         valid = True
