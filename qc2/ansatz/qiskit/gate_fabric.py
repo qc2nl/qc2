@@ -1,5 +1,6 @@
 from qiskit.circuit.library.blueprintcircuit import BlueprintCircuit
-from qiskit.circuit import QuantumCircuit, Parameter
+from qiskit.exceptions import QiskitError
+from qiskit.circuit import QuantumCircuit, Parameter, QuantumRegister
 from qiskit_nature.second_q.mappers import QubitMapper
 from typing import Optional
 import numpy as np
@@ -33,6 +34,11 @@ class GateFabric(BlueprintCircuit):
         self._qubit_mapper = qubit_mapper
         self._num_layers = num_layers
         self._include_pi = include_pi
+
+        if self.num_qubits == 0:
+            self.qregs = []
+        else:
+            self.qregs = [QuantumRegister(self.num_qubits, name="q")]
 
         # Use provided initial state, default to an empty circuit
         self._initial_state = initial_state if initial_state is not None else QuantumCircuit(self.num_qubits)
@@ -115,14 +121,14 @@ class GateFabric(BlueprintCircuit):
         """
         if self._is_built:
             return
-        self._check_configuration()
-        self._build_circuit()
-        self._is_built = True
+        super()._build()
 
-    def _build_circuit(self):
-        # Add initial state preparation
-        self.compose(self._initial_state, inplace=True)
+        # Create circuit
+        circuit = QuantumCircuit(self.num_qubits, name=self.name)
 
+        # Apply initial state
+        circuit.compose(self._initial_state.copy(), inplace=True, copy=False)
+        
         # Create parameters
         parameters = []
         for l in range(self._num_layers):
@@ -135,34 +141,16 @@ class GateFabric(BlueprintCircuit):
 
         # Apply Gate Fabric layers
         for layer in range(self._num_layers):
-            self._gate_fabric_layer(parameters[layer], range(self.num_qubits))
+            self._gate_fabric_layer(circuit, parameters[layer], range(self.num_qubits))
 
+        # append to self
+        try:
+            block = circuit.to_gate()
+        except QiskitError:
+            block = circuit.to_instruction()
+        self.append(block, range(self.num_qubits), copy=False)
 
-    def _orbital_rotation(self, theta: Parameter, qubits: list) -> None:
-        """Implements the orbital rotation gate"""
-        self.ry(theta / 2, qubits[1])
-        self.cx(qubits[1], qubits[0])
-        self.ry(-theta / 2, qubits[1])
-        self.cx(qubits[1], qubits[0])
-
-        self.ry(theta / 2, qubits[3])
-        self.cx(qubits[3], qubits[2])
-        self.ry(-theta / 2, qubits[3])
-        self.cx(qubits[3], qubits[2])
-
-    def _double_excitation(self,  phi: Parameter, qubits: list) -> None:
-        """Implements the double excitation gate"""
-        self.cx(qubits[3], qubits[2])
-        self.cx(qubits[2], qubits[1])
-        self.cx(qubits[1], qubits[0])
-
-        self.rz(phi, qubits[0])
-
-        self.cx(qubits[1], qubits[0])
-        self.cx(qubits[2], qubits[1])
-        self.cx(qubits[3], qubits[2])
-
-    def _gate_fabric_layer(self, parameters: list, wires: list) -> None:
+    def _gate_fabric_layer(self, circuit: QuantumCircuit, parameters: list, wires: list) -> None:
         """Implements a single layer of Gate Fabric"""
         n_gates = len(wires) // 2 - 1
 
@@ -172,7 +160,32 @@ class GateFabric(BlueprintCircuit):
             if self._include_pi:
                 self._orbital_rotation( np.pi, qubits)
 
-            self._double_excitation(parameters[i][0], qubits)
-            self._orbital_rotation(parameters[i][1], qubits)
+            self._double_excitation(circuit, parameters[i][0], qubits)
+            self._orbital_rotation(circuit, parameters[i][1], qubits)
+
+
+    def _orbital_rotation(self, circuit: QuantumCircuit, theta: Parameter, qubits: list) -> None:
+        """Implements the orbital rotation gate"""
+        circuit.ry(theta / 2, qubits[1])
+        circuit.cx(qubits[1], qubits[0])
+        circuit.ry(-theta / 2, qubits[1])
+        circuit.cx(qubits[1], qubits[0])
+
+        circuit.ry(theta / 2, qubits[3])
+        circuit.cx(qubits[3], qubits[2])
+        circuit.ry(-theta / 2, qubits[3])
+        circuit.cx(qubits[3], qubits[2])
+
+    def _double_excitation(self, circuit: QuantumCircuit, phi: Parameter, qubits: list) -> None:
+        """Implements the double excitation gate"""
+        circuit.cx(qubits[3], qubits[2])
+        circuit.cx(qubits[2], qubits[1])
+        circuit.cx(qubits[1], qubits[0])
+
+        circuit.rz(phi, qubits[0])
+
+        circuit.cx(qubits[1], qubits[0])
+        circuit.cx(qubits[2], qubits[1])
+        circuit.cx(qubits[3], qubits[2])
 
 

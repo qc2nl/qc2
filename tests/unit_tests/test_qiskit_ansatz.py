@@ -10,6 +10,7 @@ def test_gate_fabric():
     mapper = JordanWignerMapper()
     reference_state = HartreeFock(num_spatial_orbitals, num_particles, mapper)
     gate_fabric = GateFabric(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
+    gate_fabric._build()
     assert gate_fabric.num_qubits == 8
     
 
