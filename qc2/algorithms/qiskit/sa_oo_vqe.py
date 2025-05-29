@@ -124,14 +124,10 @@ class SA_OO_VQE(OO_VQE):
         )
 
         # create the reference states 
-        self.reference_state = (
-            self._get_default_excited_state_reference()
-            if reference_state is None
-            else reference_state
-        )
+        self.reference_state = self._get_default_list_reference_state()
 
         # create the ansatz
-        self.ansatz = self._get_default_excited_state_ansatz(
+        self.ansatz = self._get_default_list_ansatz(
             active_space=self.active_space,
             mapper=self.mapper,
             reference_state=self.reference_state
@@ -141,7 +137,7 @@ class SA_OO_VQE(OO_VQE):
         self.state_weights = self._get_default_state_weights(state_weights)
 
 
-    def _get_default_excited_state_reference(
+    def _get_default_list_reference_state(
         self
     ) -> List[QuantumCircuit]:
         """Set up the default reference state circuit based on Hartree Fock and singlet excitation.
@@ -197,7 +193,7 @@ class SA_OO_VQE(OO_VQE):
         return circuit
     
     @staticmethod
-    def _get_default_excited_state_ansatz(
+    def _get_default_list_ansatz(
         active_space: ActiveSpace,
         mapper: QubitMapper,
         reference_state: QuantumCircuit

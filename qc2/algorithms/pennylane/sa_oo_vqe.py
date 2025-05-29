@@ -9,7 +9,7 @@ from qc2.algorithms.pennylane.oo_vqe import OO_VQE
 from qc2.algorithms.algorithms_results import SAOOVQEResults
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.pennylane.convert import _qiskit_nature_to_pennylane
-
+from qc2.algorithms.utils.active_space import ActiveSpace
 
 class SA_OO_VQE(OO_VQE):
     """Main class for orbital-optimized VQE with PennyLane.
@@ -123,6 +123,18 @@ class SA_OO_VQE(OO_VQE):
             conv_tol,
             verbose
         )
+
+        # create the reference states 
+        self.reference_state = self._get_default_list_reference_state(self.qubits, self.electrons)
+
+        # create the ansatz
+        self.ansatz  = self._get_default_list_ansatz(
+            self.qubits,
+            self.electrons,
+            reference_state=self.reference_state
+        )
+
+        # create the state weights
         self.state_weights = self._get_default_state_weights(state_weights)
 
     @staticmethod
@@ -142,8 +154,7 @@ class SA_OO_VQE(OO_VQE):
         return state_weights
         
 
-    @staticmethod
-    def _get_default_reference(qubits: int, electrons: int) -> List[np.ndarray]:
+    def _get_default_list_reference_state(self, qubits: int, electrons: int) -> List[np.ndarray]:
         """Generate the default reference state for the ansatz.
 
         Args:
@@ -153,12 +164,56 @@ class SA_OO_VQE(OO_VQE):
         Returns:
             np.ndarray: Reference state vector.
         """
-        return [qml.qchem.hf_state(electrons, qubits), 
-                ... ]
+        hf = qml.qchem.hf_state(electrons, qubits)
+        return [hf, 
+                self._get_excited_state(hf, self.active_space)
+            ]
 
     @staticmethod
-    def _get_default_ansatz(
-        qubits: int, electrons: int, reference_state: np.ndarray
+    def _get_excited_state(
+        reference_state: np.ndarray,
+        active_space: ActiveSpace,
+        excitation: List[List[int]] | List[int] | None = None
+    ) -> np.ndarray:
+        """Generate the excited state for the ansatz.
+
+        Args:
+            reference_state (np.ndarray): Reference state vector.
+            active_space (ActiveSpace): Instance of
+                :class:`~qc2.algorithm.utils.active_space.ActiveSpace`.
+            excitation (List[List[int]] | List[int] | None): Excitation
+                operator. Defaults to None.
+
+        Returns:
+            np.ndarray: Excited state vector.
+        """
+        nalpha, nbeta = active_space.num_active_electrons
+
+        if excitation is None:
+            alpha_xt = [nalpha + nbeta - 2, nalpha + nbeta]
+            beta_xt = [nbeta + nbeta - 1, nbeta + nbeta + 1]
+        elif isinstance(excitation[0], int):
+            alpha_xt = excitation
+            beta_xt = excitation
+        elif isinstance(excitation[0], tuple):
+            alpha_xt, beta_xt = excitation
+        else:
+            raise ValueError("excitation must be a List of Lists or a List of ints")
+        
+        reference_state[alpha_xt[0]] = 0
+        reference_state[alpha_xt[1]] = 1
+
+        # reference_state[beta_xt[0]] = 0
+        # reference_state[beta_xt[1]] = 1
+
+        return reference_state
+        
+
+    @staticmethod
+    def _get_default_list_ansatz(
+        qubits: int, 
+        electrons: int, 
+        reference_state: List[np.ndarray]
     ) -> List[Callable]:
         """Create the default ansatz function for the VQE circuit.
 
@@ -177,12 +232,21 @@ class SA_OO_VQE(OO_VQE):
         s_wires, d_wires = qml.qchem.excitations_to_wires(singles, doubles)
 
         # Return a function that applies the UCCSD ansatz
-        def ansatz(params):
-            [qml.UCCSD(
+        # on the HF
+        def ref_ansatz(params):
+            qml.UCCSD(
                 params, wires=range(qubits), s_wires=s_wires,
-                d_wires=d_wires, init_state=ref
-            ) for ref in reference_state]
-        return ansatz
+                d_wires=d_wires, init_state=reference_state[0]
+            )
+        # Return a function that applies the UCCSD ansatz
+        # on the excied state
+        def excited_ansatz(params):
+            qml.UCCSD(
+                params, wires=range(qubits), s_wires=s_wires,
+                d_wires=d_wires, init_state=reference_state[1]
+            )
+
+        return [ref_ansatz, excited_ansatz]
     
     def _get_energy_from_parameters(
             self,
@@ -235,11 +299,13 @@ class SA_OO_VQE(OO_VQE):
         """
         nparam = len(kappa)
         out = [0.0] * nparam
+        total_cost = 0.0
         for ansatz, weight in zip(self.ansatz, self.state_weights):
             rdm1, rdm2 = self._get_rdms(ansatz, theta, *args, **kwargs)
-            new_kappas = self.oo_problem.orbital_optimization(rdm1, rdm2, kappa)
+            new_kappas, cost = self.oo_problem.orbital_optimization(rdm1, rdm2, kappa)
+            total_cost += weight * cost
             out = [out[i] + weight * new_kappas[i] for i in range(nparam)]
-        return out
+        return out, total_cost
     
     def _circuit_optimization(
             self,
