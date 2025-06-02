@@ -238,12 +238,29 @@ class SA_OO_VQE(OO_VQE):
                 params, wires=range(qubits), s_wires=s_wires,
                 d_wires=d_wires, init_state=reference_state[0]
             )
+            
         # Return a function that applies the UCCSD ansatz
-        # on the excied state
+        # on the excited state
         def excited_ansatz(params):
+
+            #create the HF state
+            for iq in range(electrons//2):
+                qml.X(2*iq)
+                qml.X(2*iq+1)
+
+            #create the excited state
+            alpha_xt = [electrons - 2, electrons]
+            beta_xt = [electrons - 1, electrons + 1]
+            qml.H(alpha_xt[1])
+            qml.CNOT(alpha_xt[1], beta_xt[1])
+            qml.H(alpha_xt[1])
+            qml.CNOT(alpha_xt[1], beta_xt[0])
+            qml.CNOT(beta_xt[1], beta_xt[0])
+
+            # create the ansatz
             qml.UCCSD(
                 params, wires=range(qubits), s_wires=s_wires,
-                d_wires=d_wires, init_state=reference_state[1]
+                d_wires=d_wires, init_state=np.zeros_like(reference_state[0])
             )
 
         return [ref_ansatz, excited_ansatz]
