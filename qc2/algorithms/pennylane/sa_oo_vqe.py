@@ -252,10 +252,10 @@ class SA_OO_VQE(OO_VQE):
             alpha_xt = [electrons - 2, electrons]
             beta_xt = [electrons - 1, electrons + 1]
             qml.H(alpha_xt[1])
-            qml.CNOT(alpha_xt[1], beta_xt[1])
-            qml.H(alpha_xt[1])
-            qml.CNOT(alpha_xt[1], beta_xt[0])
-            qml.CNOT(beta_xt[1], beta_xt[0])
+            qml.CNOT([alpha_xt[1], beta_xt[1]])
+            qml.X(alpha_xt[1])
+            qml.CNOT([alpha_xt[1], beta_xt[0]])
+            qml.CNOT([beta_xt[1], beta_xt[0]])
 
             # create the ansatz
             qml.UCCSD(
