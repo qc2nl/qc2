@@ -7,7 +7,7 @@ from ase.build import molecule
 from qc2.data import qc2Data
 from qc2.ase import PySCF
 from qc2.algorithms.utils import ActiveSpace
-from qc2.algorithms.qiskit import oo_VQE
+from qc2.algorithms.qiskit import OO_VQE
 
 
 @pytest.fixture
@@ -30,19 +30,19 @@ def qc2data():
 
 @pytest.fixture
 def oo_vqe(qc2data):
-    """Fixture to set up oo_VQE instance."""
+    """Fixture to set up OO_VQE instance."""
     qc2data.run()
     active_space = ActiveSpace(
         num_active_electrons=(1, 1),
         num_active_spatial_orbitals=2
     )
-    oo_vqe_instance = oo_VQE(qc2data, active_space=active_space)
+    oo_vqe_instance = OO_VQE(qc2data, active_space=active_space)
     yield oo_vqe_instance
 
 
 def test_initialization(oo_vqe):
     """Test if you can initialize the class."""
-    assert isinstance(oo_vqe, oo_VQE)
+    assert isinstance(oo_vqe, OO_VQE)
 
 
 def test_theta_kappa_optimization(oo_vqe):

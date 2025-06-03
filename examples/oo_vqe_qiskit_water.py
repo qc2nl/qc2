@@ -6,7 +6,7 @@ from qiskit.primitives import Estimator
 from qc2.data import qc2Data
 from qc2.ase import PySCF
 
-from qc2.algorithms.qiskit import oo_VQE
+from qc2.algorithms.qiskit import OO_VQE
 from qc2.algorithms.utils import ActiveSpace
 
 # instantiate qc2Data class
@@ -21,7 +21,7 @@ qc2data.molecule.calc = PySCF()
 qc2data.run()
 
 # instantiate oo-VQE algorithm
-qc2data.algorithm = oo_VQE(
+qc2data.algorithm = OO_VQE(
     active_space=ActiveSpace(
         num_active_electrons=(2, 2),
         num_active_spatial_orbitals=3

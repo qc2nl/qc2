@@ -9,7 +9,7 @@ from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.pennylane.convert import _qiskit_nature_to_pennylane
 
 
-class oo_VQE(VQE):
+class OO_VQE(VQE):
     """Main class for orbital-optimized VQE with PennyLane.
 
     This class is responsible for optimizing both circuit and orbital
@@ -84,7 +84,7 @@ class oo_VQE(VQE):
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
-        >>> from qc2.algorithms.pennylane import oo_VQE
+        >>> from qc2.algorithms.pennylane import OO_VQE
         >>> from qc2.algorithms.utils import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
@@ -93,7 +93,7 @@ class oo_VQE(VQE):
         >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
         >>> qc2data.molecule.calc = PySCF()
         >>> qc2data.run()
-        >>> qc2data.algorithm = oo_VQE(
+        >>> qc2data.algorithm = OO_VQE(
         ...     active_space=ActiveSpace(
         ...         num_active_electrons=(2, 2),
         ...         num_active_spatial_orbitals=4
@@ -155,7 +155,7 @@ class oo_VQE(VQE):
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
-        >>> from qc2.algorithms.pennylane import oo_VQE
+        >>> from qc2.algorithms.pennylane import OO_VQE
         >>> from qc2.algorithms.utils import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
@@ -164,7 +164,7 @@ class oo_VQE(VQE):
         >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
         >>> qc2data.molecule.calc = PySCF()
         >>> qc2data.run()
-        >>> qc2data.algorithm = oo_VQE(
+        >>> qc2data.algorithm = OO_VQE(
         ...     active_space=ActiveSpace(
         ...         num_active_electrons=(2, 2),
         ...         num_active_spatial_orbitals=4
@@ -216,8 +216,9 @@ class oo_VQE(VQE):
             )
 
             # optimize orbital parameters with fixed theta from previous run
-            rdm1, rdm2 = self._get_rdms(theta, *args, **kwargs)
-            kappa, _ = self.oo_problem.orbital_optimization(rdm1, rdm2, kappa)
+            kappa, _ = self._rotation_optimization(
+                theta, kappa, *args, **kwargs
+            )
 
             # calculate final energy with all optimized parameters
             energy = self._get_energy_from_parameters(
@@ -233,19 +234,10 @@ class oo_VQE(VQE):
                 print(f"iter = {n+1:03}, energy = {energy:.12f} Ha")
             if n > 1:
                 if abs(energy_l[-1] - energy_l[-2]) < self.conv_tol:
-                    # instantiate OOVQEResults
-                    results = OOVQEResults()
-                    results.optimizer_evals = n
-                    results.optimal_energy = energy_l[-1]
-                    results.optimal_circuit_params = theta_l[-1]
-                    results.optimal_orbital_params = kappa_l[-1]
-                    results.energy = energy_l
-                    results.circuit_parameters = theta_l
-                    results.orbital_parameters = kappa_l
-
+                    results = self._store_results(energy_l, theta_l, kappa_l, n)
                     if self.verbose is not None:
                         print("optimization finished.\n")
-                        print("=== PENNYLANE oo-VQE RESULTS ===")
+                        print(f"=== PENNYLANE {self.__class__.__name__} RESULTS ===")
                         print("* Total ground state "
                               f"energy (Hartree): {results.optimal_energy:.12f}")
                     break
@@ -258,6 +250,26 @@ class oo_VQE(VQE):
             )
 
         return results
+
+    def _rotation_optimization(self, theta, kappa, *args, **kwargs):
+        """Optimize orbital parameters with fixed circuit parameters.
+
+        Args:
+            theta (List): List with circuit variational parameters.
+            kappa (List): List with orbital rotation parameters.
+            *args:
+                - device_args (optional): ``qml.device`` arguments.
+                - qnode_args (optional): ``qml.qnode`` arguments.
+            **kwargs:
+                - device_kwargs (optional): ``qml.device`` keyword arguments.
+                - qnode_kwargs (optional): ``qml.qnode`` keyword arguments.
+
+        Returns:
+            Tuple[List, float]:
+                Optimized orbital parameters and associated energy.
+        """
+        rdm1, rdm2 = self._get_rdms(self.ansatz, theta, *args, **kwargs)
+        return self.oo_problem.orbital_optimization(rdm1, rdm2, kappa)
 
     def _circuit_optimization(
             self,
@@ -346,13 +358,14 @@ class oo_VQE(VQE):
                 and orbital parameters.
         """
         mo_coeff_a, mo_coeff_b = self.oo_problem.get_transformed_mos(kappa)
-        one_rdm, two_rdm = self._get_rdms(theta, *args, **kwargs)
+        one_rdm, two_rdm = self._get_rdms(self.ansatz, theta, *args, **kwargs)
         return self.oo_problem.get_energy_from_mo_coeffs(
             mo_coeff_a, mo_coeff_b, one_rdm, two_rdm
         )
 
     def _get_rdms(
             self,
+            ansatz, 
             theta: List,
             sum_spin=True,
             *args, **kwargs
@@ -360,6 +373,7 @@ class oo_VQE(VQE):
         """Calculates 1- and 2-electron reduced density matrices (RDMs).
 
         Args:
+            ansatz (): ansatz circuit.
             theta (List): circuit parameters at which
                 RDMs are calculated.
             sum_spin (bool): If True, the spin-summed 1-RDM and 2-RDM will be
@@ -414,7 +428,7 @@ class oo_VQE(VQE):
             circuit = VQE._build_circuit(
                 self.device,
                 self.qubits,
-                self.ansatz,
+                ansatz,
                 qubit_ham_temp,
                 *args, **kwargs
             )
@@ -445,3 +459,30 @@ class oo_VQE(VQE):
             return rdm1_np, rdm2_np
 
         return rdm1_spin, rdm2_spin
+
+    def _store_results(self, energy_l, theta_l, kappa_l, n):
+        """
+        Stores the results of the optimization process in an OOVQEResults instance.
+
+        Args:
+            energy_l (List[float]): List of energies at each iteration.
+            theta_l (List[List[float]]): List of circuit parameters at each iteration.
+            kappa_l (List[List[float]]): List of orbital parameters at each iteration.
+            n (int): Number of optimizer evaluations performed.
+
+        Returns:
+            OOVQEResults: An instance containing the results of the optimization, 
+            including optimal parameters and energies.
+        """
+
+         # instantiate OOVQEResults
+        results = OOVQEResults()
+        results.optimizer_evals = n
+        results.optimal_energy = energy_l[-1]
+        results.optimal_circuit_params = theta_l[-1]
+        results.optimal_orbital_params = kappa_l[-1]
+        results.energy = energy_l
+        results.circuit_parameters = theta_l
+        results.orbital_parameters = kappa_l
+
+        return results

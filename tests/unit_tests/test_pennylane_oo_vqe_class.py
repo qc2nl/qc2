@@ -9,7 +9,7 @@ from qc2.algorithms.utils import ActiveSpace
 
 try:
     from pennylane import numpy as np
-    from qc2.algorithms.pennylane import oo_VQE
+    from qc2.algorithms.pennylane import OO_VQE
 except ImportError:
     pytest.skip(
         "Skipping PennyLane tests...",
@@ -37,24 +37,24 @@ def qc2data():
 
 @pytest.fixture
 def oo_vqe(qc2data):
-    """Fixture to set up oo_VQE instance."""
+    """Fixture to set up OO_VQE instance."""
     qc2data.run()
     active_space = ActiveSpace(
         num_active_electrons=(1, 1),
         num_active_spatial_orbitals=2
     )
-    oo_vqe_instance = oo_VQE(qc2data, active_space=active_space)
+    oo_vqe_instance = OO_VQE(qc2data, active_space=active_space)
     yield oo_vqe_instance
 
 
 def test_initialization(oo_vqe):
     """Test if you can initialize the class."""
-    assert isinstance(oo_vqe, oo_VQE)
+    assert isinstance(oo_vqe, OO_VQE)
 
 
 def test_default_init_orbital_params():
     """Test the initialization of orbital parameters."""
-    init_params = oo_VQE._get_default_init_orbital_params(3)
+    init_params = OO_VQE._get_default_init_orbital_params(3)
     assert isinstance(init_params, list)
     assert all(param == 0.0 for param in init_params)
 

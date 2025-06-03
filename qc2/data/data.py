@@ -52,7 +52,7 @@ class qc2Data:
 
         algorithm (BaseAlgorithm): Instance of the algorithm to be run.
             Examples are :class:`~qc2.algorithm.qiskit.vqe.VQE` and
-            :class:`~qc2.algorithm.pennylane.oo_vqe.oo_VQE`.
+            :class:`~qc2.algorithm.pennylane.oo_vqe.OO_VQE`.
     """
 
     def __init__(
@@ -72,7 +72,7 @@ class qc2Data:
                 instance representing the target molecule.
             algorithm (BaseAlgorithm): Algorithm to be run.
                 Examples are :class:`~qc2.algorithm.qiskit.vqe.VQE` and
-                :class:`~qc2.algorithm.pennylane.oo_vqe.oo_VQE`.
+                :class:`~qc2.algorithm.pennylane.oo_vqe.OO_VQE`.
             schema (Optional[str]): An optional attribute defining the format
                 in which to save qchem data. Options are ``qcschema`` or
                 ``fcidump``. Defaults to ``qcschema``.
