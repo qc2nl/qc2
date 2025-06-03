@@ -459,3 +459,30 @@ class OO_VQE(VQE):
             return rdm1_np, rdm2_np
 
         return rdm1_spin, rdm2_spin
+
+    def _store_results(self, energy_l, theta_l, kappa_l, n):
+        """
+        Stores the results of the optimization process in an OOVQEResults instance.
+
+        Args:
+            energy_l (List[float]): List of energies at each iteration.
+            theta_l (List[List[float]]): List of circuit parameters at each iteration.
+            kappa_l (List[List[float]]): List of orbital parameters at each iteration.
+            n (int): Number of optimizer evaluations performed.
+
+        Returns:
+            OOVQEResults: An instance containing the results of the optimization, 
+            including optimal parameters and energies.
+        """
+
+         # instantiate OOVQEResults
+        results = OOVQEResults()
+        results.optimizer_evals = n
+        results.optimal_energy = energy_l[-1]
+        results.optimal_circuit_params = theta_l[-1]
+        results.optimal_orbital_params = kappa_l[-1]
+        results.energy = energy_l
+        results.circuit_parameters = theta_l
+        results.orbital_parameters = kappa_l
+
+        return results
