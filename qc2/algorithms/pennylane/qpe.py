@@ -81,7 +81,7 @@ class QPE(BaseAlgorithm):
         """
 
         if self.qc2data is None:
-            raise ValueError("qc2data attribute set incorrectly in VQE.")
+            raise ValueError("qc2data attribute set incorrectly in QPE.")
 
         self.e_core, self.qubit_op = self.qc2data.get_qubit_hamiltonian(
             self.active_space.num_active_electrons,
@@ -96,7 +96,7 @@ class QPE(BaseAlgorithm):
         qubits: int,
         num_estimation_wires: int,
         reference_state: np.ndarray,
-        unitary: Operator,
+        unitary_op: Operator,
         device_args=None,
         device_kwargs=None,
         qnode_args=None,
@@ -109,7 +109,7 @@ class QPE(BaseAlgorithm):
             qubits (int): Number of qubits in the circuit.
             num_estimation_wires (int): number of qubits for estimation
             reference_state (np.ndarray): Reference state for the circuit.
-            unitary (Operator): Qubit operator for the exp(iH).
+            unitary_op (Operator): Qubit operator for the exp(iH).
             device_args (list, optional): Additional arguments for the quantum
                 device. Defaults to None.
             device_kwargs (dict, optional): Additional keyword arguments for
@@ -137,8 +137,23 @@ class QPE(BaseAlgorithm):
         # Define the QNode and call the ansatz function within it
         @qml.qnode(device, *qnode_args, **qnode_kwargs)
         def circuit():
-            qml.StatePrep(reference_state, wires=range(qubits), pad_with=0)
-            qml.QuantumPhaseEstimation(unitary, estimation_wires=estimation_wires)
+            
+            # HF state
+            qml.BasisState(reference_state, wires=range(qubits))
+            
+            # Hadamard on estimation wires
+            for q in estimation_wires:
+                qml.Hadamard(wires=q)
+
+            # cotrolled unitary
+            for q in range(num_estimation_wires):
+                qml.ctrl(qml.pow(unitary_op,2**q), 
+                         control=qubits+num_estimation_wires-q-1)
+                
+            # QFT
+            qml.adjoint(qml.templates.QFT(wires=estimation_wires))
+
+            # measure
             return qml.probs(estimation_wires)
 
         return circuit
@@ -202,7 +217,7 @@ class QPE(BaseAlgorithm):
         self._init_qubit_hamiltonian()
 
         # create the unitary operator
-        unitary_op = qml.exp(self.qubit_op, 1j)
+        unitary_op = qml.exp(self.qubit_op, coeff=1j)
 
         # build circuit after building the qubit hamiltonian
         self.circuit = self._build_circuit(
@@ -215,7 +230,7 @@ class QPE(BaseAlgorithm):
         )
        
         # extract the phase
-        phase = np.argmax(self.circuit()) // 2**self.num_evaluation_qubits
+        phase = np.argmax(self.circuit()) / 2**self.num_evaluation_qubits
 
         # get the energy
         energy = self._phase_to_energy(phase)

@@ -1,159 +1,118 @@
 """Module defining the QPE algorithm for qiskit"""
-import numpy as np
-from scipy.linalg import expm
-from qiskit_algorithms import PhaseEstimation, IterativePhaseEstimation
-from qiskit import QuantumCircuit
-from qiskit.primitives import Sampler
-from qiskit.circuit.library import UnitaryGate
-from qiskit_nature.second_q.circuit.library import HartreeFock
-from qc2.algorithms.base.base_algorithm import BaseAlgorithm
-from qc2.algorithms.utils.mappers import FermionicToQubitMapper
-from qc2.algorithms.utils.active_space import ActiveSpace
-from qiskit_nature.second_q.mappers import QubitMapper
-from qc2.algorithms.algorithms_results import QPEResults
-
-class QPEBase(BaseAlgorithm):
-    def __init__(self, 
-                 qc2data=None, 
-                 active_space=None, 
-                 mapper=None, 
-                 sampler=None, 
-                 reference_state=None,  
-                 verbose=0):
-        
-        self.qc2data = qc2data
-        self.format = "qiskit"
-        self.verbose = verbose
-        self.solver = None 
-
-        # init active space and mapper
-        self.active_space = (
-            ActiveSpace((2, 2), 2) if active_space is None else active_space
-        )
-
-        self.mapper = (
-            FermionicToQubitMapper.from_string('parity')()
-            if mapper is None
-            else FermionicToQubitMapper.from_string(mapper)()
-        )
-
-        self.reference_state = (
-            self._get_default_reference(self.active_space, self.mapper)
-            if reference_state is None
-            else reference_state
-        )
-
-        self.sampler = Sampler() if sampler is None else sampler
+from qiskit_algorithms import PhaseEstimation
+from qiskit_algorithms import PhaseEstimationResult
+from qiskit_algorithms.exceptions import AlgorithmError
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit.circuit.library import QFT
+from qiskit.primitives import BaseSampler
+from .pebase import PEBase
 
 
-    @staticmethod
-    def _get_default_reference(
-        active_space: ActiveSpace, mapper: QubitMapper
+class QC2PhaseEstimation(PhaseEstimation):
+    r"""Run the Quantum Phase Estimation (QPE) algorithm.
+
+    Rewrote here to control the qubit ordering 
+
+    """
+
+    def __init__(
+        self,
+        num_evaluation_qubits: int,
+        sampler: BaseSampler | None = None,
+    ) -> None:
+        r"""
+        Args:
+            num_evaluation_qubits: The number of qubits used in estimating the phase. The phase will
+                be estimated as a binary string with this many bits.
+            sampler: The sampler primitive on which the circuit will be sampled.
+
+        Raises:
+            AlgorithmError: If a sampler is not provided
+        """
+        super().__init__(num_evaluation_qubits, sampler)
+
+    def construct_circuit(
+        self, unitary: QuantumCircuit, 
+        state_preparation: QuantumCircuit | None = None,
+        name:str = "QPE"
     ) -> QuantumCircuit:
-        """Set up the default reference state circuit based on Hartree Fock.
+        """Return the circuit to be executed to estimate phases.
 
-        Args:
-            active_space (ActiveSpace): description of the active space.
-            mapper (mapper): mapper class instance.
-
-        Returns:
-            QuantumCircuit: Hartree-Fock circuit as the reference state.
+        This circuit includes as sub-circuits the core phase estimation circuit,
+        with the addition of the state-preparation circuit and possibly measurement instructions.
         """
-        return HartreeFock(
-            active_space.num_active_spatial_orbitals,
-            active_space.num_active_electrons,
-            mapper,
-        )
-    
-    def _init_qubit_hamiltonian(self):
-        if self.qc2data is None:
-            raise ValueError("qc2data attribute set incorrectly in VQE.")
 
-        self.e_core, self.qubit_op = self.qc2data.get_qubit_hamiltonian(
-            self.active_space.num_active_electrons,
-            self.active_space.num_active_spatial_orbitals,
-            self.mapper,
-            format=self.format,
-        )
+        qr_eval = QuantumRegister(self._num_evaluation_qubits, "eval")
+        qr_state = QuantumRegister(unitary.num_qubits, "q")
+        self._num_state_qubits = unitary.num_qubits
+        circuit = QuantumCircuit(qr_state, qr_eval, name=name)
+        iqft = QFT(self._num_evaluation_qubits, inverse=True, do_swaps=False)
+
+        # initial state
+        circuit.compose(state_preparation, qubits=qr_state, inplace=True) 
+
+        # hadamard on evaluation qubits
+        for q in qr_eval:
+            circuit.h(q)
+
+        # power of unitary
+        for q in range(self._num_evaluation_qubits):
+            circuit.compose(unitary.power(2**q).control(), 
+                            qubits=[qr_eval[-(q+1)]] + qr_state[:], 
+                            inplace=True)
+
+        # qft
+        circuit.compose(iqft, qubits=qr_eval, inplace=True)
+
+        return circuit
+
     @staticmethod
-    def _phase_to_energy(phase: float) -> float:
-        """
-        Convert a phase from 0 to 1 to an energy from -pi to pi.
+    def _get_bitstring(length: int, number: int) -> str:
+        return f"{number:b}".zfill(length)
+
+    def _add_measurement_if_required(self, pe_circuit):
+
+        # Measure only the evaluation qubits.
+        regname = "meas"
+        creg = ClassicalRegister(self._num_evaluation_qubits, regname)
+        pe_circuit.add_register(creg)
+        pe_circuit.barrier()
+        idx = range(self._num_state_qubits, self._num_state_qubits + self._num_evaluation_qubits)
+        pe_circuit.measure(idx, range(self._num_evaluation_qubits))
+
+    def estimate_from_pe_circuit(self, pe_circuit: QuantumCircuit) -> PhaseEstimationResult:
+        """Run the phase estimation algorithm on a phase estimation circuit
 
         Args:
-            phase (float): The phase to convert.
+            pe_circuit: The phase estimation circuit.
 
         Returns:
-            float: The energy corresponding to the given phase.
+            A phase estimation result.
+
+        Raises:
+            AlgorithmError: Primitive job failed.
         """
-        return (phase - 1) * 2*np.pi
 
-    def run(self) -> QPEResults: 
-        """
-        Executes the Quantum Phase Estimation (QPE) algorithm to estimate the energy
-        of the electronic ground state of a molecule.
+        self._add_measurement_if_required(pe_circuit)
 
-        Initializes the qubit Hamiltonian, constructs the unitary matrix, runs the
-        QPE algorithm, and calculates the phase and energy. The results are
-        encapsulated in a `QPEResults` object.
+        try:
+            circuit_job = self._sampler.run([pe_circuit])
+            circuit_result = circuit_job.result()
+        except Exception as exc:
+            raise AlgorithmError("The primitive job failed!") from exc
+        phases = circuit_result.quasi_dists[0]
+        phases_bitstrings = {}
+        for key, phase in phases.items():
+            bitstring_key = self._get_bitstring(self._num_evaluation_qubits, key)
+            phases_bitstrings[bitstring_key] = phase
+        phases = phases_bitstrings
 
-        Returns:
-            QPEResults: An instance of the `QPEResults` class containing the optimal
-            energy, eigenvalue, and phase obtained from the QPE algorithm.
+        return PhaseEstimationResult(
+            self._num_evaluation_qubits, circuit_result=circuit_result, phases=phases
+        )
 
-        **Example**
 
-        >>> from ase.build import molecule
-        >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
-        >>> from qc2.algorithms.qiskit import QPE
-        >>> from qc2.algorithms.utils import ActiveSpace
-        >>>
-        >>> mol = molecule('H2O')
-        >>>
-        >>> hdf5_file = 'h2o.hdf5'
-        >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
-        >>> qc2data.molecule.calc = PySCF()
-        >>> qc2data.run()
-        >>> qc2data.algorithm = QPE(
-        ...     active_space=ActiveSpace(
-        ...         num_active_electrons=(2, 2),
-        ...         num_active_spatial_orbitals=4
-        ...     ),
-        ...     mapper='parity',
-        ...     num_evaluation_qubits=9
-        ... )
-        >>> results = qc2data.algorithm.run()
-
-        """
-         # create Hamiltonian
-        self._init_qubit_hamiltonian()
-
-        # create the unitary matrix from the qubit operator
-        unitary = UnitaryGate(expm(1j*self.qubit_op.to_matrix()))
-
-        # run QPE algorithm  
-        qiskit_res = self.solver.estimate(unitary, self.reference_state)
-
-        # get the energy
-        energy = self._phase_to_energy(qiskit_res.phase)
-
-        # instantiate VQEResults
-        results = QPEResults()
-        results.optimal_energy = energy + self.e_core
-        results.eigenvalue = energy
-        results.phase = qiskit_res.phase
-
-        print(f"=== QISKIT {self.__class__.__name__} RESULTS ===")
-        print("* Electronic ground state "
-              f"energy (Hartree): {results.eigenvalue}")
-        print(f"* Inactive core energy (Hartree): {self.e_core}")
-        print(">>> Total ground state "
-              f"energy (Hartree): {results.optimal_energy}\n")
-
-        return results
-
-class QPE(QPEBase):
+class QPE(PEBase):
     def __init__(self, 
                  qc2data=None, 
                  num_evaluation_qubits=None,
@@ -161,20 +120,12 @@ class QPE(QPEBase):
                  mapper=None, 
                  sampler=None, 
                  reference_state=None,  
-                 verbose=0):
+                 verbose=0,
+                 debug=True):
         super().__init__(qc2data, active_space, mapper, sampler, reference_state, verbose)
         self.num_evaluation_qubits = num_evaluation_qubits
-        self.solver = PhaseEstimation(self.num_evaluation_qubits, self.sampler)
+        if debug:
+            self.solver = PhaseEstimation(self.num_evaluation_qubits, self.sampler)
+        else:
+            self.solver = QC2PhaseEstimation(self.num_evaluation_qubits, self.sampler)
 
-class IQPE(QPEBase):
-    def __init__(self, 
-                 qc2data=None, 
-                 num_iterations=None,
-                 active_space=None, 
-                 mapper=None, 
-                 sampler=None, 
-                 reference_state=None,  
-                 verbose=0):
-        super().__init__(qc2data, active_space, mapper, sampler, reference_state, verbose)
-        self.num_iterations = num_iterations
-        self.solver = IterativePhaseEstimation(self.num_iterations, self.sampler)
