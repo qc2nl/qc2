@@ -121,7 +121,7 @@ class QPEBase(BaseAlgorithm):
         ...         num_active_spatial_orbitals=4
         ...     ),
         ...     mapper='parity',
-        ...     num_evaluation_qubits=39
+        ...     num_evaluation_qubits=9
         ... )
         >>> results = qc2data.algorithm.run()
 
