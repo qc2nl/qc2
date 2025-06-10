@@ -2,14 +2,16 @@
 from qiskit_nature.second_q.mappers import (
     QubitMapper,
     JordanWignerMapper,
-    BravyiKitaevMapper
+    BravyiKitaevMapper,
+    ParityMapper
 )
 
 
 class FermionicToQubitMapper:
     _mappers = {
         'JW': JordanWignerMapper,
-        'BK': BravyiKitaevMapper
+        'BK': BravyiKitaevMapper,
+        'PARITY': ParityMapper
     }
 
     @classmethod
