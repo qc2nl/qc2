@@ -88,5 +88,5 @@ class IQPE(PEBase):
                  reference_state=None,  
                  verbose=0):
         super().__init__(qc2data, active_space, mapper, sampler, reference_state, verbose)
-        self.num_iterations = num_iterations
+        self.num_iterations = 3 if num_iterations is None else num_iterations
         self.solver = QC2IterativePhaseEstimation(self.num_iterations, self.sampler)

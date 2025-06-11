@@ -11,7 +11,7 @@ from qc2.algorithms.utils import ActiveSpace
 try:
     import pennylane as qml
     from pennylane import numpy as np
-    from qc2.algorithms.pennylane import QPE
+    from qc2.algorithms.pennylane import IQPE
 except ImportError:
     pytest.skip(
         "Skipping PennyLane tests...",
@@ -31,15 +31,15 @@ def qc2data():
 
 
 @pytest.fixture
-def qpe(qc2data):
-    """Fixture to set up QPE instance."""
+def iqpe(qc2data):
+    """Fixture to set up IQPE instance."""
     qc2data.run()
     active_space = ActiveSpace(
         num_active_electrons=(1, 1),
         num_active_spatial_orbitals=2
     )
-    qpe = QPE(qc2data=qc2data, active_space=active_space)
-    yield qpe
+    iqpe = IQPE(qc2data=qc2data, active_space=active_space)
+    yield iqpe
 
 
 @pytest.fixture
@@ -47,9 +47,9 @@ def active_space():
     return ActiveSpace((1, 1), 2)
 
 
-def test_initialization(qpe):
+def test_initialization(iqpe):
     """Test if you can initialize the class."""
-    assert isinstance(qpe, QPE)
+    assert isinstance(iqpe, IQPE)
 
 
 def test_initialization():
@@ -57,7 +57,7 @@ def test_initialization():
     # set up reference state
     reference_state = qml.qchem.hf_state(2, 4)
 
-    qpe = QPE(
+    iqpe = IQPE(
         reference_state=reference_state,
         active_space=ActiveSpace(
             num_active_electrons=(1, 1),
@@ -66,11 +66,11 @@ def test_initialization():
         mapper="bk",
         device="default.qubit",
     )
-    assert isinstance(qpe, QPE)
+    assert isinstance(iqpe, IQPE)
 
-def test_run_method(qpe):
-    """Test main QPE workflow."""
-    results = qpe.run()
+def test_run_method(iqpe):
+    """Test main IQPE workflow."""
+    results = iqpe.run()
     assert isinstance(results.optimal_energy, float)
     assert results.optimal_energy == pytest.approx(-0.852942802, 1e-6)
     assert results.phase == pytest.approx(0.75, 1e-6)

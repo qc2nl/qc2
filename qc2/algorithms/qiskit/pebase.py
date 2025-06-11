@@ -31,7 +31,7 @@ class PEBase(BaseAlgorithm):
         )
 
         self.mapper = (
-            FermionicToQubitMapper.from_string('parity')()
+            FermionicToQubitMapper.from_string('jw')()
             if mapper is None
             else FermionicToQubitMapper.from_string(mapper)()
         )
