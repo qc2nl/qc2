@@ -8,5 +8,5 @@ __all__ = [
     "VQE",
     "oo_VQE",
     "QPE",
-    "ÏQPE"
+    "IQPE"
 ]

@@ -5,7 +5,7 @@ from pennylane import QNode
 from pennylane.operation import Operator
 from .pebase import PEBase
 
-class QPE(PEBase):
+class IQPE(PEBase):
     def __init__(
         self,
         qc2data=None,
@@ -13,12 +13,13 @@ class QPE(PEBase):
         mapper=None,
         device=None,
         reference_state=None,
-        num_evaluation_qubits=None,
+        num_iterations=None,
         verbose=0
     ):
         
         super().__init__(qc2data, active_space, mapper, device, reference_state, verbose)
-        self.num_evaluation_qubits = 3 if num_evaluation_qubits is None else num_evaluation_qubits
+        self.num_iterations = 3 if num_iterations is None else num_iterations
+        self.num_evaluation_qubits = 1
         
     def get_phase(self):
         """Estimate the phase from the quantum circuit.
@@ -30,7 +31,13 @@ class QPE(PEBase):
         Returns:
             float: The estimated phase.
         """
-        return np.argmax(self.circuit()) / 2**self.num_evaluation_qubits
+        omega = 0.0
+        for k in range(self.num_iterations,0, -1):
+            omega /= 2 
+            probs = self.circuit(k, omega)
+            x = 1 if probs[1] > probs[0] else 0
+            omega = omega + x / 2
+        return omega
     
     @staticmethod
     def _build_circuit(
@@ -64,6 +71,9 @@ class QPE(PEBase):
         Returns:
             QNode: PennyLane qnode with built-in ansatz.
         """
+        if num_estimation_wires != 1:
+            raise ValueError('Number of evaluation wires must be 1 for IQPE')
+        
         # Set default values if None
         device_args = device_args if device_args is not None else []
         device_kwargs = device_kwargs if device_kwargs is not None else {}
@@ -78,22 +88,22 @@ class QPE(PEBase):
 
         # Define the QNode and call the ansatz function within it
         @qml.qnode(device, *qnode_args, **qnode_kwargs)
-        def circuit():
+        def circuit(k, omega):
             
             # HF state
             qml.BasisState(reference_state, wires=range(qubits))
             
             # Hadamard on estimation wires
-            for q in estimation_wires:
-                qml.Hadamard(wires=q)
+            qml.Hadamard(wires=estimation_wires[0])
 
-            # cotrolled unitary
-            for q in range(num_estimation_wires):
-                qml.ctrl(qml.pow(unitary_op,2**q), 
-                         control=qubits+num_estimation_wires-q-1)
+            # controlled unitary
+            qml.ctrl(qml.pow(unitary_op,2**(k-1)), control=estimation_wires[0])
                 
-            # QFT
-            qml.adjoint(qml.templates.QFT(wires=estimation_wires))
+            # phase on eval
+            qml.PhaseShift(omega, wires=estimation_wires[0])
+
+            # hadamard on eval
+            qml.Hadamard(wires=estimation_wires[0])
 
             # measure
             return qml.probs(estimation_wires)

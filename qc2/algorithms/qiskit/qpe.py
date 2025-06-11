@@ -11,7 +11,7 @@ from .pebase import PEBase
 class QC2PhaseEstimation(PhaseEstimation):
     r"""Run the Quantum Phase Estimation (QPE) algorithm.
 
-    Rewrote here to control the qubit ordering 
+    Rewrote here to control the qubit ordering and harmonize with pennlyane implementation
 
     """
 
