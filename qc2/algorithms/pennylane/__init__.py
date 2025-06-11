@@ -4,7 +4,9 @@ __all__ = []
 try:
     from .vqe import VQE  # noqa: F401
     from .oo_vqe import oo_VQE  # noqa: F401
-    __all__.append(['VQE', 'oo_VQE'])
+    from .qpe import QPE  # noqa: F401
+    from .iqpe import IQPE  # noqa: F401
+    __all__.append(['VQE', 'oo_VQE', 'QPE','IQPE'])
 
 except ImportError as err:
     raise ImportError(
