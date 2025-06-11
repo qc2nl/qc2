@@ -120,12 +120,8 @@ class QPE(PEBase):
                  mapper=None, 
                  sampler=None, 
                  reference_state=None,  
-                 verbose=0,
-                 debug=True):
+                 verbose=0):
         super().__init__(qc2data, active_space, mapper, sampler, reference_state, verbose)
-        self.num_evaluation_qubits = num_evaluation_qubits
-        if debug:
-            self.solver = PhaseEstimation(self.num_evaluation_qubits, self.sampler)
-        else:
-            self.solver = QC2PhaseEstimation(self.num_evaluation_qubits, self.sampler)
+        self.num_evaluation_qubits = 3 if num_evaluation_qubits is None else num_evaluation_qubits
+        self.solver = QC2PhaseEstimation(self.num_evaluation_qubits, self.sampler)
 

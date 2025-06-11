@@ -33,7 +33,7 @@ class QPE(BaseAlgorithm):
 
         self.device = "default.qubit" if device is None else device
         self.mapper = (
-            FermionicToQubitMapper.from_string('parity')()
+            FermionicToQubitMapper.from_string('jw')()
             if mapper is None
             else FermionicToQubitMapper.from_string(mapper)()
         )
@@ -47,7 +47,7 @@ class QPE(BaseAlgorithm):
             else reference_state
         )
 
-        self.num_evaluation_qubits = num_evaluation_qubits
+        self.num_evaluation_qubits = 3 if num_evaluation_qubits is None else num_evaluation_qubits
         
 
     @staticmethod

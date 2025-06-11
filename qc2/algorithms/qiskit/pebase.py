@@ -154,29 +154,3 @@ class PEBase(BaseAlgorithm):
               f"energy (Hartree): {results.optimal_energy}\n")
 
         return results
-
-# class QPE(QPEBase):
-#     def __init__(self, 
-#                  qc2data=None, 
-#                  num_evaluation_qubits=None,
-#                  active_space=None, 
-#                  mapper=None, 
-#                  sampler=None, 
-#                  reference_state=None,  
-#                  verbose=0):
-#         super().__init__(qc2data, active_space, mapper, sampler, reference_state, verbose)
-#         self.num_evaluation_qubits = num_evaluation_qubits
-#         self.solver = PhaseEstimation(self.num_evaluation_qubits, self.sampler)
-
-# class IQPE(QPEBase):
-#     def __init__(self, 
-#                  qc2data=None, 
-#                  num_iterations=None,
-#                  active_space=None, 
-#                  mapper=None, 
-#                  sampler=None, 
-#                  reference_state=None,  
-#                  verbose=0):
-#         super().__init__(qc2data, active_space, mapper, sampler, reference_state, verbose)
-#         self.num_iterations = num_iterations
-#         self.solver = IterativePhaseEstimation(self.num_iterations, self.sampler)
