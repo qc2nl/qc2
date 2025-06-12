@@ -1,14 +1,16 @@
 """Module defining oo-VQE algorithm for Qiskit-Nature."""
 from typing import List, Tuple
 import itertools as itt
+from functools import partial
 import numpy as np
+from qiskit.circuit import QuantumCircuit
 from qiskit_nature.second_q.operators import FermionicOp
 from qc2.algorithms.qiskit.vqe import VQE
 from qc2.algorithms.algorithms_results import OOVQEResults
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 
 
-class oo_VQE(VQE):
+class OO_VQE(VQE):
     """Main class for orbital-optimized VQE with Qiskit-Nature.
 
     This class extends the VQE class to include orbital optimization. It
@@ -85,7 +87,7 @@ class oo_VQE(VQE):
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
-        >>> from qc2.algorithms.qiskit import oo_VQE
+        >>> from qc2.algorithms.qiskit import OO_VQE
         >>> from qc2.algorithms.utils import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
@@ -94,7 +96,7 @@ class oo_VQE(VQE):
         >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
         >>> qc2data.molecule.calc = PySCF()
         >>> qc2data.run()
-        >>> qc2data.algorithm = oo_VQE(
+        >>> qc2data.algorithm = OO_VQE(
         ...     active_space=ActiveSpace(
         ...         num_active_electrons=(2, 2),
         ...         num_active_spatial_orbitals=4
@@ -127,15 +129,15 @@ class oo_VQE(VQE):
 
         Returns:
             OOVQEResults:
-                An instance of :class:`qc2.algorithms.qiskit.vqe.OOVQEResults`
-                class with all oo-VQE info.
+                An instance of :class:`qc2.algorithms.algorithms_results.OOVQEResults`
+                class with all OO-VQE info.
 
         **Example**
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
-        >>> from qc2.algorithms.qiskit import oo_VQE
+        >>> from qc2.algorithms.qiskit import OO_VQE
         >>> from qc2.algorithms.utils import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
@@ -144,7 +146,7 @@ class oo_VQE(VQE):
         >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
         >>> qc2data.molecule.calc = PySCF()
         >>> qc2data.run()
-        >>> qc2data.algorithm = oo_VQE(
+        >>> qc2data.algorithm = OO_VQE(
         ...     active_space=ActiveSpace(
         ...         num_active_electrons=(2, 2),
         ...         num_active_spatial_orbitals=4
@@ -185,16 +187,15 @@ class oo_VQE(VQE):
         # get initial energy from initial circuit params
         energy_init = self._get_energy_from_parameters(theta, kappa)
         if self.verbose is not None:
-            print(f"iter = 000, energy = {energy_init:.12f} Ha")
-            energy_l.append(energy_init)
+            self._print_iteration_information(0, energy_init)
+        energy_l.append(energy_init)
 
         for n in range(self.max_iterations):
             # optimize circuit parameters with fixed kappa
             theta, _ = self._circuit_optimization(theta, kappa)
 
             # optimize orbital parameters with fixed theta from previous run
-            rdm1, rdm2 = self._get_rdms(theta)
-            kappa, _ = self.oo_problem.orbital_optimization(rdm1, rdm2, kappa)
+            kappa, _ = self._rotation_opimization(theta, kappa)
 
             # calculate final energy with all optimized parameters
             energy = self._get_energy_from_parameters(theta, kappa)
@@ -205,22 +206,14 @@ class oo_VQE(VQE):
             energy_l.append(energy)
 
             if self.verbose is not None:
-                print(f"iter = {n+1:03}, energy = {energy:.12f} Ha")
+                self._print_iteration_information(n, energy)
+                
             if n > 1:
-                if abs(energy_l[-1] - energy_l[-2]) < self.conv_tol:
-                    # instantiate OOVQEResults
-                    results = OOVQEResults()
-                    results.optimizer_evals = n
-                    results.optimal_energy = energy_l[-1]
-                    results.optimal_circuit_params = theta_l[-1]
-                    results.optimal_orbital_params = kappa_l[-1]
-                    results.energy = energy_l
-                    results.circuit_parameters = theta_l
-                    results.orbital_parameters = kappa_l
-
+                if self.convegence_criterion(energy_l[-1], energy_l[-2]):
+                    results = self._store_results(energy_l, theta_l, kappa_l, n)
                     if self.verbose is not None:
                         print("optimization finished.\n")
-                        print("=== QISKIT oo-VQE RESULTS ===")
+                        print(f"=== QISKIT {self.__class__.__name__} RESULTS ===")
                         print("* Total ground state "
                               f"energy (Hartree): {results.optimal_energy:.12f}")
                     break
@@ -233,6 +226,75 @@ class oo_VQE(VQE):
             )
 
         return results
+
+    def convegence_criterion(self, energy: float, prev_energy: float) -> bool:
+        """
+        Checks if the difference between the current and previous energy is smaller
+        than the set convergence tolerance.
+
+        Args:
+            energy (float): The current energy value.
+            prev_energy (float): The previous energy value.
+
+        Returns:
+            bool: True if the difference between the current and previous energy is
+            smaller than the set convergence tolerance, False otherwise.
+        """
+        return abs(energy - prev_energy) < self.conv_tol
+    @staticmethod
+    def _print_iteration_information(n: int , energy: float) -> None:
+        """
+        Prints the iteration number and corresponding energy in Hartree.
+
+        Args:
+            n (int): The current iteration number.
+            energy (float): The energy value associated with the current iteration.
+        """
+        print(f"iter = {n+1:03}, energy = {energy:.12f} Ha")
+
+    def _rotation_opimization(
+            self,
+            theta: List,
+            kappa: List
+    ) -> Tuple[List, float]:
+        """Get total energy and best orbital parameters for a given theta.
+
+        Args:
+            theta (List): List with circuit variational parameters.
+            kappa (List): List with orbital rotation parameters.
+
+        Returns:
+            Tuple[List, float]:
+                Optimized orbital parameters and associated energy.
+        """
+        # optimize orbital parameters with fixed theta from previous run
+        rdm1, rdm2 = self._get_rdms(self.ansatz, theta)
+        return self.oo_problem.orbital_optimization(rdm1, rdm2, kappa)
+
+
+    def _circuit_optimization_objective_function(self, theta, kappa):
+        """
+        Calculate the cost function for circuit optimization.
+
+        Args:
+            theta (List): List of circuit variational parameters.
+            kappa (List): List of orbital rotation parameters.
+
+        Returns:
+            float: The calculated cost function value consisting of the 
+                qubit operation energy and core energy.
+        """
+        (core_energy,
+            qubit_op) = self.oo_problem.get_transformed_qubit_hamiltonian(
+                kappa
+            )
+        job = self.estimator.run(
+            circuits=self.ansatz,
+            observables=qubit_op,
+            parameter_values=theta
+        )
+        cost = job.result().values + core_energy
+        return cost
 
     def _circuit_optimization(
             self,
@@ -249,26 +311,15 @@ class oo_VQE(VQE):
             Tuple[List, float]:
                 Optimized circuit parameters and associated energy.
         """
-        def objective_function(theta):
-            (core_energy,
-             qubit_op) = self.oo_problem.get_transformed_qubit_hamiltonian(
-                 kappa
-             )
-            job = self.estimator.run(
-                circuits=self.ansatz,
-                observables=qubit_op,
-                parameter_values=theta
-            )
-            cost = job.result().values + core_energy
-            return cost
-
         # optimize theta with kappa fixed
         circuit_optimization_result = self.optimizer.minimize(
-            fun=objective_function, x0=theta
+            fun=partial(self._circuit_optimization_objective_function, 
+                        kappa=kappa), 
+            x0=theta
         )
         theta_optimized = circuit_optimization_result.x
 
-        return theta_optimized, objective_function(theta_optimized)
+        return theta_optimized, self._circuit_optimization_objective_function(theta_optimized, kappa)
 
     def _get_energy_from_parameters(
             self,
@@ -287,19 +338,21 @@ class oo_VQE(VQE):
                 and orbital parameters.
         """
         mo_coeff_a, mo_coeff_b = self.oo_problem.get_transformed_mos(kappa)
-        one_rdm, two_rdm = self._get_rdms(theta)
+        one_rdm, two_rdm = self._get_rdms(self.ansatz, theta)
         return self.oo_problem.get_energy_from_mo_coeffs(
             mo_coeff_a, mo_coeff_b, one_rdm, two_rdm
         )
 
     def _get_rdms(
             self,
+            ansatz: QuantumCircuit,
             theta: List,
             sum_spin=True
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Calculates 1- and 2-electron reduced density matrices (RDMs).
 
         Args:
+            ansatz (QuantumCircuit): ansatz circuit.
             theta (List): circuit parameters at which
                 RDMs are calculated.
             sum_spin (bool): If True, the spin-summed 1-RDM and 2-RDM will be
@@ -310,7 +363,7 @@ class oo_VQE(VQE):
             Tuple[np.ndarray, np.ndarray]:
                 1- and 2-RDMs.
         """
-        if len(theta) != self.ansatz.num_parameters:
+        if len(theta) != ansatz.num_parameters:
             raise ValueError("Incorrect dimension for amplitude list.")
 
         # initialize the RDM arrays
@@ -341,7 +394,7 @@ class oo_VQE(VQE):
             )
             # calculate expectation values
             energy_temp = self.estimator.run(
-                circuits=self.ansatz,
+                circuits=ansatz,
                 observables=qubit_ham_temp,
                 parameter_values=theta
             ).result().values
@@ -372,3 +425,30 @@ class oo_VQE(VQE):
             return rdm1_np, rdm2_np
 
         return rdm1_spin, rdm2_spin
+
+    def _store_results(self, energy_l, theta_l, kappa_l, n):
+        """
+        Stores the results of the optimization process in an OOVQEResults instance.
+
+        Args:
+            energy_l (List[float]): List of energies at each iteration.
+            theta_l (List[List[float]]): List of circuit parameters at each iteration.
+            kappa_l (List[List[float]]): List of orbital parameters at each iteration.
+            n (int): Number of optimizer evaluations performed.
+
+        Returns:
+            OOVQEResults: An instance containing the results of the optimization, 
+            including optimal parameters and energies.
+        """
+
+         # instantiate OOVQEResults
+        results = OOVQEResults()
+        results.optimizer_evals = n
+        results.optimal_energy = energy_l[-1]
+        results.optimal_circuit_params = theta_l[-1]
+        results.optimal_orbital_params = kappa_l[-1]
+        results.energy = energy_l
+        results.circuit_parameters = theta_l
+        results.orbital_parameters = kappa_l
+
+        return results

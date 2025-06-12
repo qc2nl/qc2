@@ -10,7 +10,7 @@ from qc2.data import qc2Data
 from qc2.algorithms.utils import ActiveSpace
 
 try:
-    from qc2.algorithms.pennylane import oo_VQE
+    from qc2.algorithms.pennylane import OO_VQE
 except ImportError:
     pytest.skip(
         "Skipping PennyLane tests...",
@@ -49,7 +49,7 @@ def oo_vqe_calculation():
     qc2data.run()
 
     # instantiate oo-VQE algorithm
-    qc2data.algorithm = oo_VQE(
+    qc2data.algorithm = OO_VQE(
         active_space=ActiveSpace(
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2

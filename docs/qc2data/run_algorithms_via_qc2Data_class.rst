@@ -74,7 +74,7 @@ Extra options for PennyLane's ``device`` and ``QNode`` are also added.
 
     from qc2.data import qc2Data
     from qc2.ase import Psi4
-    from qc2.algorithms.pennylane import oo_VQE
+    from qc2.algorithms.pennylane import OO_VQE
     from qc2.algorithms.utils import ActiveSpace
 
     # set ASE Atoms object
@@ -94,7 +94,7 @@ Extra options for PennyLane's ``device`` and ``QNode`` are also added.
     qc2data.run() 
 
     # instantiate oo-VQE class
-    qc2data.algorithm = oo_VQE(
+    qc2data.algorithm = OO_VQE(
         active_space=ActiveSpace(
             num_active_electrons=(2, 2),
             num_active_spatial_orbitals=4
