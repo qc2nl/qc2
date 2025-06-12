@@ -1,15 +1,10 @@
 """Module defining oo-VQE algorithm for PennyLane."""
-from typing import List, Union, Tuple, Callable
-import itertools as itt
+from typing import List,Tuple, Callable
 from pennylane import numpy as np
 import pennylane as qml
-from qiskit_nature.second_q.operators import FermionicOp
 from qc2.algorithms.pennylane.vqe import VQE
 from qc2.algorithms.pennylane.oo_vqe import OO_VQE
 from qc2.algorithms.algorithms_results import SAOOVQEResults
-from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
-from qc2.pennylane.convert import _qiskit_nature_to_pennylane
-from qc2.algorithms.utils.active_space import ActiveSpace
 
 class SA_OO_VQE(OO_VQE):
     """Main class for orbital-optimized VQE with PennyLane.
@@ -97,7 +92,7 @@ class SA_OO_VQE(OO_VQE):
         >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
         >>> qc2data.molecule.calc = PySCF()
         >>> qc2data.run()
-        >>> qc2data.algorithm = OO_VQE(
+        >>> qc2data.algorithm = SA_OO_VQE(
         ...     active_space=ActiveSpace(
         ...         num_active_electrons=(2, 2),
         ...         num_active_spatial_orbitals=4
@@ -124,103 +119,32 @@ class SA_OO_VQE(OO_VQE):
             verbose
         )
 
-        # create the reference states 
-        self.reference_state = self._get_default_list_reference_state(self.qubits, self.electrons)
-
         # create the ansatz
-        self.ansatz  = self._get_default_list_ansatz(
-            self.qubits,
-            self.electrons,
-            reference_state=self.reference_state
-        )
+        if ansatz is None:
+            self.ansatz  = self._get_default_list_ansatz(
+                self.qubits,
+                self.electrons,
+            )
+        else:
+            self.ansatz = ansatz
 
         # create the state weights
-        self.state_weights = self._get_default_state_weights(state_weights)
-
-    @staticmethod
-    def _get_default_state_weights(
-        state_weights: Union[None, List[float]]
-    ) -> List[float]:
-        """Set up the default state weights.
-
-        Args:
-            state_weights (List[float]): List of state weights.
-
-        Returns:
-            List[float]: List of state weights.
-        """
         if state_weights is None:
-            return [0.5, 0.5]
-        return state_weights
-        
-
-    def _get_default_list_reference_state(self, qubits: int, electrons: int) -> List[np.ndarray]:
-        """Generate the default reference state for the ansatz.
-
-        Args:
-            qubits (int): Number of qubits in the circuit.
-            electrons (int): Number of electrons in the system.
-
-        Returns:
-            np.ndarray: Reference state vector.
-        """
-        hf = qml.qchem.hf_state(electrons, qubits)
-        return [hf, 
-                self._get_excited_state(hf, self.active_space)
-            ]
-
-    @staticmethod
-    def _get_excited_state(
-        reference_state: np.ndarray,
-        active_space: ActiveSpace,
-        excitation: List[List[int]] | List[int] | None = None
-    ) -> np.ndarray:
-        """Generate the excited state for the ansatz.
-
-        Args:
-            reference_state (np.ndarray): Reference state vector.
-            active_space (ActiveSpace): Instance of
-                :class:`~qc2.algorithm.utils.active_space.ActiveSpace`.
-            excitation (List[List[int]] | List[int] | None): Excitation
-                operator. Defaults to None.
-
-        Returns:
-            np.ndarray: Excited state vector.
-        """
-        nalpha, nbeta = active_space.num_active_electrons
-
-        if excitation is None:
-            alpha_xt = [nalpha + nbeta - 2, nalpha + nbeta]
-            beta_xt = [nbeta + nbeta - 1, nbeta + nbeta + 1]
-        elif isinstance(excitation[0], int):
-            alpha_xt = excitation
-            beta_xt = excitation
-        elif isinstance(excitation[0], tuple):
-            alpha_xt, beta_xt = excitation
+            self.state_weights = [0.5, 0.5]
         else:
-            raise ValueError("excitation must be a List of Lists or a List of ints")
-        
-        reference_state[alpha_xt[0]] = 0
-        reference_state[alpha_xt[1]] = 1
-
-        # reference_state[beta_xt[0]] = 0
-        # reference_state[beta_xt[1]] = 1
-
-        return reference_state
+            self.state_weights = state_weights
         
 
     @staticmethod
     def _get_default_list_ansatz(
         qubits: int, 
         electrons: int, 
-        reference_state: List[np.ndarray]
     ) -> List[Callable]:
         """Create the default ansatz function for the VQE circuit.
 
         Args:
             qubits (int): Number of qubits in the circuit.
             electrons (int): Number of electrons in the system.
-            reference_state (np.ndarray): Reference state for the ansatz.
 
         Returns:
             Callable: Function that applies the UCCSD ansatz.
@@ -231,12 +155,16 @@ class SA_OO_VQE(OO_VQE):
         # Map excitations to the wires the UCCSD circuit will act on
         s_wires, d_wires = qml.qchem.excitations_to_wires(singles, doubles)
 
+        # HF state
+        hf = qml.qchem.hf_state(electrons, qubits)
+
         # Return a function that applies the UCCSD ansatz
         # on the HF
         def ref_ansatz(params):
             qml.UCCSD(
-                params, wires=range(qubits), s_wires=s_wires,
-                d_wires=d_wires, init_state=reference_state[0]
+                params, wires=range(qubits), 
+                s_wires=s_wires, d_wires=d_wires, 
+                init_state=hf
             )
             
         # Return a function that applies the UCCSD ansatz
@@ -259,8 +187,9 @@ class SA_OO_VQE(OO_VQE):
 
             # create the ansatz
             qml.UCCSD(
-                params, wires=range(qubits), s_wires=s_wires,
-                d_wires=d_wires, init_state=np.zeros_like(reference_state[0])
+                params, wires=range(qubits), 
+                s_wires=s_wires, d_wires=d_wires, 
+                init_state=np.zeros_like(hf)
             )
 
         return [ref_ansatz, excited_ansatz]
