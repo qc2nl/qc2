@@ -10,10 +10,9 @@ from qiskit.primitives import Estimator
 
 from qc2.data import qc2Data
 
-from qc2.algorithms.qiskit import OO_VQE
+from qc2.algorithms.qiskit import SA_OO_VQE
 from qc2.algorithms.utils import ActiveSpace
 from qc2.ase import PySCF
-
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -32,8 +31,8 @@ def clean_up_files():
 
 
 @pytest.fixture
-def oo_vqe_calculation():
-    """Create input for oo-VQE on H2O."""
+def sa_oo_vqe_calculation():
+    """Create input for SA-OO-VQE on H2O."""
 
     # instantiate qc2Data class
     qc2data = qc2Data(
@@ -47,7 +46,7 @@ def oo_vqe_calculation():
     qc2data.run()
 
     # instantiate oo-VQE algorithm
-    qc2data.algorithm = OO_VQE(
+    qc2data.algorithm = SA_OO_VQE(
         active_space=ActiveSpace(
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2
@@ -61,6 +60,6 @@ def oo_vqe_calculation():
     return results.optimal_energy
 
 
-def test_oo_vqe_calculation(oo_vqe_calculation):
+def test_sa_oo_vqe_calculation(sa_oo_vqe_calculation):
     """Check that the oo-vqe energy corresponds to one at CASSCF/sto-3g."""
-    assert oo_vqe_calculation == pytest.approx(-74.96565745741862, rel=1e-6)
+    assert sa_oo_vqe_calculation == pytest.approx(-74.96565745741862, rel=1e-6)
