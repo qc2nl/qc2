@@ -187,8 +187,8 @@ class OO_VQE(VQE):
         # get initial energy from initial circuit params
         energy_init = self._get_energy_from_parameters(theta, kappa)
         if self.verbose is not None:
-            print(f"iter = 000, energy = {energy_init:.12f} Ha")
-            energy_l.append(energy_init)
+            self._print_iteration_information(0, energy_init)
+        energy_l.append(energy_init)
 
         for n in range(self.max_iterations):
             # optimize circuit parameters with fixed kappa
@@ -206,9 +206,10 @@ class OO_VQE(VQE):
             energy_l.append(energy)
 
             if self.verbose is not None:
-                print(f"iter = {n+1:03}, energy = {energy:.12f} Ha")
+                self._print_iteration_information(n, energy)
+                
             if n > 1:
-                if abs(energy_l[-1] - energy_l[-2]) < self.conv_tol:
+                if self.convegence_criterion(energy_l[-1], energy_l[-2]):
                     results = self._store_results(energy_l, theta_l, kappa_l, n)
                     if self.verbose is not None:
                         print("optimization finished.\n")
@@ -225,6 +226,31 @@ class OO_VQE(VQE):
             )
 
         return results
+
+    def convegence_criterion(self, energy: float, prev_energy: float) -> bool:
+        """
+        Checks if the difference between the current and previous energy is smaller
+        than the set convergence tolerance.
+
+        Args:
+            energy (float): The current energy value.
+            prev_energy (float): The previous energy value.
+
+        Returns:
+            bool: True if the difference between the current and previous energy is
+            smaller than the set convergence tolerance, False otherwise.
+        """
+        return abs(energy - prev_energy) < self.conv_tol
+    @staticmethod
+    def _print_iteration_information(n: int , energy: float) -> None:
+        """
+        Prints the iteration number and corresponding energy in Hartree.
+
+        Args:
+            n (int): The current iteration number.
+            energy (float): The energy value associated with the current iteration.
+        """
+        print(f"iter = {n+1:03}, energy = {energy:.12f} Ha")
 
     def _rotation_opimization(
             self,
