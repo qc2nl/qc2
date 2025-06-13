@@ -413,7 +413,7 @@ class SA_OO_VQE(OO_VQE):
         phase_optimization_result = self.optimizer.minimize(
             fun=partial(self._phase_optimization_objective_function, 
                     theta=theta, kappa=kappa),
-                        x0 = np.pi/2)
+                        x0 = 0.0)
         phase_optimized = phase_optimization_result.x
         return phase_optimized, phase_optimization_result(phase_optimized) 
 
@@ -430,7 +430,16 @@ class SA_OO_VQE(OO_VQE):
             float: The calculated cost function value for the phase optimization.
         """
         mo_coeff_a, mo_coeff_b = self.oo_problem.get_transformed_mos(kappa)
-        qc =  ...
+        
+        initial_state = self._get_state_rotation(self.active_space, rotation=x)
+
+        qc =  UCC(
+            num_spatial_orbitals=self.active_space.num_active_spatial_orbitals,
+            num_particles=self.active_space.num_active_electrons,
+            qubit_mapper=self.mapper,
+            initial_state=initial_state,
+            excitations="sd")
+        
         one_rdm, two_rdm = self._get_rdms(qc, theta)
         return self.oo_problem.get_energy_from_mo_coeffs(
                 mo_coeff_a, mo_coeff_b, one_rdm, two_rdm
