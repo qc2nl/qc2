@@ -1,8 +1,10 @@
 """Module defining oo-VQE algorithm for Qiskit-Nature."""
 from typing import List
 from qiskit.circuit import QuantumCircuit
-from qiskit_nature.second_q.circuit.library import HartreeFock
+from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
+from qiskit_nature.second_q.mappers import QubitMapper
 from qc2.algorithms.qiskit.vqe.sa_oo_vqe import SA_OO_VQE
+from qc2.algorithms.utils.active_space import ActiveSpace
 
 class OO_VQE(SA_OO_VQE):
     """Main class for orbital-optimized VQE with Qiskit-Nature.
@@ -37,7 +39,6 @@ class OO_VQE(SA_OO_VQE):
         mapper=None,
         estimator=None,
         optimizer=None,
-        reference_state=None,
         init_circuit_params=None,
         init_orbital_params=None,
         freeze_active=False,
@@ -62,8 +63,6 @@ class OO_VQE(SA_OO_VQE):
             optimizer (qiskit.Optimizer): Optimization routine for circuit
                 variational parameters. Defaults to
                 :class:`qiskit_algorithms.SLSQP`.
-            reference_state (QuantumCircuit): Reference state for the VQE
-                algorithm. Defaults to :class:`qiskit.HartreeFock`.
             init_circuit_params (List): List of VQE circuit parameters.
                 Defaults to a list with entries of zero.
             init_orbital_params (List): List of orbital optimization
@@ -107,26 +106,44 @@ class OO_VQE(SA_OO_VQE):
             mapper,
             estimator,
             optimizer,
-            reference_state,
             [1],
             init_circuit_params,
             init_orbital_params,
             freeze_active,
+            False,
             max_iterations,
             conv_tol,
             verbose
         )
+    
+    @staticmethod
+    def _get_default_ansatzes(
+        active_space: ActiveSpace,
+        mapper: QubitMapper
+    ) -> List[QuantumCircuit]:
+        """Set up the default UCC ansatz from a Hartree Fock reference state.
 
-    def _get_default_reference_states(
-            self
-        ) -> List[QuantumCircuit]:
-        """Set up the default reference state circuit based on Hartree Fock and singlet excitation.
+        Args:
+            active_space (ActiveSpace): Description of the active space.
+            mapper (QubitMapper): Mapper class instance.
+            reference_state (QuantumCircuit): Reference state circuit.
 
         Returns:
-            List[QuantumCircuit]: Hartree-Fock circuit as the reference state.
+            UCC: UCC ansatz quantum circuit.
         """
-        return [HartreeFock(
-            self.active_space.num_active_spatial_orbitals,
-            self.active_space.num_active_electrons,
-            self.mapper,
+
+        # create reference state
+        reference_state = [HartreeFock(
+            active_space.num_active_spatial_orbitals,
+            active_space.num_active_electrons,
+            mapper,
         )]
+
+        return [UCC(
+            num_spatial_orbitals=active_space.num_active_spatial_orbitals,
+            num_particles=active_space.num_active_electrons,
+            qubit_mapper=mapper,
+            initial_state=ref,
+            excitations="sd",
+        )
+        for ref in reference_state]
