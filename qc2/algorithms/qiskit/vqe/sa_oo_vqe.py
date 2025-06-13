@@ -124,6 +124,7 @@ class SA_OO_VQE(VQE):
         self.freeze_active = freeze_active
         self.orbital_params = init_orbital_params
         self.circuit_params = self.params
+        self.oo_problem = None
         self.max_iterations = max_iterations
         self.conv_tol = conv_tol
         self.state_resolution = state_resolution
@@ -210,7 +211,10 @@ class SA_OO_VQE(VQE):
 
         # get initial energy from initial circuit params
         energy_init = self._get_energy_from_parameters(theta, kappa)
-        
+
+        # update lists with intermediate data
+        results.update(theta, kappa, energy_init)
+
         # initial values of the optimization
         self._print_iteration_information(0, energy_init, self.verbose)
         
@@ -291,9 +295,8 @@ class SA_OO_VQE(VQE):
             kappa (List): List with orbital rotation parameters.
 
         Returns:
-            float:
-                Total ground-state energy for a given circuit
-                and orbital parameters.
+            List:
+                Total ground-state energy for the differemnt ansatzes.
         """
         energy = []
         mo_coeff_a, mo_coeff_b = self.oo_problem.get_transformed_mos(kappa)
