@@ -30,8 +30,6 @@ class VQE(VQEBASE):
         optimizer (qml.optimizer): Optimization routine for circuit
             variational parameters. Defaults
             to ``qml.GradientDescentOptimizer``.
-        reference_state (qml.ref_state): Reference state for the VQE
-            algorithm. Defaults to ``qml.qchem.hf_state``.
         params (List): List of initial VQE circuit parameters.
             Defaults to a list with entries of zero.
         max_iterations (int): Maximum number of iterations for the combined
@@ -50,7 +48,6 @@ class VQE(VQEBASE):
         mapper=None,
         device=None,
         optimizer=None,
-        reference_state=None,
         init_params=None,
         max_iterations=50,
         conv_tol=1e-7,
@@ -73,8 +70,6 @@ class VQE(VQEBASE):
             optimizer (qml.optimizer): Optimization routine for circuit
                 variational parameters. Defaults
                 to ``qml.GradientDescentOptimizer``.
-            reference_state (qml.ref_state): Reference state for the VQE
-                algorithm. Defaults to ``qml.qchem.hf_state``.
             init_params (List): List of VQE circuit parameters.
                 Defaults to a list with entries of zero.
             max_iterations (int): Maximum number of iterations for the combined
@@ -129,14 +124,10 @@ class VQE(VQEBASE):
             if optimizer is None
             else optimizer
         )
-        self.reference_state = (
-            self._get_default_reference(self.qubits, self.electrons)
-            if reference_state is None
-            else reference_state
-        )
+
         self.ansatz = (
             self._get_default_ansatz(
-                self.qubits, self.electrons, self.reference_state
+                self.qubits, self.electrons
             )
             if ansatz is None
             else ansatz
@@ -153,33 +144,23 @@ class VQE(VQEBASE):
         self.verbose = verbose
         self.circuit = None
 
-    @staticmethod
-    def _get_default_reference(qubits: int, electrons: int) -> np.ndarray:
-        """Generate the default reference state for the ansatz.
-
-        Args:
-            qubits (int): Number of qubits in the circuit.
-            electrons (int): Number of electrons in the system.
-
-        Returns:
-            np.ndarray: Reference state vector.
-        """
-        return qml.qchem.hf_state(electrons, qubits)
 
     @staticmethod
     def _get_default_ansatz(
-        qubits: int, electrons: int, reference_state: np.ndarray
+        qubits: int, electrons: int
     ) -> Callable:
         """Create the default ansatz function for the VQE circuit.
 
         Args:
             qubits (int): Number of qubits in the circuit.
             electrons (int): Number of electrons in the system.
-            reference_state (np.ndarray): Reference state for the ansatz.
 
         Returns:
             Callable: Function that applies the UCCSD ansatz.
         """
+        # reference state
+        reference_state = qml.qchem.hf_state(electrons, qubits)
+
         # Generate single and double excitations
         singles, doubles = qml.qchem.excitations(electrons, qubits)
 

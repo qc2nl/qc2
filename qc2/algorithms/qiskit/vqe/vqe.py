@@ -29,8 +29,6 @@ class VQE(VQEBASE):
         optimizer (qiskit.Optmizer): Optimization routine for circuit
             variational parameters. Defaults to
             :class:`qiskit_algorithms.SLSQP`.
-        reference_state (QuantumCircuit): Reference state for the VQE
-            algorithm. Defaults to :class:`qiskit.HartreeFock`.
         ansatz (UCC): The ansatz for the VQE algorithm.
             Defaults to :class:`qiskit.UCCSD`.
         params (List): List of initial VQE circuit parameters.
@@ -46,7 +44,6 @@ class VQE(VQEBASE):
         mapper=None,
         estimator=None,
         optimizer=None,
-        reference_state=None,
         init_params=None,
         verbose=0
     ):
@@ -66,8 +63,6 @@ class VQE(VQEBASE):
             optimizer (qiskit.Optmizer): Optimization routine for circuit
                 variational parameters. Defaults to
                 :class:`qiskit_algorithms.SLSQP`.
-            reference_state (QuantumCircuit): Reference state for the VQE
-                algorithm. Defaults to :class:`qiskit.HartreeFock`.
             init_params (List): List of VQE circuit parameters.
                 Defaults to a list with entries of zero.
             verbose (int): Verbosity level. Defaults to 0.
@@ -113,14 +108,10 @@ class VQE(VQEBASE):
         # init circuit
         self.estimator = Estimator() if estimator is None else estimator
         self.optimizer = SLSQP() if optimizer is None else optimizer
-        self.reference_state = (
-            self._get_default_reference(self.active_space, self.mapper)
-            if reference_state is None
-            else reference_state
-        )
+        
         self.ansatz = (
             self._get_default_ansatz(
-                self.active_space, self.mapper, self.reference_state
+                self.active_space, self.mapper
             )
             if ansatz is None
             else ansatz
@@ -135,40 +126,24 @@ class VQE(VQEBASE):
         self.verbose = verbose
 
     @staticmethod
-    def _get_default_reference(
-        active_space: ActiveSpace, mapper: QubitMapper
-    ) -> QuantumCircuit:
-        """Set up the default reference state circuit based on Hartree Fock.
-
-        Args:
-            active_space (ActiveSpace): description of the active space.
-            mapper (mapper): mapper class instance.
-
-        Returns:
-            QuantumCircuit: Hartree-Fock circuit as the reference state.
-        """
-        return HartreeFock(
-            active_space.num_active_spatial_orbitals,
-            active_space.num_active_electrons,
-            mapper,
-        )
-
-    @staticmethod
     def _get_default_ansatz(
         active_space: ActiveSpace,
         mapper: QubitMapper,
-        reference_state: QuantumCircuit
     ) -> UCC:
         """Set up the default UCC ansatz from a Hartree Fock reference state.
 
         Args:
             active_space (ActiveSpace): Description of the active space.
             mapper (QubitMapper): Mapper class instance.
-            reference_state (QuantumCircuit): Reference state circuit.
 
         Returns:
             UCC: UCC ansatz quantum circuit.
         """
+        reference_state = HartreeFock(
+            active_space.num_active_spatial_orbitals,
+            active_space.num_active_electrons,
+            mapper,
+        )
 
         return UCC(
             num_spatial_orbitals=active_space.num_active_spatial_orbitals,
