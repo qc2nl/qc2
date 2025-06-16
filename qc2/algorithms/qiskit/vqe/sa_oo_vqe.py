@@ -247,6 +247,7 @@ class SA_OO_VQE(VQE):
             )
         
         if self.state_resolution:
+            print(">>> Optimizing phase parameter...")
             phase, energy = self._phase_optimization(theta, kappa)
             results.optimal_phase = phase
             results.update(theta, kappa, [energy, None])

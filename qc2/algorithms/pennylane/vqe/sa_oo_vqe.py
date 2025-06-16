@@ -6,6 +6,7 @@ import pennylane as qml
 from qc2.algorithms.pennylane.vqe.vqe import VQE
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.algorithms.algorithms_results import SAOOVQEResults
+from qc2.ansatz.pennylane.state_resolution import state_resolution_initializer
 from qc2.pennylane.convert import _qiskit_nature_to_pennylane
 from qiskit_nature.second_q.operators import FermionicOp
 
@@ -258,6 +259,14 @@ class SA_OO_VQE(VQE):
                 " setting a different 'optimizer'."
             )
 
+        if self.state_resolution:
+            print(">>> Optimizing phase parameter...")
+            initial_phase  = 0.0
+            phase, energy = self._phase_optimization(initial_phase, theta, kappa, *args, **kwargs)
+            results.optimal_phase = phase
+            results.update(theta, kappa, [energy, None])
+            self._print_converged_iteration_information(results)
+
         return results
     
     @staticmethod
@@ -292,41 +301,29 @@ class SA_OO_VQE(VQE):
         # Map excitations to the wires the UCCSD circuit will act on
         s_wires, d_wires = qml.qchem.excitations_to_wires(singles, doubles)
 
-        # HF state
-        hf = qml.qchem.hf_state(electrons, qubits)
-
         # Return a function that applies the UCCSD ansatz
-        # on the HF
+        # on the state resolution ground state
         def ref_ansatz(params):
+
+            state_resolution_initializer(electrons//2, electrons//2, 0.0)
+
             qml.UCCSD(
                 params, wires=range(qubits), 
                 s_wires=s_wires, d_wires=d_wires, 
-                init_state=hf
+                init_state=np.zeros(qubits).astype(int)
             )
             
         # Return a function that applies the UCCSD ansatz
-        # on the excited state
+        # on the state resolution excited state
         def excited_ansatz(params):
 
-            #create the HF state
-            for iq in range(electrons//2):
-                qml.X(2*iq)
-                qml.X(2*iq+1)
-
-            #create the excited state
-            alpha_xt = [electrons - 2, electrons]
-            beta_xt = [electrons - 1, electrons + 1]
-            qml.H(alpha_xt[1])
-            qml.CNOT([alpha_xt[1], beta_xt[1]])
-            qml.X(alpha_xt[1])
-            qml.CNOT([alpha_xt[1], beta_xt[0]])
-            qml.CNOT([beta_xt[1], beta_xt[0]])
+            state_resolution_initializer(electrons//2, electrons//2, np.pi/2)
 
             # create the ansatz
             qml.UCCSD(
                 params, wires=range(qubits), 
                 s_wires=s_wires, d_wires=d_wires, 
-                init_state=np.zeros_like(hf)
+                init_state=np.zeros(qubits).astype(int)
             )
 
         return [ref_ansatz, excited_ansatz]
@@ -498,6 +495,69 @@ class SA_OO_VQE(VQE):
             )
 
         return theta_optimized, energy_optimized
+
+    def _phase_optimization(self, phi: float, theta: List, kappa: List, *args, **kwargs) -> Tuple[float, float]:
+        """Optimize phase parameters with fixed circuit and orbital parameters.
+
+        Args:
+            theta (List): List with circuit variational parameters.
+            kappa (List): List with orbital rotation parameters.
+            *args:
+                - device_args (optional): ``qml.device`` arguments.
+                - qnode_args (optional): ``qml.qnode`` arguments.
+            **kwargs:
+                - device_kwargs (optional): ``qml.device`` keyword arguments.
+                - qnode_kwargs (optional): ``qml.qnode`` keyword arguments.
+
+        Returns:
+            Tuple[float, float]:
+                Optimized phase parameter and associated energy.
+        """
+
+        # Generate single and double excitations
+        singles, doubles = qml.qchem.excitations(self.electrons, self.qubits)
+        s_wires, d_wires = qml.qchem.excitations_to_wires(singles, doubles)
+        (core_energy, qubit_op) = self.oo_problem.get_transformed_qubit_hamiltonian(kappa)
+        device = qml.device(self.device, wires=self.qubits)
+
+        @qml.qnode(device, *args, **kwargs)
+        def phase_optimization_circuit(phase):
+            state_resolution_initializer(self.electrons//2, self.electrons//2, phase)
+            qml.UCCSD(
+                theta, wires=range(self.qubits), 
+                s_wires=s_wires, d_wires=d_wires, 
+                init_state=np.zeros(self.qubits).astype(int)
+            )
+            return qml.expval(qubit_op)
+        
+        # init the container
+        energy_l = []
+        phase_l = []
+
+        # Optimize the circuit parameters and compute the energy
+        circ_params = phi
+        for n in range(self.max_iterations):
+            circ_params, state_corr_energy = self.optimizer.step_and_cost(
+                phase_optimization_circuit, circ_params
+            )
+            energy = state_corr_energy + core_energy
+            energy_l.append(energy)
+            phase_l.append(circ_params)
+
+            if n > 1:
+                if abs(energy_l[-1] - energy_l[-2]) < self.conv_tol:
+                    phase_optimized = phase_l[-1]
+                    energy_optimized = energy_l[-1]
+                    break
+        # in case of non-convergence
+        else:
+            raise RuntimeError(
+                "Circuit optimization step did not converge."
+                " Consider increasing 'max_iterations' attribute or"
+                " setting a different 'optimizer'."
+            )
+
+        return phase_optimized, energy_optimized
 
     def _get_rdms(
             self,
