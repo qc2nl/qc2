@@ -30,6 +30,9 @@ def generate_ansatz(
         # Map excitations to the wires the UCCSD circuit will act on
         s_wires, d_wires = qml.qchem.excitations_to_wires(singles, doubles)
 
+        # number of parameters
+        parameters = np.zeros(len(singles) + len(doubles))
+
         # Return a function that applies the UCCSD ansatz
         def ansatz(params):
             qml.UCCSD(
@@ -37,7 +40,7 @@ def generate_ansatz(
                 d_wires=d_wires, init_state=reference_state
             )
         
-        return ansatz
+        return ansatz, parameters
     
     else:
         raise ValueError("Unsupported ansatz type. Choose from 'UCCSD'.")
@@ -74,6 +77,9 @@ def generate_state_resolution_ansatz(
         # Map excitations to the wires the UCCSD circuit will act on
         s_wires, d_wires = qml.qchem.excitations_to_wires(singles, doubles)
 
+        # number of parameters
+        parameters = np.zeros(len(singles) + len(doubles))
+
         def ansatz(params):
 
             state_resolution_initializer(electrons//2, electrons//2, phase)
@@ -83,7 +89,7 @@ def generate_state_resolution_ansatz(
                 s_wires=s_wires, d_wires=d_wires, 
                 init_state=np.zeros(qubits).astype(int)
             )
-        return ansatz
+        return ansatz, parameters
     
     else:
         raise ValueError("Unsupported ansatz type. Choose from 'UCCSD'.")

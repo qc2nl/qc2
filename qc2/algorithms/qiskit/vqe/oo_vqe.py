@@ -1,7 +1,6 @@
 """Module defining oo-VQE algorithm for Qiskit-Nature."""
 from typing import List, Union
 from qiskit.circuit import QuantumCircuit
-from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
 from qiskit_nature.second_q.mappers import QubitMapper
 from qc2.algorithms.qiskit.vqe.sa_oo_vqe import SA_OO_VQE
 from qc2.algorithms.utils.active_space import ActiveSpace

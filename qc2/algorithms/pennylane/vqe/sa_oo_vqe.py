@@ -130,11 +130,13 @@ class SA_OO_VQE(VQE):
         self.state_resolution = state_resolution
 
         # create the ansatz
-        self.ansatz = (self._get_default_ansatzes(ansatz, self.qubits, self.electrons) 
-            if not isinstance(ansatz, Callable) 
-            else ansatz 
-        )
-
+        if not isinstance(ansatz, Callable):
+            self.ansatz, self.parameters = self._get_default_ansatzes(ansatz, self.qubits, self.electrons)
+        else:
+            raise NotImplementedError(
+                "Custom ansatz functions are not supported yet."
+            )      
+        
         # create the weights
         self.state_weights = ([0.5, 0.5] 
                               if state_weights is None 
@@ -297,8 +299,9 @@ class SA_OO_VQE(VQE):
         Returns:
             Callable: Function that applies the UCCSD ansatz.
         """
-        return [generate_state_resolution_ansatz(qubits, electrons, ansatz, 0.0), 
-                generate_state_resolution_ansatz(qubits, electrons, ansatz, np.pi/2)]
+        ground_state, parameters = generate_state_resolution_ansatz(qubits, electrons, ansatz, 0.0)
+        excited_state, _ = generate_state_resolution_ansatz(qubits, electrons, ansatz, np.pi/2)
+        return [ground_state, excited_state], parameters
     
     def _get_energy_from_parameters(
             self,

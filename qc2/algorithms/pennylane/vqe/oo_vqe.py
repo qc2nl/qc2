@@ -1,13 +1,6 @@
 """Module defining oo-VQE algorithm for PennyLane."""
-from typing import List, Tuple
 from typing import Callable
-import pennylane as qml
-import itertools as itt
-from pennylane import numpy as np
-from qiskit_nature.second_q.operators import FermionicOp
 from qc2.algorithms.pennylane.vqe.sa_oo_vqe import SA_OO_VQE
-from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
-from qc2.pennylane.convert import _qiskit_nature_to_pennylane
 from qc2.ansatz.pennylane.generate_ansatz import generate_ansatz
 
 class OO_VQE(SA_OO_VQE):
@@ -135,4 +128,5 @@ class OO_VQE(SA_OO_VQE):
         Returns:
             Callable: Function that applies the UCCSD ansatz.
         """
-        return [generate_ansatz(qubits, electrons, ansatz)]
+        ansatz, parameter = generate_ansatz(qubits, electrons, ansatz)
+        return [ansatz], parameter

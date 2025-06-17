@@ -125,18 +125,17 @@ class VQE(VQEBASE):
             else optimizer
         )
 
-        self.ansatz = (
-            self._get_default_ansatz(ansatz,
-                self.qubits, self.electrons
+        # init ansatz
+        if not isinstance(ansatz, Callable):
+            self.ansatz, self.params = self._get_default_ansatz(
+                ansatz, self.qubits, self.electrons
             )
-            if not isinstance(ansatz, Callable)
-            else ansatz
-        )
-        self.params = (
-            self._get_default_init_params(self.qubits, self.electrons)
-            if init_params is None
-            else init_params
-        )
+            self.params
+        else:
+            raise NotImplementedError(
+                "Custom ansatz functions are not supported yet."
+            )
+    
 
         # init algorithm-specific attributes
         self.max_iterations = max_iterations
