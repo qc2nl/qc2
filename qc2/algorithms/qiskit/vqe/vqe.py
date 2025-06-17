@@ -1,6 +1,6 @@
 """Module defining VQE algorithm for Qiskit-Nature."""
 from typing import List, Dict, Union
-from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
+import numpy as np
 from qiskit_nature.second_q.mappers import QubitMapper
 from qiskit_algorithms.minimum_eigensolvers import VQE as vqe_solver
 from qiskit_algorithms.optimizers import SLSQP
@@ -118,7 +118,7 @@ class VQE(VQEBASE):
             else ansatz
         )
         self.params = (
-            self._get_default_init_params(self.ansatz.num_parameters)
+            np.array(self._get_default_init_params(self.ansatz.num_parameters))
             if init_params is None
             else init_params
         )

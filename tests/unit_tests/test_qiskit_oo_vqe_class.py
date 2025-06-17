@@ -60,7 +60,7 @@ def test_theta_kappa_optimization(oo_vqe):
     )
 
     assert all(
-        isinstance(num, float) for num in results.energy
+        isinstance(num[0], float) for num in results.energy
     )
     assert all(
         isinstance(term, np.ndarray) for term in results.circuit_parameters

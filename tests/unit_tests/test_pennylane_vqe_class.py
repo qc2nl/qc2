@@ -72,7 +72,6 @@ def test_initialization_with_ansatz():
 
     vqe = VQE(
         ansatz=ansatz,
-        reference_state=reference_state,
         active_space=ActiveSpace(
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2
@@ -83,16 +82,10 @@ def test_initialization_with_ansatz():
     assert isinstance(vqe, VQE)
 
 
-def test_default_reference():
-    """Test if default reference state works."""
-    reference_state = VQE._get_default_reference(4, 2)
-    assert isinstance(reference_state, np.ndarray)
-
 
 def test_default_ansatz():
     """Test the generation of default ansatz."""
-    reference_state = VQE._get_default_reference(4, 2)
-    ansatz = VQE._get_default_ansatz(4, 2, reference_state)
+    ansatz = VQE._get_default_ansatz(None, 4, 2)
     assert isinstance(ansatz, Callable)
 
 

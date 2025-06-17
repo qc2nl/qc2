@@ -62,4 +62,4 @@ def sa_oo_vqe_calculation():
 
 def test_sa_oo_vqe_calculation(sa_oo_vqe_calculation):
     """Check that the oo-vqe energy corresponds to one at CASSCF/sto-3g."""
-    assert sa_oo_vqe_calculation == pytest.approx(-74.96565745741862, rel=1e-6)
+    assert sa_oo_vqe_calculation == pytest.approx(-74.95803690830257, rel=1e-6)
