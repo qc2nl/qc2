@@ -10,14 +10,10 @@ from qiskit.primitives import Estimator
 
 from qc2.data import qc2Data
 
-from qc2.algorithms.qiskit import oo_VQE
+from qc2.algorithms.qiskit import OO_VQE
 from qc2.algorithms.utils import ActiveSpace
+from qc2.ase import PySCF
 
-try:
-    from qc2.ase import Psi4
-except ImportError:
-    pytest.skip("Skipping ASE-Psi4 tests...",
-                allow_module_level=True)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -47,11 +43,11 @@ def oo_vqe_calculation():
     )
 
     # set up and run calculator
-    qc2data.molecule.calc = Psi4(method='hf', basis='sto-3g')
+    qc2data.molecule.calc = PySCF(method='scf.HF', basis='sto-3g')
     qc2data.run()
 
     # instantiate oo-VQE algorithm
-    qc2data.algorithm = oo_VQE(
+    qc2data.algorithm = OO_VQE(
         active_space=ActiveSpace(
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2

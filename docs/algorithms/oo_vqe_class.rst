@@ -15,7 +15,7 @@ oo-VQE
     The expectation values of :math:`H` are minimized via a classical two-step process; NR stands for Newton-Raphson.
 
 The oo-VQE algorithm (refer to the figure) is implemented in two other dedicated classes:
-:class:`qc2.algorithms.qiskit.oo_vqe.oo_VQE` and :class:`qc2.algorithms.pennylane.oo_vqe.oo_VQE`.
+:class:`qc2.algorithms.qiskit.oo_vqe.OO_VQE` and :class:`qc2.algorithms.pennylane.oo_vqe.OO_VQE`.
 It is important to note that, in addition to handling circuit parameters, oo-VQE also optimizes
 the initial Hartree-Fock molecular orbital coefficients through
 additional classical Newton-Raphson steps (:math:`C'_{\rm MO} \rightarrow e^{-\boldsymbol \kappa} C_{\rm MO}`) . This is done by resorting to analytic
@@ -37,7 +37,7 @@ An illustrative example is shown below:
     from qiskit.primitives import Estimator
 
     from qc2.data import qc2Data
-    from qc2.algorithms.qiskit import oo_VQE
+    from qc2.algorithms.qiskit import OO_VQE
     from qc2.algorithms.utils import ActiveSpace
 
     # set ASE Atoms object
@@ -52,7 +52,7 @@ An illustrative example is shown below:
     # ... run qchem ab initio HF calculation via qc2-ASE 
 
     # set up oo-VQE class
-    oo_vqe = oo_VQE(
+    oo_vqe = OO_VQE(
         qc2data=qc2data,
         active_space=ActiveSpace(
             num_active_electrons=(2, 2),

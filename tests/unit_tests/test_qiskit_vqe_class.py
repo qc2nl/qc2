@@ -67,7 +67,6 @@ def test_initialization_with_ansatz():
     )
     vqe = VQE(
         ansatz=ansatz,
-        reference_state=reference_state,
         active_space=ActiveSpace(
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2
@@ -78,22 +77,10 @@ def test_initialization_with_ansatz():
     )
     assert isinstance(vqe, VQE)
 
-
-def test_default_reference(active_space):
-    """Test if default reference state works."""
-    reference_state = VQE._get_default_reference(
-        active_space, JordanWignerMapper()
-    )
-    assert isinstance(reference_state, QuantumCircuit)
-
-
 def test_default_ansatz(active_space):
     """Test the generation of default ansatz."""
-    reference_state = VQE._get_default_reference(
+    ansatz = VQE._get_default_ansatz(None,
         active_space, JordanWignerMapper()
-    )
-    ansatz = VQE._get_default_ansatz(
-        active_space, JordanWignerMapper(), reference_state
     )
     assert isinstance(ansatz, UCC)
 

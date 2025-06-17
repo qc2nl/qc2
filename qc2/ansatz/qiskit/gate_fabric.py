@@ -158,7 +158,7 @@ class GateFabric(BlueprintCircuit):
             qubits = wires[i : i + 4]
 
             if self._include_pi:
-                self._orbital_rotation( np.pi, qubits)
+                self._orbital_rotation(circuit, np.pi, qubits)
 
             self._double_excitation(circuit, parameters[i][0], qubits)
             self._orbital_rotation(circuit, parameters[i][1], qubits)
