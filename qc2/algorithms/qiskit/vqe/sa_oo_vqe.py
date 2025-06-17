@@ -4,7 +4,7 @@ import numpy as np
 import itertools as itt
 from qiskit.circuit import QuantumCircuit
 from functools import partial
-from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
+from qiskit_nature.second_q.circuit.library import UCC
 from qiskit_nature.second_q.mappers import QubitMapper
 from qiskit_nature.second_q.operators import FermionicOp
 
@@ -13,6 +13,7 @@ from qc2.algorithms.algorithms_results import SAOOVQEResults
 from qc2.algorithms.utils.active_space import ActiveSpace
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.ansatz.qiskit.state_resolution import StateResolution
+from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
 
 class SA_OO_VQE(VQE):
     """Main class for state-averaged orbital-optimized VQE with Qiskit-Nature.
@@ -257,6 +258,7 @@ class SA_OO_VQE(VQE):
 
     @staticmethod
     def _get_default_ansatzes(
+        ansatz: Union[str, None],
         active_space: ActiveSpace,
         mapper: QubitMapper
     ) -> List[QuantumCircuit]:
@@ -268,21 +270,24 @@ class SA_OO_VQE(VQE):
             reference_state (QuantumCircuit): Reference state circuit.
 
         Returns:
-            UCC: UCC ansatz quantum circuit.
+            QuantumCircuit: the ansatz quantum circuit.
         """
 
         # create reference state
         reference_state = StateResolution(active_space)
 
-        return [UCC(
-            num_spatial_orbitals=active_space.num_active_spatial_orbitals,
-            num_particles=active_space.num_active_electrons,
-            qubit_mapper=mapper,
-            initial_state=reference_state.assign_parameters([phase], inplace=False),
-            excitations="sd",
-        )
-        for phase in [0, np.pi/2]]
-
+        return [
+            generate_ansatz(
+                num_spatial_orbitals=active_space.num_active_spatial_orbitals,
+                num_particles=active_space.num_active_electrons,
+                mapper=mapper,
+                ansatz_type=ansatz,
+                reference_state=reference_state.assign_parameters([phase], inplace=False),
+                mol_data=None,
+                scf=None
+            ) 
+            for phase in [0, np.pi/2]
+        ]
 
     def _get_energy_from_parameters(
             self,

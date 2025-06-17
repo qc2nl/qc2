@@ -8,7 +8,7 @@ from qc2.algorithms.utils.active_space import ActiveSpace
 from qc2.algorithms.utils.mappers import FermionicToQubitMapper
 from qc2.algorithms.base.vqe_base import VQEBASE
 from qc2.algorithms.algorithms_results import VQEResults
-
+from qc2.ansatz.pennylane.generate_ansatz import generate_ansatz
 
 class VQE(VQEBASE):
     """
@@ -126,10 +126,10 @@ class VQE(VQEBASE):
         )
 
         self.ansatz = (
-            self._get_default_ansatz(
+            self._get_default_ansatz(ansatz,
                 self.qubits, self.electrons
             )
-            if ansatz is None
+            if not isinstance(ansatz, Callable)
             else ansatz
         )
         self.params = (
@@ -147,33 +147,19 @@ class VQE(VQEBASE):
 
     @staticmethod
     def _get_default_ansatz(
-        qubits: int, electrons: int
+        ansatz: str| None, qubits: int, electrons: int
     ) -> Callable:
         """Create the default ansatz function for the VQE circuit.
 
         Args:
+            ansatz (str| None): Type of ansatz to use.
             qubits (int): Number of qubits in the circuit.
             electrons (int): Number of electrons in the system.
 
         Returns:
             Callable: Function that applies the UCCSD ansatz.
         """
-        # reference state
-        reference_state = qml.qchem.hf_state(electrons, qubits)
-
-        # Generate single and double excitations
-        singles, doubles = qml.qchem.excitations(electrons, qubits)
-
-        # Map excitations to the wires the UCCSD circuit will act on
-        s_wires, d_wires = qml.qchem.excitations_to_wires(singles, doubles)
-
-        # Return a function that applies the UCCSD ansatz
-        def ansatz(params):
-            qml.UCCSD(
-                params, wires=range(qubits), s_wires=s_wires,
-                d_wires=d_wires, init_state=reference_state
-            )
-        return ansatz
+        return generate_ansatz(qubits, electrons, ansatz)
 
     @staticmethod
     def _get_default_init_params(qubits: int, electrons: int) -> np.ndarray:

@@ -8,7 +8,7 @@ from qiskit_nature.second_q.operators import FermionicOp
 from qc2.algorithms.pennylane.vqe.sa_oo_vqe import SA_OO_VQE
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.pennylane.convert import _qiskit_nature_to_pennylane
-
+from qc2.ansatz.pennylane.generate_ansatz import generate_ansatz
 
 class OO_VQE(SA_OO_VQE):
     """Main class for orbital-optimized VQE with PennyLane.
@@ -122,31 +122,17 @@ class OO_VQE(SA_OO_VQE):
         )
 
     @staticmethod
-    def _get_default_ansatzes(
+    def _get_default_ansatzes(ansatz: str| None,
         qubits: int, electrons: int
     ) -> Callable:
         """Create the default ansatz function for the VQE circuit.
 
         Args:
+            ansatz (str| None): Type of ansatz to use.
             qubits (int): Number of qubits in the circuit.
             electrons (int): Number of electrons in the system.
 
         Returns:
             Callable: Function that applies the UCCSD ansatz.
         """
-        # reference state
-        reference_state = qml.qchem.hf_state(electrons, qubits)
-
-        # Generate single and double excitations
-        singles, doubles = qml.qchem.excitations(electrons, qubits)
-
-        # Map excitations to the wires the UCCSD circuit will act on
-        s_wires, d_wires = qml.qchem.excitations_to_wires(singles, doubles)
-
-        # Return a function that applies the UCCSD ansatz
-        def ansatz(params):
-            qml.UCCSD(
-                params, wires=range(qubits), s_wires=s_wires,
-                d_wires=d_wires, init_state=reference_state
-            )
-        return [ansatz]
+        return [generate_ansatz(qubits, electrons, ansatz)]

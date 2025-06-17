@@ -1,5 +1,5 @@
 """Module defining VQE algorithm for Qiskit-Nature."""
-from typing import List, Dict
+from typing import List, Dict, Union
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
 from qiskit_nature.second_q.mappers import QubitMapper
 from qiskit_algorithms.minimum_eigensolvers import VQE as vqe_solver
@@ -10,6 +10,7 @@ from qc2.algorithms.base.vqe_base import VQEBASE
 from qc2.algorithms.algorithms_results import VQEResults
 from qc2.algorithms.utils.active_space import ActiveSpace
 from qc2.algorithms.utils.mappers import FermionicToQubitMapper
+from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
 
 
 class VQE(VQEBASE):
@@ -51,7 +52,7 @@ class VQE(VQEBASE):
 
         Args:
             qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`.
-            ansatz (UCC): The ansatz for the VQE algorithm.
+            ansatz (None, str, QuantmumCircuit): The ansatz for the VQE algorithm.
                 Defaults to :class:`qiskit.UCCSD`.
             active_space (ActiveSpace): Describes the active space for quantum
                 simulation. Defaults to ``ActiveSpace((2, 2), 2)``.
@@ -111,9 +112,9 @@ class VQE(VQEBASE):
         
         self.ansatz = (
             self._get_default_ansatz(
-                self.active_space, self.mapper
+                ansatz, self.active_space, self.mapper
             )
-            if ansatz is None
+            if not isinstance(ansatz, QuantumCircuit)
             else ansatz
         )
         self.params = (
@@ -127,9 +128,10 @@ class VQE(VQEBASE):
 
     @staticmethod
     def _get_default_ansatz(
+        ansatz: Union[str, None],
         active_space: ActiveSpace,
         mapper: QubitMapper,
-    ) -> UCC:
+    ) -> QuantumCircuit:
         """Set up the default UCC ansatz from a Hartree Fock reference state.
 
         Args:
@@ -137,20 +139,16 @@ class VQE(VQEBASE):
             mapper (QubitMapper): Mapper class instance.
 
         Returns:
-            UCC: UCC ansatz quantum circuit.
+            QuantumCircuit: the ansatz quantum circuit.
         """
-        reference_state = HartreeFock(
-            active_space.num_active_spatial_orbitals,
-            active_space.num_active_electrons,
-            mapper,
-        )
 
-        return UCC(
+        return generate_ansatz(
             num_spatial_orbitals=active_space.num_active_spatial_orbitals,
             num_particles=active_space.num_active_electrons,
-            qubit_mapper=mapper,
-            initial_state=reference_state,
-            excitations="sd",
+            mapper=mapper,
+            ansatz_type=ansatz,
+            mol_data=None,
+            scf=None
         )
 
     @staticmethod

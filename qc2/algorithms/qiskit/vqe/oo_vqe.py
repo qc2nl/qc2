@@ -1,10 +1,11 @@
 """Module defining oo-VQE algorithm for Qiskit-Nature."""
-from typing import List
+from typing import List, Union
 from qiskit.circuit import QuantumCircuit
 from qiskit_nature.second_q.circuit.library import HartreeFock, UCC
 from qiskit_nature.second_q.mappers import QubitMapper
 from qc2.algorithms.qiskit.vqe.sa_oo_vqe import SA_OO_VQE
 from qc2.algorithms.utils.active_space import ActiveSpace
+from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
 
 class OO_VQE(SA_OO_VQE):
     """Main class for orbital-optimized VQE with Qiskit-Nature.
@@ -118,6 +119,7 @@ class OO_VQE(SA_OO_VQE):
     
     @staticmethod
     def _get_default_ansatzes(
+        ansatz: Union[str, None],
         active_space: ActiveSpace,
         mapper: QubitMapper
     ) -> List[QuantumCircuit]:
@@ -129,21 +131,14 @@ class OO_VQE(SA_OO_VQE):
             reference_state (QuantumCircuit): Reference state circuit.
 
         Returns:
-            UCC: UCC ansatz quantum circuit.
+            QuantumCircuit: the ansatz quantum circuit.
         """
 
-        # create reference state
-        reference_state = [HartreeFock(
-            active_space.num_active_spatial_orbitals,
-            active_space.num_active_electrons,
-            mapper,
-        )]
-
-        return [UCC(
+        return [generate_ansatz(
             num_spatial_orbitals=active_space.num_active_spatial_orbitals,
             num_particles=active_space.num_active_electrons,
-            qubit_mapper=mapper,
-            initial_state=ref,
-            excitations="sd",
-        )
-        for ref in reference_state]
+            mapper=mapper,
+            ansatz_type=ansatz,
+            mol_data=None,
+            scf=None
+        )]

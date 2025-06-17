@@ -9,6 +9,7 @@ from qc2.algorithms.algorithms_results import SAOOVQEResults
 from qc2.ansatz.pennylane.state_resolution import state_resolution_initializer
 from qc2.pennylane.convert import _qiskit_nature_to_pennylane
 from qiskit_nature.second_q.operators import FermionicOp
+from qc2.ansatz.pennylane.generate_ansatz import generate_state_resolution_ansatz
 
 class SA_OO_VQE(VQE):
     """Main class for orbital-optimized VQE with PennyLane.
@@ -283,6 +284,7 @@ class SA_OO_VQE(VQE):
 
     @staticmethod
     def _get_default_ansatzes(
+        ansatz: str| None,
         qubits: int, 
         electrons: int, 
     ) -> List[Callable]:
@@ -295,38 +297,8 @@ class SA_OO_VQE(VQE):
         Returns:
             Callable: Function that applies the UCCSD ansatz.
         """
-        # Generate single and double excitations
-        singles, doubles = qml.qchem.excitations(electrons, qubits)
-
-        # Map excitations to the wires the UCCSD circuit will act on
-        s_wires, d_wires = qml.qchem.excitations_to_wires(singles, doubles)
-
-        # Return a function that applies the UCCSD ansatz
-        # on the state resolution ground state
-        def ref_ansatz(params):
-
-            state_resolution_initializer(electrons//2, electrons//2, 0.0)
-
-            qml.UCCSD(
-                params, wires=range(qubits), 
-                s_wires=s_wires, d_wires=d_wires, 
-                init_state=np.zeros(qubits).astype(int)
-            )
-            
-        # Return a function that applies the UCCSD ansatz
-        # on the state resolution excited state
-        def excited_ansatz(params):
-
-            state_resolution_initializer(electrons//2, electrons//2, np.pi/2)
-
-            # create the ansatz
-            qml.UCCSD(
-                params, wires=range(qubits), 
-                s_wires=s_wires, d_wires=d_wires, 
-                init_state=np.zeros(qubits).astype(int)
-            )
-
-        return [ref_ansatz, excited_ansatz]
+        return [generate_state_resolution_ansatz(qubits, electrons, ansatz, 0.0), 
+                generate_state_resolution_ansatz(qubits, electrons, ansatz, np.pi/2)]
     
     def _get_energy_from_parameters(
             self,
