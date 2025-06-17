@@ -130,8 +130,8 @@ class SA_OO_VQE(VQE):
         self.state_resolution = state_resolution
 
         # create the ansatz
-        self.ansatz = (self._get_default_ansatzes(self.qubits, self.electrons) 
-            if ansatz is None 
+        self.ansatz = (self._get_default_ansatzes(ansatz, self.qubits, self.electrons) 
+            if not isinstance(ansatz, Callable) 
             else ansatz 
         )
 

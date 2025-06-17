@@ -132,9 +132,10 @@ class SA_OO_VQE(VQE):
 
         # create the ansatz
         self.ansatz = (self._get_default_ansatzes(
+            ansatz,
             active_space=self.active_space,
             mapper=self.mapper) 
-            if ansatz is None 
+            if not isinstance(ansatz, QuantumCircuit) 
             else ansatz 
         )
 
