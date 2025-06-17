@@ -131,12 +131,12 @@ class SA_OO_VQE(VQE):
 
         # create the ansatz
         if not isinstance(ansatz, Callable):
-            self.ansatz, self.parameters = self._get_default_ansatzes(ansatz, 
+            self.ansatz, self.circuit_params = self._get_default_ansatzes(ansatz, 
                                                                       self.qubits, 
                                                                       self.electrons)
         else:
             self.ansatz = ansatz
-            self.parameters = init_circuit_params      
+            self.circuit_params = init_circuit_params      
         
         # create the weights
         self.state_weights = ([0.5, 0.5] 
