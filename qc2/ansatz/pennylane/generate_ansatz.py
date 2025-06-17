@@ -1,5 +1,5 @@
 import pennylane as qml
-import numpy as np 
+import pennylane import numpy as np 
 from .state_resolution import state_resolution_initializer
 def generate_ansatz(
     qubits: int, 

@@ -130,11 +130,8 @@ class VQE(VQEBASE):
             self.ansatz, self.params = self._get_default_ansatz(
                 ansatz, self.qubits, self.electrons
             )
-            self.params
         else:
-            raise NotImplementedError(
-                "Custom ansatz functions are not supported yet."
-            )
+            self.ansatz, self.params = ansatz, init_params
     
 
         # init algorithm-specific attributes
@@ -159,21 +156,6 @@ class VQE(VQEBASE):
             Callable: Function that applies the UCCSD ansatz.
         """
         return generate_ansatz(qubits, electrons, ansatz)
-
-    @staticmethod
-    def _get_default_init_params(qubits: int, electrons: int) -> np.ndarray:
-        """Generate default initial parameters for the ansatz.
-
-        Args:
-            qubits (int): Number of qubits in the circuit.
-            electrons (int): Number of electrons in the system.
-
-        Returns:
-            np.ndarray: Array of initial parameter values.
-        """
-        # Generate single and double excitations
-        singles, doubles = qml.qchem.excitations(electrons, qubits)
-        return np.zeros(len(singles) + len(doubles))
 
     @staticmethod
     def _build_circuit(
