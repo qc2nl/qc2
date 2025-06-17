@@ -85,16 +85,9 @@ def test_initialization_with_ansatz():
 
 def test_default_ansatz():
     """Test the generation of default ansatz."""
-    ansatz = VQE._get_default_ansatz(None, 4, 2)
+    ansatz, parameters = VQE._get_default_ansatz(None, 4, 2)
     assert isinstance(ansatz, Callable)
-
-
-def test_default_init_params():
-    """Test the initialization of circuit parameters."""
-    init_params = VQE._get_default_init_params(4, 2)
-    assert isinstance(init_params, np.ndarray)
-    assert all(param == 0.0 for param in init_params)
-
+    assert isinstance(parameters, np.ndarray)
 
 def test_run_method(vqe):
     """Test main VQE workflow."""
