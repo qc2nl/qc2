@@ -8,10 +8,10 @@ from qiskit.quantum_info import SparsePauliOp
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.problems import ElectronicStructureProblem
 from qiskit_nature.second_q.hamiltonians import ElectronicEnergy
-from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature.second_q.formats.fcidump import FCIDump
 
 from qc2.data.data import qc2Data
+from qc2.qc2schema.qcschema import QCSchema
 from qc2.ase.pyscf import PySCF
 
 # try importing PennyLane and set a flag

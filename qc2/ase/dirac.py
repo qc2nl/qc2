@@ -19,13 +19,13 @@ from ase.calculators.calculator import InputError, CalculationFailed
 from ase.units import Bohr
 from ase.io import write
 
-from qiskit_nature.second_q.formats.qcschema import QCSchema
+
 from qiskit_nature import __version__ as qiskit_nature_version
 from qiskit_nature.second_q.formats.fcidump import FCIDump
 
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from .qc2_ase_base_class import BaseQc2ASECalculator
-
+from ..qc2schema.qcschema import QCSchema
 
 class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
     """A general ASE calculator for the relativistic qchem DIRAC code.

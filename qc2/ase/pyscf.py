@@ -23,12 +23,11 @@ from pyscf import gto, scf, dft
 from pyscf import __version__ as pyscf_version
 from pyscf.tools import fcidump
 
-from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature import __version__ as qiskit_nature_version
 from qiskit_nature.second_q.formats.fcidump import FCIDump
 
 from .qc2_ase_base_class import BaseQc2ASECalculator
-
+from ..qc2schema.qcschema import QCSchema
 
 def ase_atoms_to_pyscf(ase_atoms: Atoms) -> List[List[Union[str, np.ndarray]]]:
     """Converts ASE atoms to PySCF atom.

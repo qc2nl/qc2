@@ -4,12 +4,11 @@ from typing import Tuple, Any, Union
 import os
 import h5py
 
-from qiskit_nature.second_q.formats.qcschema import (
+from ..qc2schema.qcschema import (
     QCSchema, QCTopology, QCProperties,
     QCModel, QCProvenance, QCWavefunction
 )
 from qiskit_nature.second_q.formats.fcidump import FCIDump
-
 
 class BaseQc2ASECalculator(ABC):
     """Abstract base class for all qc2 ASE calculators."""

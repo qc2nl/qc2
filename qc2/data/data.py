@@ -8,9 +8,10 @@ from ase.units import Ha
 
 from qiskit.quantum_info import SparsePauliOp
 
-from qiskit_nature.second_q.formats.qcschema import QCSchema
+from ..qc2schema.qcschema import QCSchema
+from ..qc2schema.qcschema_translator import qcschema_to_problem
+
 from qiskit_nature.second_q.formats.fcidump import FCIDump
-from qiskit_nature.second_q.formats import qcschema_to_problem
 from qiskit_nature.second_q.formats import fcidump_to_problem
 from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
 from qiskit_nature.second_q.operators import FermionicOp

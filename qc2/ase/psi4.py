@@ -12,11 +12,11 @@ from psi4.driver import fcidump
 from psi4.core import MintsHelper
 from psi4 import __version__ as psi4_version
 
-from qiskit_nature.second_q.formats.qcschema import QCSchema
 from qiskit_nature import __version__ as qiskit_nature_version
 from qiskit_nature.second_q.formats.fcidump import FCIDump
 
 from .qc2_ase_base_class import BaseQc2ASECalculator
+from ..qc2schema.qcschema import QCSchema
 
 
 class Psi4(Psi4_original, BaseQc2ASECalculator):
