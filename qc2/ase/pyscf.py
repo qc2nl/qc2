@@ -23,11 +23,10 @@ from pyscf import gto, scf, dft
 from pyscf import __version__ as pyscf_version
 from pyscf.tools import fcidump
 
-from qiskit_nature import __version__ as qiskit_nature_version
-from qiskit_nature.second_q.formats.fcidump import FCIDump
 
 from .qc2_ase_base_class import BaseQc2ASECalculator
 from ..qc2schema.qcschema import QCSchema
+from qc2.__init__ import __version__ as qc2_version
 
 def ase_atoms_to_pyscf(ase_atoms: Atoms) -> List[List[Union[str, np.ndarray]]]:
     """Converts ASE atoms to PySCF atom.
@@ -382,7 +381,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
             molecular_multiplicity=(self.mol.spin + 1),
             atomic_numbers=[atom[0] for atom in self.mol._atm],
             schema_name="qcschema_molecule",
-            schema_version=qiskit_nature_version
+            schema_version=qc2_version
         )
 
         provenance = super().instantiate_qcprovenance(
@@ -449,7 +448,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
 
         qcschema = super().instantiate_qcschema(
             schema_name='qcschema_molecule',
-            schema_version=qiskit_nature_version,
+            schema_version=qc2_version,
             driver='energy',
             keywords={},
             return_result=self.mf.e_tot,
@@ -464,9 +463,7 @@ class PySCF(Calculator, BaseQc2ASECalculator):
         with h5py.File(datafile, 'w') as h5file:
             qcschema.to_hdf5(h5file)
 
-    def load(self, datafile: Union[h5py.File, str]) -> Union[
-        QCSchema, FCIDump
-    ]:
+    def load(self, datafile: Union[h5py.File, str]) -> QCSchema:
         """Loads electronic structure data from a datafile.
 
         Args:

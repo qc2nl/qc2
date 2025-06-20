@@ -20,13 +20,11 @@ from ase.units import Bohr
 from ase.io import write
 
 
-from qiskit_nature import __version__ as qiskit_nature_version
-from qiskit_nature.second_q.formats.fcidump import FCIDump
-
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from .qc2_ase_base_class import BaseQc2ASECalculator
 from ..qc2schema.qcschema import QCSchema
 
+from qc2.__init__ import __version__ as qc2_version
 class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
     """A general ASE calculator for the relativistic qchem DIRAC code.
 
@@ -271,7 +269,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
                 '/input/molecule/nuc_charge'
             ),
             schema_name="qcschema_molecule",
-            schema_version=qiskit_nature_version
+            schema_version=qc2_version
         )
 
         provenance = super().instantiate_qcprovenance(
@@ -327,7 +325,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
 
         qcschema = super().instantiate_qcschema(
             schema_name='qcschema_molecule',
-            schema_version=qiskit_nature_version,
+            schema_version=qc2_version,
             driver='energy',
             keywords={},
             return_result=self._get_from_dirac_hdf5_file(
@@ -344,9 +342,7 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         with h5py.File(datafile, 'w') as h5file:
             qcschema.to_hdf5(h5file)
 
-    def load(self, datafile: Union[h5py.File, str]) -> Union[
-        QCSchema, FCIDump
-    ]:
+    def load(self, datafile: Union[h5py.File, str]) -> QCSchema:
         """Loads electronic structure data from a datafile.
 
         Args:
@@ -374,15 +370,6 @@ class DIRAC(FileIOCalculator, BaseQc2ASECalculator):
         >>> molecule.calc.schema_format = "fcidump"
         >>> fcidump = molecule.calc.load('h2.fcidump')
         """
-        if self._schema_format == "fcidump":
-            logging.warning(
-                'FCIDump.from_file() in Qiskit-Nature may not load '
-                'properly integrals from DIRAC FCIDUMP file. '
-                'The reason lies in the fact that FCIDump.from_file() '
-                'reads integrals as `SymmetricTwoBodyIntegrals`, while, '
-                'in DIRAC, FCIDUMP file is generated with the full list '
-                'of terms.'
-            )
 
         return BaseQc2ASECalculator.load(self, datafile)
 

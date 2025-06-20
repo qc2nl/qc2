@@ -11,8 +11,6 @@ from qiskit.quantum_info import SparsePauliOp
 from ..qc2schema.qcschema import QCSchema
 from ..qc2schema.qcschema_translator import qcschema_to_problem
 
-from qiskit_nature.second_q.formats.fcidump import FCIDump
-from qiskit_nature.second_q.formats import fcidump_to_problem
 from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.problems import ElectronicStructureProblem
@@ -204,15 +202,15 @@ class qc2Data:
         self._molecule.calc.save(self._filename)
         print(f"* Saving qchem data in {self._filename}\n")
 
-    def read_schema(self) -> Union[QCSchema, FCIDump]:
-        """Reads and stores data in :class:`QCSchema` or :class:`FCIDump`.
+    def read_schema(self) -> QCSchema:
+        """Reads and stores data in :class:`QCSchema`
 
         Reads and stores the required data from an HDF5 or FCIDump file as
         either a :class:`QCSchema` or :class:`FCIDump` dataclass instance.
 
         Returns:
-            Union[QCSchema, FCIDump]:
-                Instance of :class:`QCSchema` or :class:`FCIDump` dataclass.
+            QCSchema:
+                Instance of :class:`QCSchema`
 
         Notes:
             See qiskit_nature/second_q/formats for more information on the
@@ -303,11 +301,6 @@ class qc2Data:
         # convert electronic basis from string to an instance
         # of :class:`qiskit.ElectronicBasis`
         basis = ElectronicBasis(basis)
-
-        if self._schema == "fcidump":
-            # convert `FCIDump` into `ElectronicStructureProblem`;
-            # see qiskit_nature/second_q/formats/fcidump_translator.py
-            return fcidump_to_problem(schema)
 
         # convert `QCSchema` into `ElectronicStructureProblem`;
         # see qiskit_nature/second_q/formats/qcschema_translator.py

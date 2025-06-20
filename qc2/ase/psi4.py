@@ -12,12 +12,10 @@ from psi4.driver import fcidump
 from psi4.core import MintsHelper
 from psi4 import __version__ as psi4_version
 
-from qiskit_nature import __version__ as qiskit_nature_version
-from qiskit_nature.second_q.formats.fcidump import FCIDump
-
 from .qc2_ase_base_class import BaseQc2ASECalculator
 from ..qc2schema.qcschema import QCSchema
 
+from qc2.__init__ import __version__ as qc2_version
 
 class Psi4(Psi4_original, BaseQc2ASECalculator):
     """An extended ASE calculator for Psi4.
@@ -113,7 +111,7 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
                 for n in range(self.scf_wfn.molecule().natom())
             ],
             schema_name="qcschema_molecule",
-            schema_version=qiskit_nature_version
+            schema_version=qc2_version
         )
 
         provenance = super().instantiate_qcprovenance(
@@ -178,7 +176,7 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
 
         qcschema = super().instantiate_qcschema(
             schema_name='qcschema_molecule',
-            schema_version=qiskit_nature_version,
+            schema_version=qc2_version,
             driver='energy',
             keywords={},
             return_result=self.scf_e,
@@ -193,9 +191,7 @@ class Psi4(Psi4_original, BaseQc2ASECalculator):
         with h5py.File(datafile, 'w') as h5file:
             qcschema.to_hdf5(h5file)
 
-    def load(self, datafile: Union[h5py.File, str]) -> Union[
-            QCSchema, FCIDump
-    ]:
+    def load(self, datafile: Union[h5py.File, str]) -> QCSchema:
         """Loads electronic structure data from a datafile.
 
         Args:

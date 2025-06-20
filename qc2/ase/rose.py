@@ -13,8 +13,6 @@ from ase_rose import ROSE as ROSE_original
 from ase_rose import ROSEFragment as ROSEFragment_original
 from ase_rose import ROSETargetMolecule as ROSETargetMolecule_original
 
-from qiskit_nature.second_q.formats.fcidump import FCIDump
-
 from .qc2_ase_base_class import BaseQc2ASECalculator
 
 
@@ -88,7 +86,7 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
                 'Datafile %s from ROSE can only be loaded.', datafile
             )
 
-    def load(self, datafile: str) -> FCIDump:
+    def load(self, datafile: str):
         """Loads electronic structure data from a fcidump datafile.
 
         Args:
@@ -114,4 +112,5 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
         >>> H2_calculator.schema_format = "fcidump"
         >>> fcidump = H2_calculator.load('ibo.fcidump')
         """
-        return BaseQc2ASECalculator.load(self, datafile)
+        raise NotImplementedError("Only support FCIDUMP")
+        # return BaseQc2ASECalculator.load(self, datafile)

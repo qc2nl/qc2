@@ -8,7 +8,6 @@ from ..qc2schema.qcschema import (
     QCSchema, QCTopology, QCProperties,
     QCModel, QCProvenance, QCWavefunction
 )
-from qiskit_nature.second_q.formats.fcidump import FCIDump
 
 class BaseQc2ASECalculator(ABC):
     """Abstract base class for all qc2 ASE calculators."""
@@ -41,9 +40,7 @@ class BaseQc2ASECalculator(ABC):
         """Dumps qchem data to a datafile using QCSchema or FCIDump formats."""
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def load(self, datafile: Union[h5py.File, str]) -> Union[
-        QCSchema, FCIDump
-    ]:
+    def load(self, datafile: Union[h5py.File, str]) -> QCSchema:
         """Loads qchem data from a QCSchema- or FCIDump-formatted datafile."""
         # first check if the file exists
         if not os.path.exists(datafile):
@@ -52,14 +49,6 @@ class BaseQc2ASECalculator(ABC):
         # check if the file has a valid format
         if (self._schema_format == "qcschema" and not h5py.is_hdf5(datafile)):
             raise ValueError(f"{datafile} is not an hdf5 file.")
-
-        # add here checks for fcidump...
-        # if (self._schema_format == "fcidump" and ....):
-        #     raise ValueError(f"{datafile} is not an fcidump-formated file")
-
-        # populating QCSchema or FCIDump dataclasses
-        if self._schema_format == "fcidump":
-            return FCIDump.from_file(datafile)
 
         with h5py.File(datafile, 'r') as file:
             return QCSchema._from_hdf5_group(file)
