@@ -9,7 +9,7 @@ from ase.units import Ha
 from qiskit.quantum_info import SparsePauliOp
 
 from ..qc2schema.qcschema import QCSchema
-from ..qc2schema.qcschema_translator import qcschema_to_problem
+from qiskit_nature.second_q.formats.qcschema_translator import qcschema_to_problem
 
 from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
 from qiskit_nature.second_q.operators import FermionicOp
@@ -266,9 +266,6 @@ class qc2Data:
               the :class:`ElectronicStructureProblem`.
 
         Notes:
-            - For ``fcidump`` schema, the conversion is done using the
-              `fcidump_to_problem` function from
-              qiskit_nature/second_q/formats/fcidump_translator.py.
             - For ``qcschema`` schema, the conversion is done using the
               `qcschema_to_problem` function from
               qiskit_nature/second_q/formats/qcschema_translator.py.
