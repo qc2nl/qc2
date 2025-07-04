@@ -1,7 +1,6 @@
 import netket as nk
+import jax.numpy as jnp
 import GPSKet.models as qGPS
-
-import numpy as np
 
 from GPSKet.hilbert.discrete_fermion import FermionicDiscreteHilbert
 from GPSKet.sampler.fermionic_hopping import MetropolisHopping, MetropolisFastHopping
@@ -9,13 +8,8 @@ from GPSKet.operator.hamiltonian.ab_initio import (
     AbInitioHamiltonian,
     AbInitioHamiltonianOnTheFly,
 )
-
 from GPSKet.models import qGPS
-
-from pyscf import scf, gto, ao2mo, fci, lo
-from pyscf.tools import ring
-
-import jax.numpy as jnp
+from ..base.base_algorithm import BaseAlgorithm
 
 """
 This is the GPSKet/NetKet bit of the calculation.
@@ -47,49 +41,64 @@ The key elements different from standard netket calculations are:
     TODO: this needs to be implemented and checked.
 """
 
-class VMC():
+class VMC(BaseAlgorithm):
     def __init__(
             self,
             qc2data=None,
+            model=None,
+            sampler=None,
             active_space=None):
 
         self.qc2data = qc2data
         self.active_space = active_space
-
-# Set up Hilbert space
-hi = FermionicDiscreteHilbert(norb, n_elec=(nelec // 2, nelec // 2))
-
-# Set up ab-initio Hamiltonian
-ha = AbInitioHamiltonianOnTheFly(hi, h1, h2)
+        super().__init__()
 
 
-# If we want, we can compare the exact energies given by the PySCF and the NetKet solver
-# e_mo_nk = nk.exact.lanczos_ed(ha)[0]
-# assert(np.allclose(e_mo_nk, energy_mo))
+    def run(self):
+        data = self.qc2data.read_schema()
+
+        norb = data.properties.calcinfo_nmo
+        nalpha = data.properties.calcinfo_nalpha
+        nbeta = data.properties.calcinfo_nbeta
+        nuc_en = data.properties.nuclear_repulsion_energy
+
+        h1 = data.wavefunction.scf_fock_mo_a
+        h2 = data.wavefunction.scf_eri_mo_aa
+
+        # Set up Hilbert space
+        hi = FermionicDiscreteHilbert(norb, n_elec=(nalpha // 2, nbeta // 2))
+
+        # Set up ab-initio Hamiltonian
+        ha = AbInitioHamiltonianOnTheFly(hi, h1, h2)
 
 
-# Use Metropolis-Hastings sampler with hopping rule (including fast updates for qGPS)
-sa = MetropolisFastHopping(hi, n_chains_per_rank=1)
-
-# Define the model and the variational state
-model = qGPS(hi, 10, dtype=jnp.complex128)
-vs = nk.vqs.MCState(sa, model, n_samples=1000)
+        # If we want, we can compare the exact energies given by the PySCF and the NetKet solver
+        # e_mo_nk = nk.exact.lanczos_ed(ha)[0]
+        # assert(np.allclose(e_mo_nk, energy_mo))
 
 
-# Optimizer
-op = nk.optimizer.Sgd(learning_rate=0.02)
-qgt = nk.optimizer.qgt.QGTJacobianDense(holomorphic=True)
-sr = nk.optimizer.SR(qgt=qgt)
+        # Use Metropolis-Hastings sampler with hopping rule (including fast updates for qGPS)
+        sa = MetropolisFastHopping(hi, n_chains_per_rank=1)
 
-# Variational Monte Carlo driver
-gs = nk.VMC(ha, op, variational_state=vs, preconditioner=sr)
+        # Define the model and the variational state
+        model = qGPS(hi, 10, dtype=jnp.complex128)
+        vs = nk.vqs.MCState(sa, model, n_samples=1000)
 
-# Run optimization
-for it in gs.iter(1000, 1):
-    en = gs.energy.mean + nuc_en
-    print(
-        "Iteration: {}, Energy: {}, Rel. energy_error: {}".format(
-            it, en, abs((gs_energy - en) / gs_energy)
-        ),
-        flush=True,
-    )
+
+        # Optimizer
+        op = nk.optimizer.Sgd(learning_rate=0.02)
+        qgt = nk.optimizer.qgt.QGTJacobianDense(holomorphic=True)
+        sr = nk.optimizer.SR(qgt=qgt)
+
+        # Variational Monte Carlo driver
+        gs = nk.VMC(ha, op, variational_state=vs, preconditioner=sr)
+
+        # Run optimization
+        for it in gs.iter(1000, 1):
+            en = gs.energy.mean + nuc_en
+            print(
+                "Iteration: {}, Energy: {}".format(
+                    it, en
+                ),
+                flush=True,
+            )
