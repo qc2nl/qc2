@@ -1,5 +1,6 @@
 
 import numpy as np
+from ..algorithms.utils import ActiveSpace
 from .qcschema import QCSchema
 
 
@@ -48,7 +49,10 @@ class ElectronicHamiltonian:
     def _reshape_4(self, arr):
         return np.asarray(arr).reshape((self.norb,) * 4)
     
+
     def get_second_q_coeffs(self):
+
+
         # see ElectronicIntegrals.second_q_coeff()
         self.second_q_coeffs = {'+-': None, '++--': None}
         
@@ -78,7 +82,6 @@ class ElectronicHamiltonian:
         kron_two_body[(1, 1, 0, 0)] = 0.0
         kron_two_body[(0, 0, 1, 1)] = 0.5
         self.second_q_coeffs['++--'] += np.kron( kron_two_body, self.beta_alpha['++--'].T )
-                                                # self.beta_alpha['++--']np.moveaxis(, (0, 1), (2, 3)) )
                                                 
 
     
@@ -99,3 +102,5 @@ class ElectronicHamiltonian:
                     for l in range(norb):
                         if np.abs(self.second_q_coeffs['++--'][i, j, k, l]) >= self.tol: 
                             self.second_q_ops[("+_{} +_{} -_{} -_{}".format(i, k, l, j))] = self.second_q_coeffs['++--'][i, j, k, l]
+
+
