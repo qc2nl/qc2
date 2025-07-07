@@ -21,4 +21,4 @@ qc2data.run()
 # instantiate the solver
 vmc = VMC()
 qc2data.algorithm = vmc 
-qc2data.algorithm.run()
+qc2data.algorithm.run() 
