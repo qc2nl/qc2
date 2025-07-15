@@ -41,37 +41,6 @@ class ElectronicHamiltonian:
 
         self.get_second_q_ops()
 
-
-    @property
-    def one_body(self):
-        """Returns only the one-body integrals."""
-        alpha = {'+-': None}
-        if "+-" in self.alpha:
-            alpha['+-']  = self.alpha["+-"]
-
-        beta = {'+-': None}
-        if "+-" in self.beta:
-            beta['+-']  = self.beta["+-"]
-
-        return ElectronicIntegrals(alpha, beta)
-
-    @property
-    def two_body(self) -> ElectronicIntegrals:
-        """Returns only the two-body integrals."""
-        alpha = {'++--': None}
-        if "++--" in self.alpha:
-            alpha["++--"] = self.alpha["++--"]
-
-        beta = {'++--': None}
-        if "++--" in self.beta:
-            beta["++--"] = self.beta["++--"]
-
-        beta_alpha = {'++--': None}
-        if "++--" in self.beta_alpha:
-            beta_alpha["++--"] = self.beta_alpha["++--"]
-
-        return ElectronicIntegrals(alpha, beta, beta_alpha)
-
     def get_electronic_integrals(self):
         # see qcshema_translator.get_mo_hamiltonian_direct
 

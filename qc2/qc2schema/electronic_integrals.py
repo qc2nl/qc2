@@ -44,6 +44,9 @@ class TensorDict(Dict):
             prod_dict[key] = other * matrix
 
         return TensorDict(prod_dict)
+    
+    def __rmul__(self, other: Number) -> TensorDict:
+        return self * other
 
     def __add__(self, other: TensorDict, qargs=None) -> TensorDict:
         """Addition of ``PolynomialTensor`` instances.
@@ -67,12 +70,9 @@ class TensorDict(Dict):
             sum_dict[key] = value + other.get(key, 0)
 
         return TensorDict(sum_dict)
-
-        # if not isinstance(other, PolynomialTensor):
-        #     raise TypeError("Incorrect argument type: other should be PolynomialTensor")
-        # sum_dict = {key: value + other.get(key, 0) for key, value in self.items()}
-        # other_unique = {key: other[key] for key in other.keys() - self.keys()}
-        # sum_dict.update(other_unique)
+    
+    def __sub__(self, other: TensorDict, qargs=None) -> TensorDict:
+        return self + other * (-1)
 
     @classmethod
     def einsum(
@@ -233,7 +233,7 @@ class ElectronicIntegrals:
     @beta_alpha.setter
     def beta_alpha(self, beta_alpha: TensorDict | None) -> None:
         if beta_alpha is None:
-            self._beta_alpha = {}
+            self._beta_alpha = TensorDict({})
         else:
             keys = set(beta_alpha)
             if keys and keys != {"++--"}:
@@ -242,22 +242,60 @@ class ElectronicIntegrals:
                 )
             self._beta_alpha = beta_alpha
 
-    def __mul__(self, other: complex) -> ElectronicIntegrals:
+    @property
+    def one_body(self) -> ElectronicIntegrals:
+        """Returns only the one-body integrals."""
+        alpha: TensorDict = None
+        if "+-" in self.alpha:
+            alpha = TensorDict(
+                {"+-": self.alpha["+-"]}
+            )
+        beta: TensorDict = None
+        if "+-" in self.beta:
+            beta = TensorDict(
+                {"+-": self.beta["+-"]},
+            )
+        return self.__class__(alpha, beta)
+
+    @property
+    def two_body(self) -> ElectronicIntegrals:
+        """Returns only the two-body integrals."""
+        alpha: TensorDict = None
+        if "++--" in self.alpha:
+            alpha = TensorDict(
+                {"++--": self.alpha["++--"]},
+            )
+        beta: TensorDict = None
+        if "++--" in self.beta:
+            beta = TensorDict(
+                {"++--": self.beta["++--"]},
+            )
+        beta_alpha: TensorDict = None
+        if "++--" in self.beta_alpha:
+            beta_alpha = TensorDict(
+                {"++--": self.beta_alpha["++--"]},
+            )
+        return self.__class__(alpha, beta, beta_alpha)
+
+    def __mul__(self, other: Number) -> ElectronicIntegrals:
         if not isinstance(other, Number):
             raise TypeError(f"other {other} must be a number")
 
         return self.__class__(
-            cast(Dict, other * self.alpha),
-            cast(Dict, other * self.beta),
-            cast(Dict, other * self.beta_alpha),
+            cast(TensorDict, self.alpha * other),
+            cast(TensorDict, self.beta * other),
+            cast(TensorDict, self.beta_alpha * other),
         )
+    
+    def __rmul__(self, other: Number) -> ElectronicIntegrals:
+        return self * other
 
     def __add__(self, other: ElectronicIntegrals, qargs=None) -> ElectronicIntegrals:
         if not isinstance(other, ElectronicIntegrals):
             raise TypeError("Incorrect argument type: other should be ElectronicIntegrals")
 
         # we need to handle beta separately in order to inject alpha where necessary
-        beta = {}
+        beta = TensorDict({})
         beta_self_empty = len(self.beta) == 0
         beta_other_empty = len(other.beta) == 0
         if not (beta_self_empty and beta_other_empty):
@@ -270,6 +308,9 @@ class ElectronicIntegrals:
             beta,
             self.beta_alpha + other.beta_alpha,
         )
+    
+    def __sub__(self, other: ElectronicIntegrals, qargs=None) -> ElectronicIntegrals:
+        return self + other * (-1)
     
 
     @classmethod

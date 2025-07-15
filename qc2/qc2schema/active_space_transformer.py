@@ -1,8 +1,20 @@
 
+# This code is part of a Qiskit project.
+#
+# (C) Copyright IBM 2021, 2023.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
 from typing import  cast
 import numpy as np
 
-from .electronic_integrals import ElectronicIntegrals
+from .electronic_integrals import ElectronicIntegrals, TensorDict
 from .electronic_hamiltonian import ElectronicHamiltonian
 
 
@@ -133,7 +145,8 @@ class ActveSpaceTransformer():
         )
 
         self._density_total = ElectronicIntegrals(
-            alpha = {'+-' : np.diag(occupation_alpha)}, beta = {'+-' : np.diag(occupation_beta)}
+            alpha = TensorDict({'+-' : np.diag(occupation_alpha)}), 
+            beta = TensorDict({'+-' : np.diag(occupation_beta)})
         )
 
 
@@ -146,7 +159,8 @@ class ActveSpaceTransformer():
         occupation_active_beta = [0] * num_frozen_beta + [1] * num_active_beta + [0] * (total_num_spatial_orbitals - num_beta)
        
         self._active_density = ElectronicIntegrals(
-            alpha = {'+-' : np.diag(occupation_active_alpha)}, beta = {'+-' : np.diag(occupation_active_beta)}
+            alpha = TensorDict({'+-' : np.diag(occupation_active_alpha)}), 
+            beta = TensorDict({'+-' : np.diag(occupation_active_beta)})
         )
 
         # initialize size-reducing basis transformation
@@ -176,12 +190,11 @@ class ActveSpaceTransformer():
 
         reference_inactive_energy = cast(
             ElectronicIntegrals,
-            0.5
-            * ElectronicIntegrals.einsum(
+            ElectronicIntegrals.einsum(
                 {"ij,ji": ("+-", "+-", "")},
                 reference_inactive_fock + hamiltonian.electronic_integrals.one_body,
                 self._density_total,
-            ),
+            ) * 0.5,
         )
         reference_inactive_energy = (
             reference_inactive_energy.alpha.get("", 0.0)
@@ -191,17 +204,15 @@ class ActveSpaceTransformer():
 
         e_inactive = cast(
             ElectronicIntegrals,
-            -1.0
-            * ElectronicIntegrals.einsum(
+            ElectronicIntegrals.einsum(
                 {"ij,ji": ("+-", "+-", "")}, reference_inactive_fock, self._active_density
-            ),
+            ) * (-1.0),
         )
         e_inactive += cast(
             ElectronicIntegrals,
-            0.5
-            * ElectronicIntegrals.einsum(
+            ElectronicIntegrals.einsum(
                 {"ij,ji": ("+-", "+-", "")}, active_fock_operator, self._active_density
-            ),
+            ) * 0.5,
         )
         e_inactive_sum = (
             reference_inactive_energy
