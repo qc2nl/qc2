@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Tuple, Union
 import numpy as np
 
-
 def get_active_space_idx(
     nao: int,
     nelectron: Union[int, Tuple[int, int]],
@@ -48,3 +47,8 @@ class ActiveSpace:
     """A data class representing the active space."""
     num_active_electrons: tuple[int, int]
     num_active_spatial_orbitals: int
+
+
+
+
+

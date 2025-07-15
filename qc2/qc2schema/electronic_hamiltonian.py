@@ -9,13 +9,21 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+from __future__ import annotations
 
 import numpy as np
+from typing import Dict, Callable
 from ..algorithms.utils import ActiveSpace
 from .qcschema import QCSchema
-from .electronic_integrals import ElectronicIntegrals
-from .polynomial_tensor import PolynomialTensor
+from .electronic_integrals import ElectronicIntegrals, TensorDict
+# from .polynomial_tensor import PolynomialTensor
+# from .fermionic_op import FermionicOp
 
+def _reshape_2( arr, size):
+        return np.asarray(arr).reshape((size, size))
+
+def _reshape_4(arr, size):
+    return np.asarray(arr).reshape((size,) * 4)
 
 class ElectronicHamiltonian:
 
@@ -29,65 +37,68 @@ class ElectronicHamiltonian:
 
         self.electronic_integrals = self.get_electronic_integrals()
 
-        self.get_mo_hamiltonian()
-
         self.get_second_q_coeffs()
 
         self.get_second_q_ops()
 
 
+    @property
+    def one_body(self):
+        """Returns only the one-body integrals."""
+        alpha = {'+-': None}
+        if "+-" in self.alpha:
+            alpha['+-']  = self.alpha["+-"]
+
+        beta = {'+-': None}
+        if "+-" in self.beta:
+            beta['+-']  = self.beta["+-"]
+
+        return ElectronicIntegrals(alpha, beta)
+
+    @property
+    def two_body(self) -> ElectronicIntegrals:
+        """Returns only the two-body integrals."""
+        alpha = {'++--': None}
+        if "++--" in self.alpha:
+            alpha["++--"] = self.alpha["++--"]
+
+        beta = {'++--': None}
+        if "++--" in self.beta:
+            beta["++--"] = self.beta["++--"]
+
+        beta_alpha = {'++--': None}
+        if "++--" in self.beta_alpha:
+            beta_alpha["++--"] = self.beta_alpha["++--"]
+
+        return ElectronicIntegrals(alpha, beta, beta_alpha)
+
     def get_electronic_integrals(self):
-
-        h1_a = self._reshape_2(self.schema.wavefunction.scf_fock_mo_a)
-        h2_aa = self._reshape_4(self.schema.wavefunction.scf_eri_mo_aa)
-        
-        if self.schema.wavefunction.scf_fock_mo_b is not None:
-            h1_b = self._reshape_2(self.schema.wavefunction.scf_fock_mo_b)
-
-        if self.schema.wavefunction.scf_eri_mo_bb is not None:
-            h2_bb = self._reshape_4(self.schema.wavefunction.scf_eri_mo_bb)
-
-        if self.schema.wavefunction.scf_eri_mo_ba is not None:
-            h2_ba = self._reshape_4(self.schema.wavefunction.scf_eri_mo_ba)
-
-        if self.schema.wavefunction.scf_eri_mo_ab is not None and h2_ba is None:
-            h2_ba = np.transpose(self._reshape_4(self.schema.wavefunction.scf_eri_mo_ab))
-
-        return ElectronicIntegrals.from_raw_integrals(
-            h1_a, h2_aa, h1_b, h2_bb, h2_ba
-        )
-
-    def get_mo_hamiltonian(self):
         # see qcshema_translator.get_mo_hamiltonian_direct
 
-        self.alpha = {'+-': None, '++--': None}
-        self.beta = {'+-': None, '++--': None}
-        self.beta_alpha = {'++--': None}
+        alpha = TensorDict({'+-': None, '++--': None})
+        beta = TensorDict({'+-': None, '++--': None})
+        beta_alpha = TensorDict({'++--': None})
 
 
-        self.alpha['+-'] = self._reshape_2(self.schema.wavefunction.scf_fock_mo_a)
-        self.alpha['++--'] = self._reshape_4(self.schema.wavefunction.scf_eri_mo_aa)
+        alpha['+-'] = _reshape_2(self.schema.wavefunction.scf_fock_mo_a, self.norb)
+        alpha['++--'] = _reshape_4(self.schema.wavefunction.scf_eri_mo_aa, self.norb)
         
         if self.schema.wavefunction.scf_fock_mo_b is not None:
-            self.beta['+-'] = self._reshape_2(self.schema.wavefunction.scf_fock_mo_b)
+            beta['+-'] = _reshape_2(self.schema.wavefunction.scf_fock_mo_b, self.norb)
 
         if self.schema.wavefunction.scf_eri_mo_bb is not None:
-            self.beta['++--'] = self._reshape_4(self.schema.wavefunction.scf_eri_mo_bb)
+            beta['++--'] = _reshape_4(self.schema.wavefunction.scf_eri_mo_bb, self.norb)
 
         if self.schema.wavefunction.scf_eri_mo_ba is not None:
-            self.beta_alpha['++--'] = self._reshape_4(self.schema.wavefunction.scf_eri_mo_ba)
+            beta_alpha['++--'] = _reshape_4(self.schema.wavefunction.scf_eri_mo_ba, self.norb)
 
-        if self.schema.wavefunction.scf_eri_mo_ab is not None and self.beta_alpha['++--'] is None:
-            self.beta_alpha['++--'] = np.transpose(self._reshape_4(self.schema.wavefunction.scf_eri_mo_ab))
+        if self.schema.wavefunction.scf_eri_mo_ab is not None and beta_alpha['++--'] is None:
+            beta_alpha['++--'] = np.transpose(self._reshape_4(self.schema.wavefunction.scf_eri_mo_ab))
 
-    def _reshape_2(self, arr):
-        return np.asarray(arr).reshape((self.norb, self.norb))
+        return ElectronicIntegrals(alpha=alpha, beta=beta, beta_alpha=beta_alpha)
 
-    def _reshape_4(self, arr):
-        return np.asarray(arr).reshape((self.norb,) * 4)
-    
 
-    def get_second_q_coeffs(self):
+    def get_second_q_coeffs(self) -> Dict:
 
         # see ElectronicIntegrals.second_q_coeff()
         self.second_q_coeffs = {'+-': None, '++--': None}
@@ -95,29 +106,29 @@ class ElectronicHamiltonian:
         # one body coefficients
         kron_one_body = np.zeros((2, 2))
         kron_one_body[(0, 0)] = 1
-        self.second_q_coeffs['+-'] = np.kron( kron_one_body, self.alpha['+-'] ) 
+        self.second_q_coeffs['+-'] = np.kron( kron_one_body, self.electronic_integrals.alpha['+-'] ) 
 
         kron_one_body[(0, 0)] = 0
         kron_one_body[(1, 1)] = 1
-        self.second_q_coeffs['+-'] += np.kron( kron_one_body, self.beta['+-'] ) 
+        self.second_q_coeffs['+-'] += np.kron( kron_one_body, self.electronic_integrals.beta['+-'] ) 
         
         # two body coefficients pure spin
         kron_two_body = np.zeros((2, 2, 2, 2))
         kron_two_body[(0, 0, 0, 0)] = 0.5
-        self.second_q_coeffs['++--'] = np.kron( kron_two_body, self.alpha['++--'] )
+        self.second_q_coeffs['++--'] = np.kron( kron_two_body, self.electronic_integrals.alpha['++--'] )
 
         kron_two_body[(0, 0, 0, 0)] = 0.0
         kron_two_body[(1, 1, 1, 1)] = 0.5
-        self.second_q_coeffs['++--'] += np.kron( kron_two_body, self.beta['++--'] )
+        self.second_q_coeffs['++--'] += np.kron( kron_two_body, self.electronic_integrals.beta['++--'] )
 
         # two body coefficients mixed spin
         kron_two_body[(1, 1, 1, 1)] = 0.0
         kron_two_body[(1, 1, 0, 0)] = 0.5
-        self.second_q_coeffs['++--'] += np.kron( kron_two_body, self.beta_alpha['++--'] )
+        self.second_q_coeffs['++--'] += np.kron( kron_two_body, self.electronic_integrals.beta_alpha['++--'] )
 
         kron_two_body[(1, 1, 0, 0)] = 0.0
         kron_two_body[(0, 0, 1, 1)] = 0.5
-        self.second_q_coeffs['++--'] += np.kron( kron_two_body, self.beta_alpha['++--'].T )
+        self.second_q_coeffs['++--'] += np.kron( kron_two_body, self.electronic_integrals.beta_alpha['++--'].T )
                                                 
 
     
@@ -156,27 +167,27 @@ class ElectronicHamiltonian:
             NotImplementedError: when encountering :class:`.SymmetricTwoBodyIntegrals` inside of
                 :attr:`.ElectronicEnergy.electronic_integrals`.
         """
-        two_body_aa = self.electronic_integrals.alpha.get("++--", None)
+        # two_body_aa = self.electronic_integrals.alpha.get("++--", None)
+        # einsum = f"{''.join(two_body_aa._reverse_label_template('pqrs'))},ps->qr"
 
-        einsum = f"{''.join(two_body_aa._reverse_label_template('pqrs'))},ps->qr"
+        einsum = "psqr,ps->qr"
         coulomb = ElectronicIntegrals.einsum(
             {einsum: ("++--", "+-", "+-")}, self.electronic_integrals, density
         )
-
+        
         if self.electronic_integrals.beta_alpha.is_empty() and density.beta.is_empty():
             coulomb *= 2.0  # type: ignore
+
         else:
-            if self.electronic_integrals.beta_alpha.is_empty():
+            if self.electronic_integrals.beta_alpha.is_empty(): 
                 beta_alpha = self.electronic_integrals.two_body.alpha
             else:
                 beta_alpha = self.electronic_integrals.beta_alpha
-            coulomb.alpha += PolynomialTensor.einsum(
-                {einsum: ("++--", "+-", "+-")}, beta_alpha, density.beta
-            )
+
+            coulomb.alpha += TensorDict.einsum({einsum: ("++--", "+-", "+-")}, beta_alpha, density.beta)
+
             einsum = einsum[2:4] + einsum[:2] + einsum[4:]
-            coulomb.beta += PolynomialTensor.einsum(
-                {einsum: ("++--", "+-", "+-")}, beta_alpha, density.alpha
-            )
+            coulomb.beta += TensorDict.einsum({einsum: ("++--", "+-", "+-")}, beta_alpha, density.alpha)
 
         return coulomb
 
@@ -196,11 +207,9 @@ class ElectronicHamiltonian:
             NotImplementedError: when encountering :class:`.SymmetricTwoBodyIntegrals` inside of
                 :attr:`.ElectronicEnergy.electronic_integrals`.
         """
-        two_body_aa = self.electronic_integrals.alpha.get("++--", None)
 
-        einsum = f"{''.join(two_body_aa._reverse_label_template('pqrs'))},qs->pr"
         exchange = ElectronicIntegrals.einsum(
-            {einsum: ("++--", "+-", "+-")}, self.electronic_integrals, density
+            {"psqr,qs->pr": ("++--", "+-", "+-")}, self.electronic_integrals, density
         )
         return exchange
 
@@ -220,3 +229,5 @@ class ElectronicHamiltonian:
             The Fock operator coefficients.
         """
         return self.electronic_integrals.one_body + self.coulomb(density) - self.exchange(density)
+    
+    
