@@ -155,12 +155,8 @@ class ElectronicHamiltonian:
         Returns:
             The Coulomb operator coefficients.
 
-        Raises:
-            NotImplementedError: when encountering :class:`.SymmetricTwoBodyIntegrals` inside of
-                :attr:`.ElectronicEnergy.electronic_integrals`.
         """
-        # two_body_aa = self.electronic_integrals.alpha.get("++--", None)
-        # einsum = f"{''.join(two_body_aa._reverse_label_template('pqrs'))},ps->qr"
+
 
         einsum = "psqr,ps->qr"
         coulomb = ElectronicIntegrals.einsum(
@@ -195,9 +191,6 @@ class ElectronicHamiltonian:
         Returns:
             The Exchange operator coefficients.
 
-        Raises:
-            NotImplementedError: when encountering :class:`.SymmetricTwoBodyIntegrals` inside of
-                :attr:`.ElectronicEnergy.electronic_integrals`.
         """
 
         exchange = ElectronicIntegrals.einsum(
