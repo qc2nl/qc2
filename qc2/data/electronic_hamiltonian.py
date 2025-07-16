@@ -13,11 +13,8 @@ from __future__ import annotations
 
 import numpy as np
 from typing import Dict, MutableMapping
-from ..algorithms.utils import ActiveSpace
 from .qcschema import QCSchema
 from .electronic_integrals import ElectronicIntegrals, TensorDict
-# from .polynomial_tensor import PolynomialTensor
-# from .fermionic_op import FermionicOp
 
 def _reshape_2( arr, size):
         return np.asarray(arr).reshape((size, size))
@@ -37,8 +34,8 @@ class ElectronicHamiltonian:
         self.electronic_integrals = None
         self.num_particles = None
         self.num_spatial_orbitals = None
-        self.second_q_coeffs = None
-        self.second_q_ops = None
+        self.coeffs = None
+        self.ops = None
         self.tol = tol
         self.constants = constants
 
@@ -48,19 +45,21 @@ class ElectronicHamiltonian:
         if schema is not None:
             self.schema = schema
             self.constants['nuclear_repulsion_energy'] = self.schema.properties.nuclear_repulsion_energy
-            self.norb = self.schema.properties.calcinfo_nmo
+            self.num_spatial_orbitals = self.schema.properties.calcinfo_nmo
+            self.num_particles = (self.schema.properties.calcinfo_nalpha, 
+                                  self.schema.properties.calcinfo_nbeta)
             self.electronic_integrals = self.read_electronic_integrals_from_schema()
 
         elif electronic_integrals is not None:
             self.electronic_integrals = electronic_integrals
-            self.norb = self.electronic_integrals.alpha['+-'].shape[0]
+            self.num_spatial_orbitals = self.electronic_integrals.alpha['+-'].shape[0]
 
         else:
             raise ValueError("Either schema or electronic_integrals must be provided.")
         
-        self.second_q_coeffs = self.get_second_q_coeffs()
+        self.coeffs = self.second_q_coeffs()
 
-        self.second_q_ops = self.get_second_q_ops()
+        self.ops = self.second_q_op()
 
 
     def read_electronic_integrals_from_schema(self):
@@ -71,17 +70,17 @@ class ElectronicHamiltonian:
         beta_alpha = TensorDict({'++--': None})
 
 
-        alpha['+-'] = _reshape_2(self.schema.wavefunction.scf_fock_mo_a, self.norb)
-        alpha['++--'] = _reshape_4(self.schema.wavefunction.scf_eri_mo_aa, self.norb)
+        alpha['+-'] = _reshape_2(self.schema.wavefunction.scf_fock_mo_a, self.num_spatial_orbitals)
+        alpha['++--'] = _reshape_4(self.schema.wavefunction.scf_eri_mo_aa, self.num_spatial_orbitals)
         
         if self.schema.wavefunction.scf_fock_mo_b is not None:
-            beta['+-'] = _reshape_2(self.schema.wavefunction.scf_fock_mo_b, self.norb)
+            beta['+-'] = _reshape_2(self.schema.wavefunction.scf_fock_mo_b, self.num_spatial_orbitals)
 
         if self.schema.wavefunction.scf_eri_mo_bb is not None:
-            beta['++--'] = _reshape_4(self.schema.wavefunction.scf_eri_mo_bb, self.norb)
+            beta['++--'] = _reshape_4(self.schema.wavefunction.scf_eri_mo_bb, self.num_spatial_orbitals)
 
         if self.schema.wavefunction.scf_eri_mo_ba is not None:
-            beta_alpha['++--'] = _reshape_4(self.schema.wavefunction.scf_eri_mo_ba, self.norb)
+            beta_alpha['++--'] = _reshape_4(self.schema.wavefunction.scf_eri_mo_ba, self.num_spatial_orbitals)
 
         if self.schema.wavefunction.scf_eri_mo_ab is not None and beta_alpha['++--'] is None:
             beta_alpha['++--'] = np.transpose(self._reshape_4(self.schema.wavefunction.scf_eri_mo_ab))
@@ -90,7 +89,7 @@ class ElectronicHamiltonian:
 
 
 
-    def get_second_q_coeffs(self) -> Dict:
+    def second_q_coeffs(self) -> Dict:
 
         # see ElectronicIntegrals.second_q_coeff()
         second_q_coeffs = {'+-': None, '++--': None}
@@ -125,23 +124,23 @@ class ElectronicHamiltonian:
         return second_q_coeffs                     
 
     
-    def get_second_q_ops(self):
+    def second_q_op(self) -> Dict:
 
         # see FermionicOp.from_polynomial_tensor()
         second_q_ops = {}
-        norb = self.second_q_coeffs['+-'].shape[0]
+        norb = self.coeffs['+-'].shape[0]
 
         for i in range(norb):
             for j in range(norb):
-                if np.abs(self.second_q_coeffs['+-'][i, j]) >= self.tol: 
-                    second_q_ops[("+_{} -_{}".format(i, j))] = self.second_q_coeffs['+-'][i, j]
+                if np.abs(self.coeffs['+-'][i, j]) >= self.tol: 
+                    second_q_ops[("+_{} -_{}".format(i, j))] = self.coeffs['+-'][i, j]
 
         for i in range(norb):
             for j in range(norb):
                 for k in range(norb):
                     for l in range(norb):
-                        if np.abs(self.second_q_coeffs['++--'][i, j, k, l]) >= self.tol: 
-                            second_q_ops[("+_{} +_{} -_{} -_{}".format(i, k, l, j))] = self.second_q_coeffs['++--'][i, j, k, l]
+                        if np.abs(self.coeffs['++--'][i, j, k, l]) >= self.tol: 
+                            second_q_ops[("+_{} +_{} -_{} -_{}".format(i, k, l, j))] = self.coeffs['++--'][i, j, k, l]
         return second_q_ops
 
     def coulomb(self, density: ElectronicIntegrals) -> ElectronicIntegrals:

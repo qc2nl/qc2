@@ -14,8 +14,7 @@
 from __future__ import annotations
 from numbers import Number
 import numpy as np
-from typing import Dict, Optional, Sequence, Tuple, cast, Callable
-# from .polynomial_tensor import PolynomialTensor
+from typing import Dict, cast, Callable
 
 
 class TensorDict(Dict):

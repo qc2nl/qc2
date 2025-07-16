@@ -17,7 +17,7 @@ from .electronic_integrals import ElectronicIntegrals, TensorDict
 from .electronic_hamiltonian import ElectronicHamiltonian
 
 
-class ActveSpaceTransformer():
+class ActiveSpaceTransformer():
 
     def __init__(
         self,
