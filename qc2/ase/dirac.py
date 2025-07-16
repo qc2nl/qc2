@@ -22,7 +22,7 @@ from ase.io import write
 
 from .dirac_io import write_dirac_in, read_dirac_out, _update_dict
 from .qc2_ase_base_class import BaseQc2ASECalculator
-from ..qc2schema.qcschema import QCSchema
+from ..data.qcschema import QCSchema
 
 from qc2.__init__ import __version__ as qc2_version
 class DIRAC(FileIOCalculator, BaseQc2ASECalculator):

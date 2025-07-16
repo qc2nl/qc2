@@ -4,7 +4,7 @@ from typing import Tuple, Any, Union
 import os
 import h5py
 
-from ..qc2schema.qcschema import (
+from ..data.qcschema import (
     QCSchema, QCTopology, QCProperties,
     QCModel, QCProvenance, QCWavefunction
 )

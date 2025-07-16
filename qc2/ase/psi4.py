@@ -13,7 +13,7 @@ from psi4.core import MintsHelper
 from psi4 import __version__ as psi4_version
 
 from .qc2_ase_base_class import BaseQc2ASECalculator
-from ..qc2schema.qcschema import QCSchema
+from ..data.qcschema import QCSchema
 
 from qc2.__init__ import __version__ as qc2_version
 

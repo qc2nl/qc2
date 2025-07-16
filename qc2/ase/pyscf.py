@@ -25,7 +25,7 @@ from pyscf.tools import fcidump
 
 
 from .qc2_ase_base_class import BaseQc2ASECalculator
-from ..qc2schema.qcschema import QCSchema
+from ..data.qcschema import QCSchema
 from qc2.__init__ import __version__ as qc2_version
 
 def ase_atoms_to_pyscf(ase_atoms: Atoms) -> List[List[Union[str, np.ndarray]]]:
