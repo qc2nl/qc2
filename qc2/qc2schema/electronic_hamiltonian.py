@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 import numpy as np
-from typing import Dict, Callable
+from typing import Dict, MutableMapping
 from ..algorithms.utils import ActiveSpace
 from .qcschema import QCSchema
 from .electronic_integrals import ElectronicIntegrals, TensorDict
@@ -27,23 +27,45 @@ def _reshape_4(arr, size):
 
 class ElectronicHamiltonian:
 
-    def __init__(self, schema: QCSchema, tol=1E-6):
-        self.schema = schema 
-        self.tol = tol
-        self.nuclear_repulsion_energy = self.schema.properties.nuclear_repulsion_energy
-        self.norb = self.schema.properties.calcinfo_nmo
+    def __init__(self, 
+                 schema: QCSchema | None = None,
+                 electronic_integrals: ElectronicIntegrals | None = None,
+                 constants: MutableMapping[str, float] = {},
+                 tol: float = 1E-6):
+        
+        self.schema = None 
+        self.electronic_integrals = None
         self.num_particles = None
         self.num_spatial_orbitals = None
+        self.second_q_coeffs = None
+        self.second_q_ops = None
+        self.tol = tol
+        self.constants = constants
 
-        self.electronic_integrals = self.get_electronic_integrals()
+        if schema is None and electronic_integrals is None:
+            raise ValueError("Either schema or electronic_integrals must be provided.")
 
-        self.get_second_q_coeffs()
+        if schema is not None:
+            self.schema = schema
+            self.constants['nuclear_repulsion_energy'] = self.schema.properties.nuclear_repulsion_energy
+            self.norb = self.schema.properties.calcinfo_nmo
+            self.electronic_integrals = self.read_electronic_integrals_from_schema()
 
-        self.get_second_q_ops()
+        elif electronic_integrals is not None:
+            self.electronic_integrals = electronic_integrals
+            self.norb = self.electronic_integrals.alpha['+-'].shape[0]
 
-    def get_electronic_integrals(self):
+        else:
+            raise ValueError("Either schema or electronic_integrals must be provided.")
+        
+        self.second_q_coeffs = self.get_second_q_coeffs()
+
+        self.second_q_ops = self.get_second_q_ops()
+
+
+    def read_electronic_integrals_from_schema(self):
+
         # see qcshema_translator.get_mo_hamiltonian_direct
-
         alpha = TensorDict({'+-': None, '++--': None})
         beta = TensorDict({'+-': None, '++--': None})
         beta_alpha = TensorDict({'++--': None})
@@ -67,58 +89,60 @@ class ElectronicHamiltonian:
         return ElectronicIntegrals(alpha=alpha, beta=beta, beta_alpha=beta_alpha)
 
 
+
     def get_second_q_coeffs(self) -> Dict:
 
         # see ElectronicIntegrals.second_q_coeff()
-        self.second_q_coeffs = {'+-': None, '++--': None}
+        second_q_coeffs = {'+-': None, '++--': None}
         
         # one body coefficients
         kron_one_body = np.zeros((2, 2))
         kron_one_body[(0, 0)] = 1
-        self.second_q_coeffs['+-'] = np.kron( kron_one_body, self.electronic_integrals.alpha['+-'] ) 
+        second_q_coeffs['+-'] = np.kron( kron_one_body, self.electronic_integrals.alpha['+-'] ) 
 
         kron_one_body[(0, 0)] = 0
         kron_one_body[(1, 1)] = 1
-        self.second_q_coeffs['+-'] += np.kron( kron_one_body, self.electronic_integrals.beta['+-'] ) 
+        second_q_coeffs['+-'] += np.kron( kron_one_body, self.electronic_integrals.beta['+-'] ) 
         
         # two body coefficients pure spin
         kron_two_body = np.zeros((2, 2, 2, 2))
         kron_two_body[(0, 0, 0, 0)] = 0.5
-        self.second_q_coeffs['++--'] = np.kron( kron_two_body, self.electronic_integrals.alpha['++--'] )
+        second_q_coeffs['++--'] = np.kron( kron_two_body, self.electronic_integrals.alpha['++--'] )
 
         kron_two_body[(0, 0, 0, 0)] = 0.0
         kron_two_body[(1, 1, 1, 1)] = 0.5
-        self.second_q_coeffs['++--'] += np.kron( kron_two_body, self.electronic_integrals.beta['++--'] )
+        second_q_coeffs['++--'] += np.kron( kron_two_body, self.electronic_integrals.beta['++--'] )
 
         # two body coefficients mixed spin
         kron_two_body[(1, 1, 1, 1)] = 0.0
         kron_two_body[(1, 1, 0, 0)] = 0.5
-        self.second_q_coeffs['++--'] += np.kron( kron_two_body, self.electronic_integrals.beta_alpha['++--'] )
+        second_q_coeffs['++--'] += np.kron( kron_two_body, self.electronic_integrals.beta_alpha['++--'] )
 
         kron_two_body[(1, 1, 0, 0)] = 0.0
         kron_two_body[(0, 0, 1, 1)] = 0.5
-        self.second_q_coeffs['++--'] += np.kron( kron_two_body, self.electronic_integrals.beta_alpha['++--'].T )
-                                                
+        second_q_coeffs['++--'] += np.kron( kron_two_body, self.electronic_integrals.beta_alpha['++--'].T )
+
+        return second_q_coeffs                     
 
     
     def get_second_q_ops(self):
 
         # see FermionicOp.from_polynomial_tensor()
-        self.second_q_ops = {}
+        second_q_ops = {}
         norb = self.second_q_coeffs['+-'].shape[0]
 
         for i in range(norb):
             for j in range(norb):
                 if np.abs(self.second_q_coeffs['+-'][i, j]) >= self.tol: 
-                    self.second_q_ops[("+_{} -_{}".format(i, j))] = self.second_q_coeffs['+-'][i, j]
+                    second_q_ops[("+_{} -_{}".format(i, j))] = self.second_q_coeffs['+-'][i, j]
 
         for i in range(norb):
             for j in range(norb):
                 for k in range(norb):
                     for l in range(norb):
                         if np.abs(self.second_q_coeffs['++--'][i, j, k, l]) >= self.tol: 
-                            self.second_q_ops[("+_{} +_{} -_{} -_{}".format(i, k, l, j))] = self.second_q_coeffs['++--'][i, j, k, l]
-
+                            second_q_ops[("+_{} +_{} -_{} -_{}".format(i, k, l, j))] = self.second_q_coeffs['++--'][i, j, k, l]
+        return second_q_ops
 
     def coulomb(self, density: ElectronicIntegrals) -> ElectronicIntegrals:
         r"""Computes the Coulomb term for the given reduced density matrix.

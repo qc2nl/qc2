@@ -1,4 +1,3 @@
-
 # This code is part of a Qiskit project.
 #
 # (C) Copyright IBM 2021, 2023.
@@ -13,7 +12,7 @@
 
 from typing import  cast
 import numpy as np
-
+from copy import deepcopy
 from .electronic_integrals import ElectronicIntegrals, TensorDict
 from .electronic_hamiltonian import ElectronicHamiltonian
 
@@ -33,8 +32,7 @@ class ActveSpaceTransformer():
 
         self._active_alpha_indices: list[int] = None
         self._active_beta_indices: list[int] = None
-        # NOTE: the following attribute is exposed as read-only
-        # self._active_basis: BasisTransformer = None
+
         # NOTE: the following attribute is exposed as a read-write property to the user
         # The reason we are not making it a public attribute is to avoid the FreezeCoreTransformer
         # also having to expose it publicly.
@@ -164,19 +162,18 @@ class ActveSpaceTransformer():
         )
 
         # initialize size-reducing basis transformation
-        # if self._active_basis is None:
-        #     coeff_alpha = np.zeros((total_num_spatial_orbitals, self._num_spatial_orbitals))
-        #     coeff_alpha[self._active_alpha_indices, range(self._num_spatial_orbitals)] = 1.0
-        #     coeff_beta = np.zeros((total_num_spatial_orbitals, self._num_spatial_orbitals))
-        #     coeff_beta[self._active_beta_indices, range(self._num_spatial_orbitals)] = 1.0
+        alpha = TensorDict()
+        coeff_alpha = np.zeros((total_num_spatial_orbitals, self._num_spatial_orbitals))
+        coeff_alpha[self._active_alpha_indices, range(self._num_spatial_orbitals)] = 1.0
+        alpha["+-"] = coeff_alpha
 
-            # self._active_basis = BasisTransformer(
-            #     ElectronicBasis.MO,
-            #     ElectronicBasis.MO,
-            #     ElectronicIntegrals.from_raw_integrals(
-            #         coeff_alpha, h1_b=coeff_beta, validate=False
-            #     ),
-            # )
+        beta = TensorDict()
+        coeff_beta = np.zeros((total_num_spatial_orbitals, self._num_spatial_orbitals))
+        coeff_beta[self._active_beta_indices, range(self._num_spatial_orbitals)] = 1.0
+        beta["+-"] = coeff_beta
+
+        self.transform_coefficents = ElectronicIntegrals(alpha, beta)
+        
 
     def transform_hamiltonian(self, hamiltonian: ElectronicHamiltonian) -> ElectronicHamiltonian:
        
@@ -222,11 +219,58 @@ class ActveSpaceTransformer():
         )
 
         new_hamil = ElectronicHamiltonian(
-            active_basis.transform_electronic_integrals(
+            electronic_integrals=self.transform_electronic_integrals(
                 inactive_fock_operator + hamiltonian.electronic_integrals.two_body
-            )
+            ),
+            constants=deepcopy(hamiltonian.constants)
         )
-        new_hamil.constants = deepcopy(hamiltonian.constants)
-        new_hamil.constants[offset_name] = e_inactive_sum
+
+        new_hamil.constants[self.__class__.__name__] = e_inactive_sum
 
         return new_hamil
+    
+    def transform_electronic_integrals(self, integrals: ElectronicIntegrals) -> ElectronicIntegrals:
+        """Transforms an :class:`qiskit_nature.second_q.operators.ElectronicIntegrals` instance.
+
+        Args:
+            integrals: the ``ElectronicIntegrals`` to transform.
+
+        Raises:
+            QiskitNatureError: when using this method on a ``BasisTransformer`` that does not store
+                its :attr:`coefficients` as ``ElectronicIntegrals``, too.
+
+        Returns:
+            The transformed ``ElectronicIntegrals``.
+        """
+        if not isinstance(self.transform_coefficents, ElectronicIntegrals):
+            raise TypeError(
+                "You cannot transform ElectronicIntegrals with  "
+                f"coefficients of type, {type(self.transform_coefficents)}, rather than ElectronicIntegrals."
+            )
+
+        prsq = "prsq"
+        iklj = "iklj"
+
+        two_body_aa = integrals.alpha.get("++--", None)
+        if two_body_aa is not None:
+            prsq = "pqrs"
+            iklj = "ijkl"
+
+        einsum_map = {
+            "jk,ji,kl->il": ("+-",) * 4,
+            f"{prsq},pi,qj,rk,sl->{iklj}": ("++--", *("+-",) * 4, "++--"),
+        }
+
+        transformed_integrals = ElectronicIntegrals.einsum(
+            einsum_map, integrals, *(self.transform_coefficents,) * 4
+        )
+
+        if not self.transform_coefficents.beta.is_empty() and transformed_integrals.beta_alpha.is_empty():
+            transformed_integrals.beta_alpha = TensorDict.einsum(
+                {f"{prsq},pi,qj,rk,sl->{iklj}": ("++--", *("+-",) * 4, "++--")},
+                integrals.alpha if integrals.beta_alpha.is_empty() else integrals.beta_alpha,
+                *(self.transform_coefficents.beta,) * 2,
+                *(self.transform_coefficents.alpha,) * 2,
+            )
+
+        return transformed_integrals

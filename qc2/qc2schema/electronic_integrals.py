@@ -69,6 +69,10 @@ class TensorDict(Dict):
         for key, value in self.items():
             sum_dict[key] = value + other.get(key, 0)
 
+        for key,value in other.items():
+            if key not in sum_dict:
+                sum_dict[key] = value
+                 
         return TensorDict(sum_dict)
     
     def __sub__(self, other: TensorDict, qargs=None) -> TensorDict:
