@@ -3,6 +3,7 @@
 try:
     from .pyscf import PySCF
 except ImportError:
+    print('What do you want to do?')
     pass
 
 try:

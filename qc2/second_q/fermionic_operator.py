@@ -1,0 +1,52 @@
+# This code is part of a Qiskit project.
+#
+# (C) Copyright IBM 2021, 2023.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+"""The Fermionic-particle Operator."""
+
+from __future__ import annotations
+
+import re
+from collections import defaultdict
+from collections.abc import Collection, Mapping
+from typing import Iterator, Sequence, Dict
+
+import numpy as np
+
+class FermionicOpertor(Dict):
+
+    num_spatial_orbitals = None
+
+    @property
+    def register_length(self) -> int:
+        if self.num_spatial_orbitals is None:
+            self.num_spatial_orbitals = max(int(ks[2:]) for k in self.keys() for ks in k.split()) + 1
+        return self.num_spatial_orbitals
+
+    def terms(self) -> Iterator[tuple[list[tuple[str, int]]]]:
+        """Provides an iterator analogous to :meth:`items` but with the labels already split into
+        pairs of operation characters and indices.
+
+        Yields:
+            A tuple with two items; the first one being a list of pairs of the form (char, int)
+            where char is either `+` or `-` and the integer corresponds to the fermionic mode index
+            on which the operator gets applied; the second item of the returned tuple is the
+            coefficient of this term.
+        """
+        for label in iter(self):
+            if not label:
+                yield ([], self[label])
+                continue
+            # we hard-code the result of lbl.split("_") as follows:
+            #   lbl[0] is either + or -
+            #   lbl[2:] corresponds to the index
+            terms = [(lbl[0], int(lbl[2:])) for lbl in label.split()]
+            yield (terms, self[label])

@@ -8,8 +8,8 @@ from ase.units import Ha
 
 
 from .qcschema import QCSchema
-from .electronic_hamiltonian import ElectronicHamiltonian
-from .active_space_transformer import ActiveSpaceTransformer
+from ..second_q.electronic_hamiltonian import ElectronicHamiltonian
+from ..second_q.active_space_transformer import ActiveSpaceTransformer
 
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
@@ -21,7 +21,7 @@ from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
 # try importing PennyLane and set `PennyLaneOperatorType`
 try:
     from pennylane.operation import Operator
-    from qc2.pennylane.convert import import_operator
+    from qc2.qubit_mappers.pennylane.convert import import_operator
     PennyLaneOperatorType = Operator
 except ImportError:
     PennyLaneOperatorType = object
