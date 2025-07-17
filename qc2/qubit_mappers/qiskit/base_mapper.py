@@ -253,7 +253,7 @@ class BaseMapper(ABC):
         """
         if register_length is None:
             register_length = second_q_op.register_length
-        print(register_length)
+        
         times_creation_op, times_annihilation_op = cls.sparse_pauli_operators(register_length)
 
         # make sure ret_op_list is not empty by including a zero op
