@@ -13,4 +13,4 @@ class JordanWigner(PennylaneBaseMapper):
                                     from_string(self.reformat_str(op)), 
                                     ps=True)
 
-        return qubit_ops
+        return self._return_data(qubit_ops)

@@ -4,11 +4,11 @@ import pennylane as qml
 from pennylane import numpy as np
 from pennylane import QNode
 from pennylane.operation import Operator
-from qc2.algorithms.utils.active_space import ActiveSpace
-from qc2.algorithms.utils.mappers import FermionicToQubitMapper
+from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.base.vqe_base import VQEBASE
 from qc2.algorithms.algorithms_results import VQEResults
 from qc2.ansatz.pennylane.generate_ansatz import generate_ansatz
+from qc2.qubit_mappers.pennylane.jordan_wigner import JordanWigner
 
 class VQE(VQEBASE):
     """
@@ -84,7 +84,7 @@ class VQE(VQEBASE):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.pennylane import VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -112,11 +112,11 @@ class VQE(VQEBASE):
 
         # init circuit
         self.device = "default.qubit" if device is None else device
+
         self.mapper = (
-            FermionicToQubitMapper.from_string('jw')()
-            if mapper is None
-            else FermionicToQubitMapper.from_string(mapper)()
+            JordanWigner() if mapper is None else mapper
         )
+
         self.qubits = 2 * self.active_space.num_active_spatial_orbitals
         self.electrons = sum(self.active_space.num_active_electrons)
         self.optimizer = (
@@ -226,7 +226,7 @@ class VQE(VQEBASE):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.pennylane import VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

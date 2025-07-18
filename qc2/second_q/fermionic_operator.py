@@ -50,3 +50,11 @@ class FermionicOperator(Dict):
             #   lbl[2:] corresponds to the index
             terms = [(lbl[0], int(lbl[2:])) for lbl in label.split()]
             yield (terms, self[label])
+
+    @classmethod
+    def from_terms(cls, terms: Sequence[tuple[list[tuple[str, int]], float]]) -> FermionicOperator:
+        data = {
+            " ".join(f"{action}_{index}" for action, index in label): value
+            for label, value in terms
+        }
+        return cls(data)

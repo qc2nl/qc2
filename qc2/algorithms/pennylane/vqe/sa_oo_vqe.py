@@ -8,7 +8,8 @@ from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.algorithms.algorithms_results import SAOOVQEResults
 from qc2.ansatz.pennylane.state_resolution import state_resolution_initializer
 from qc2.qubit_mappers.convert import _qiskit_nature_to_pennylane
-from qiskit_nature.second_q.operators import FermionicOp
+# from qiskit_nature.second_q.operators import FermionicOp
+from qc2.second_q.fermionic_operator import FermionicOperator
 from qc2.ansatz.pennylane.generate_ansatz import generate_state_resolution_ansatz
 
 class SA_OO_VQE(VQE):
@@ -90,7 +91,7 @@ class SA_OO_VQE(VQE):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.pennylane import OO_VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -171,7 +172,7 @@ class SA_OO_VQE(VQE):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.pennylane import OO_VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -587,7 +588,7 @@ class SA_OO_VQE(VQE):
                 iele, jele, kele, lele = (int(ele[1]) for ele in tuple(key[0:4]))
 
             # get fermionic and qubit representation of each term
-            fermionic_ham_temp = FermionicOp.from_terms([(key, 1.0)])
+            fermionic_ham_temp = FermionicOperator.from_terms([(key, 1.0)])
             qubit_ham_temp_qiskit = self.mapper.map(
                 fermionic_ham_temp, register_length=n_spin_orbitals
             )

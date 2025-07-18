@@ -40,7 +40,7 @@ For illustrative purposes only, the following is a pseudo-code example demonstra
 
     from qc2.data import qc2Data
     from qc2.algorithms.qiskit import VQE
-    from qc2.algorithms.utils import ActiveSpace
+    from qc2.second_q.active_space import ActiveSpace
 
     # set ASE Atoms object
     mol = molecule('H2')
@@ -79,7 +79,7 @@ A corresponding example using :class:`qc2.algorithms.pennylane.vqe.VQE` is:
 
     from qc2.data import qc2Data
     from qc2.algorithms.pennylane import VQE
-    from qc2.algorithms.utils import ActiveSpace
+    from qc2.second_q.active_space import ActiveSpace
 
     # set ASE Atoms object
     mol = molecule('H2')

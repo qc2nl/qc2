@@ -6,10 +6,10 @@ from qiskit.primitives import Sampler
 from qiskit.circuit.library import UnitaryGate
 from qiskit_nature.second_q.circuit.library import HartreeFock
 from qc2.algorithms.base.base_algorithm import BaseAlgorithm
-from qc2.algorithms.utils.mappers import FermionicToQubitMapper
-from qc2.algorithms.utils.active_space import ActiveSpace
+from qc2.second_q.active_space import ActiveSpace
 from qiskit_nature.second_q.mappers import QubitMapper
 from qc2.algorithms.algorithms_results import QPEResults
+from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
 
 class PEBase(BaseAlgorithm):
     def __init__(self, 
@@ -31,11 +31,10 @@ class PEBase(BaseAlgorithm):
         )
 
         self.mapper = (
-            FermionicToQubitMapper.from_string('jw')()
+            JordanWigner()
             if mapper is None
-            else FermionicToQubitMapper.from_string(mapper)()
+            else mapper
         )
-
         self.qubits = 2 * self.active_space.num_active_spatial_orbitals
         self.electrons = sum(self.active_space.num_active_electrons)
 
@@ -67,16 +66,17 @@ class PEBase(BaseAlgorithm):
             mapper,
         )
     
-    def _init_qubit_hamiltonian(self):
-        if self.qc2data is None:
-            raise ValueError("qc2data attribute set incorrectly in QPE.")
+    # def _init_qubit_hamiltonian(self):
+    #     if self.qc2data is None:
+    #         raise ValueError("qc2data attribute set incorrectly in QPE.")
 
-        self.e_core, self.qubit_op = self.qc2data.get_qubit_hamiltonian(
-            self.active_space.num_active_electrons,
-            self.active_space.num_active_spatial_orbitals,
-            self.mapper,
-            format=self.format,
-        )
+    #     self.e_core, self.qubit_op = self.qc2data.get_qubit_hamiltonian(
+    #         self.active_space.num_active_electrons,
+    #         self.active_space.num_active_spatial_orbitals,
+    #         self.mapper,
+    #         format=self.format,
+    #     )
+
     @staticmethod
     def _phase_to_energy(phase: float) -> float:
         """
@@ -109,7 +109,7 @@ class PEBase(BaseAlgorithm):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.qiskit import QPE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

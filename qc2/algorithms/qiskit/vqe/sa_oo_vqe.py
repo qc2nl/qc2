@@ -10,7 +10,7 @@ from qiskit_nature.second_q.operators import FermionicOp
 
 from qc2.algorithms.qiskit.vqe.vqe import VQE
 from qc2.algorithms.algorithms_results import SAOOVQEResults
-from qc2.algorithms.utils.active_space import ActiveSpace
+from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.ansatz.qiskit.state_resolution import StateResolution
 from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
@@ -94,7 +94,7 @@ class SA_OO_VQE(VQE):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.qiskit import OO_VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -164,7 +164,7 @@ class SA_OO_VQE(VQE):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.qiskit import OO_VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

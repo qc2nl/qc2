@@ -4,13 +4,12 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TypeVar, Dict, Iterable, Generic, Generator
-
-import numpy as np
-
+from typing import TypeVar, Tuple, List 
 
 import pennylane as qml
-from pennylane.fermi import from_string
+import pennylane.numpy as np
+from pennylane.operation import active_new_opmath
+from pennylane.pauli.pauli_arithmetic import PauliSentence
 from ..base_mapper import BaseMapper
 
 class PennylaneBaseMapper(BaseMapper):
@@ -24,3 +23,14 @@ class PennylaneBaseMapper(BaseMapper):
             o.reverse()
             reformatted_op_list.append(''.join(o))
         return ' '.join(reformatted_op_list)
+
+    def _return_data(self, pauli_sentence: PauliSentence) -> Tuple[np.ndarray, List]:
+        """Return data for the qubit mapper."""
+
+        data = (np.array(list(pauli_sentence.values())).real, 
+                 list(pauli_sentence.keys()))
+        
+        if active_new_opmath():
+            return qml.dot(*data)
+        return qml.Hamiltonian(*data)
+

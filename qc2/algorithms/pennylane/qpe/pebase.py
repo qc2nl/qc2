@@ -4,11 +4,10 @@ import pennylane as qml
 from pennylane import numpy as np
 from pennylane import QNode
 from pennylane.operation import Operator
-from qc2.algorithms.utils.active_space import ActiveSpace
-from qc2.algorithms.utils.mappers import FermionicToQubitMapper
+from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.algorithms_results import QPEResults
 from qc2.algorithms.base.base_algorithm import BaseAlgorithm
-
+from qc2.qubit_mappers.pennylane.jordan_wigner import JordanWigner
 class PEBase(BaseAlgorithm):
     def __init__(
         self,
@@ -32,10 +31,10 @@ class PEBase(BaseAlgorithm):
         )
 
         self.device = "default.qubit" if device is None else device
+
+
         self.mapper = (
-            FermionicToQubitMapper.from_string('jw')()
-            if mapper is None
-            else FermionicToQubitMapper.from_string(mapper)()
+            JordanWigner() if mapper is None else mapper
         )
 
         self.qubits = 2 * self.active_space.num_active_spatial_orbitals
@@ -59,33 +58,6 @@ class PEBase(BaseAlgorithm):
             np.ndarray: Reference state vector.
         """
         return qml.qchem.hf_state(electrons, qubits)
-
-
-    def _init_qubit_hamiltonian(self):
-        """
-        Initializes the qubit Hamiltonian for the quantum phase estimation algorithm.
-
-        This method retrieves the qubit Hamiltonian representation of the target 
-        molecule from the `qc2data` object. It requires prior initialization of 
-        `qc2data` with the molecular data.
-
-        Raises:
-            ValueError: If `qc2data` is not set correctly.
-
-        Attributes:
-            e_core (float): The core energy of the system.
-            qubit_op (Operator): The qubit operator representing the Hamiltonian.
-        """
-
-        if self.qc2data is None:
-            raise ValueError("qc2data attribute set incorrectly in QPE.")
-
-        self.e_core, self.qubit_op = self.qc2data.get_qubit_hamiltonian(
-            self.active_space.num_active_electrons,
-            self.active_space.num_active_spatial_orbitals,
-            self.mapper,
-            format=self.format,
-        )
 
     @staticmethod
     def _phase_to_energy(phase: float) -> float:
@@ -171,7 +143,7 @@ class PEBase(BaseAlgorithm):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.pennylane import QPE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

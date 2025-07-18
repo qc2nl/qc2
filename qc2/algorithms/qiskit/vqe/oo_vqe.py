@@ -3,7 +3,7 @@ from typing import List, Union
 from qiskit.circuit import QuantumCircuit
 from qiskit_nature.second_q.mappers import QubitMapper
 from qc2.algorithms.qiskit.vqe.sa_oo_vqe import SA_OO_VQE
-from qc2.algorithms.utils.active_space import ActiveSpace
+from qc2.second_q.active_space import ActiveSpace
 from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
 
 class OO_VQE(SA_OO_VQE):
@@ -81,7 +81,7 @@ class OO_VQE(SA_OO_VQE):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.qiskit import OO_VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

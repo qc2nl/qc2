@@ -28,7 +28,7 @@ except ImportError:
 from .base_mapper import BaseMapper
 
 
-class JordanWignerMapper(BaseMapper):
+class JordanWigner(BaseMapper):
     """The Jordan-Wigner fermion-to-qubit mapping."""
 
     @classmethod

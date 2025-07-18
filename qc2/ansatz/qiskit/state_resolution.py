@@ -2,7 +2,7 @@ from qiskit.circuit.library.blueprintcircuit import BlueprintCircuit
 from qiskit.exceptions import QiskitError
 from qiskit.circuit import QuantumCircuit, Parameter, QuantumRegister, QuantumCircuit
 from qiskit.circuit.library.blueprintcircuit import BlueprintCircuit
-from qc2.algorithms.utils.active_space import ActiveSpace
+from qc2.second_q.active_space import ActiveSpace
 
 class StateResolution(BlueprintCircuit):
     """State Resolution initial state for SA OO VQE."""

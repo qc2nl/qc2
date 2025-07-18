@@ -11,7 +11,7 @@ from qiskit.primitives import Estimator
 from qc2.data import qc2Data
 
 from qc2.algorithms.qiskit import SA_OO_VQE
-from qc2.algorithms.utils import ActiveSpace
+from qc2.second_q.active_space import ActiveSpace
 from qc2.ase import PySCF
 
 

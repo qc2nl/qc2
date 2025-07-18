@@ -15,7 +15,7 @@ except ImportError:
     PennyLaneOperatorType = object
 
 from qc2.data.data import qc2Data
-from qc2.algorithms.utils.active_space import (
+from qc2.second_q.active_space import (
     ActiveSpace,
     get_active_space_idx
 )
@@ -84,7 +84,7 @@ class OrbitalOptimization():
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.utils import OrbitalOptimization
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -169,7 +169,7 @@ class OrbitalOptimization():
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.utils import OrbitalOptimization
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

@@ -15,7 +15,7 @@ from qiskit.primitives import Estimator
 from qc2.ase import DIRAC
 from qc2.data import qc2Data
 from qc2.algorithms.qiskit import VQE
-from qc2.algorithms.utils import ActiveSpace
+from qc2.second_q.active_space import ActiveSpace
 
 
 def clean_up_DIRAC_files():

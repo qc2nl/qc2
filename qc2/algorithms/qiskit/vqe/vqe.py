@@ -8,10 +8,10 @@ from qiskit.primitives import Estimator
 from qiskit.circuit import QuantumCircuit
 from qc2.algorithms.base.vqe_base import VQEBASE
 from qc2.algorithms.algorithms_results import VQEResults
-from qc2.algorithms.utils.active_space import ActiveSpace
+from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.utils.mappers import FermionicToQubitMapper
 from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
-
+from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
 
 class VQE(VQEBASE):
     """
@@ -74,7 +74,7 @@ class VQE(VQEBASE):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.qiskit import VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -100,10 +100,11 @@ class VQE(VQEBASE):
         self.active_space = (
             ActiveSpace((2, 2), 2) if active_space is None else active_space
         )
+
         self.mapper = (
-            FermionicToQubitMapper.from_string('jw')()
+            JordanWigner()
             if mapper is None
-            else FermionicToQubitMapper.from_string(mapper)()
+            else mapper
         )
 
         # init circuit
@@ -183,7 +184,7 @@ class VQE(VQEBASE):
         >>> from qc2.ase import PySCF
         >>> from qc2.data import qc2Data
         >>> from qc2.algorithms.qiskit import VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

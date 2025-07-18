@@ -9,7 +9,7 @@ from qiskit.primitives import Sampler
 
 from qc2.data import qc2Data
 from qc2.ase import PySCF
-from qc2.algorithms.utils import ActiveSpace
+from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit import IQPE
 
 

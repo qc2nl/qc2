@@ -7,31 +7,15 @@ from ase import Atoms
 from ase.units import Ha
 
 
-from .qcschema import QCSchema
-from ..qubit_mappers.base_mapper import BaseMapper
-from ..second_q.electronic_hamiltonian import ElectronicHamiltonian
-from ..second_q.active_space_transformer import ActiveSpaceTransformer
-from ..second_q.fermionic_operator import FermionicOperator
-
-from qiskit.quantum_info import SparsePauliOp
-
+from .data.qcschema import QCSchema
+from .second_q.electronic_hamiltonian import ElectronicHamiltonian
+from .second_q.active_space_transformer import ActiveSpaceTransformer
+from .second_q.fermionic_operator import FermionicOperator
+from .algorithms.base.base_algorithm import BaseAlgorithm
+from .ase.qc2_ase_base_class import BaseQc2ASECalculator
 
 
-
-
-# try importing PennyLane and set `PennyLaneOperatorType`
-try:
-    from pennylane.operation import Operator
-    from qc2.qubit_mappers.convert import import_operator
-    PennyLaneOperatorType = Operator
-except ImportError:
-    PennyLaneOperatorType = object
-
-from qc2.algorithms.base.base_algorithm import BaseAlgorithm
-from qc2.ase.qc2_ase_base_class import BaseQc2ASECalculator
-
-
-class qc2Data:
+class QC2:
     """Main qc2 class.
 
     This class orchestrates classical qchem programs and
@@ -80,7 +64,7 @@ class qc2Data:
         >>> from ase.build import molecule
         >>> from qc2.data import qc2Data
         >>> from qc2.ase import PySCF
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.second_q.active_space import ActiveSpace
         >>> from qc2.algorithm.qiskit import VQE
         >>>
         >>> mol = molecule('H2')
@@ -424,75 +408,4 @@ class qc2Data:
         second_q_op = reduced_hamiltonian.second_q_op()
 
         return core_energy, second_q_op
-
-    def get_qubit_hamiltonian(
-            self,
-            num_electrons: Union[int, Tuple[int, int]],
-            num_spatial_orbitals: int,
-            mapper: BaseMapper,
-    ) -> Tuple[float, Union[SparsePauliOp, PennyLaneOperatorType]]:
-        """Generates the qubit Hamiltonian of a target molecule.
-
-        This method generates the qubit Hamiltonian representation of a target
-        molecule. It can optionally perform a basis set transformation if the
-        ``transform`` flag is True.
-
-        Args:
-            num_electrons (Union[int, Tuple[int, int]]):
-                The number of active electrons. If this is a tuple,
-                it represents the number of alpha- and beta-spin electrons,
-                respectively. If this is a number, it is interpreted as the
-                total number of active electrons, should be even, and implies
-                that the number of alpha and beta electrons equals half of
-                this value, respectively.
-            num_spatial_orbitals (int): The number of active orbitals.
-            mapper (QubitMapper, optional):
-                The qubit mapping strategy to convert fermionic operators to
-                qubit operators. Defaults to ``JordanWignerMapper()``.
-
-        Returns:
-            Tuple[float, Union[SparsePauliOp, Operator]]:
-                - core_energy (float): The core energy after active
-                  space transformation.
-                - qubit_op (Union[SparsePauliOp, Operator]):
-                  If the format is ``qiskit``, it returns a
-                  :class:`SparsePauliOp` representing the
-                  qubit Hamiltonian in the qiskit format.
-                  If the format is ``pennylane``, it returns a
-                  :class:`Operator` instance representing the
-                  qubit Hamiltonian in the PennyLane format.
-
-        Raises:
-            TypeError: If the provided `format` is not supported
-              (not ``qiskit`` nor ``pennylane``).
-
-        **Example**
-
-        >>> from ase.build import molecule
-        >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
-        >>>
-        >>> mol = molecule('H2')
-        >>> hdf5_file = 'h2.hdf5'
-        >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
-        >>> qc2data.molecule.calc = DIRAC(...)  # => specify qchem calculator
-        >>> qc2data.run()
-        >>> n_electrons = (1, 1)
-        >>> n_spatial_orbitals = 2
-        >>> mapper = BravyiKitaevMapper()
-        >>> (e_core, qubit_op) = qc2data.get_qubit_hamiltonian(
-        ...     n_electrons, n_spatial_orbitals, mapper, format='qiskit'
-        ... )
-        """
-
-        # get fermionic hamiltonian
-        core_energy, second_q_op = self.get_fermionic_hamiltonian(
-            num_electrons,
-            num_spatial_orbitals,
-        )
-
-        # perform fermionic-to-qubit transformation using the given mapper
-        # and obtain `SparsePauliOp` qiskit qubit hamiltonian
-        qubit_op = mapper.map(second_q_op)
-
-        return core_energy, qubit_op
+ 

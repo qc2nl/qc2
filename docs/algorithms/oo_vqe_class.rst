@@ -38,7 +38,7 @@ An illustrative example is shown below:
 
     from qc2.data import qc2Data
     from qc2.algorithms.qiskit import OO_VQE
-    from qc2.algorithms.utils import ActiveSpace
+    from qc2.second_q.active_space import ActiveSpace
 
     # set ASE Atoms object
     mol = molecule('H2O')
