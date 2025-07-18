@@ -1,7 +1,12 @@
 from typing import Tuple
 from qiskit.circuit import QuantumCircuit
-from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD, SUCCD, PUCCSD, PUCCD
-from qiskit_nature.second_q.mappers import QubitMapper
+# from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD, SUCCD, PUCCSD, PUCCD
+# from qiskit_nature.second_q.mappers import QubitMapper
+from ...qubit_mappers.qiskit.base_mapper import BaseMapper
+from .uccsd import UCCSD  # Import UCCSD ansatz
+from .hatree_fock import HartreeFock  # Import Hartree-Fock ansatz
+from .ucc import UCC  # Import UCC ansatz
+from .puccsd import PUCCSD  # Import PUCCSD ansatz
 from .gate_fabric import GateFabric  # Import Gate Fabric ansatz
 from .lucj import LUCJ  # Import LUCJ ansatz
 
@@ -29,7 +34,7 @@ from .lucj import LUCJ  # Import LUCJ ansatz
 def generate_ansatz(
     num_spatial_orbitals: int, 
     num_particles: Tuple[int, int], 
-    mapper: QubitMapper, 
+    mapper: BaseMapper, 
     ansatz_type: str, 
     reference_state: QuantumCircuit | None = None, 
     mol_data=None, 
@@ -57,14 +62,14 @@ def generate_ansatz(
     if ansatz_type.upper() == "UCCSD":
         return UCCSD(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
 
-    elif ansatz_type.upper() == "SUCCD":
-        return SUCCD(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
+    # elif ansatz_type.upper() == "SUCCD":
+    #     return SUCCD(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
 
     elif ansatz_type.upper() == "PUCCSD":
         return PUCCSD(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
 
-    elif ansatz_type.upper() == "PUCCD":
-        return PUCCD(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
+    # elif ansatz_type.upper() == "PUCCD":
+    #     return PUCCD(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
 
     elif ansatz_type.upper() == "GateFabric":
         return GateFabric(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)

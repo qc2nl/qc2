@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from abc import ABC
 from functools import lru_cache
-from typing import TypeVar, Dict, Iterable, Generic, Generator
+from typing import TypeVar, Dict, Iterable, Generic, Generator, List
 
 import numpy as np
 
@@ -150,7 +150,7 @@ class BaseMapper(BaseMapper):
 
     def map(
         self,
-        second_q_ops: FermionicOperator,
+        second_q_ops: FermionicOperator | List[FermionicOperator],
         *,
         register_length: int | None = None,
     ) -> SparsePauliOp | ListOrDictType[SparsePauliOp]:
@@ -178,11 +178,13 @@ class BaseMapper(BaseMapper):
         # # TaperedQubitMapper.
         # return returned_ops
 
-        if not isinstance(second_q_ops, FermionicOperator):
+        if  isinstance(second_q_ops, FermionicOperator):
+            return self._map_single(second_q_ops, register_length=register_length) 
+        elif isinstance(second_q_ops, List):
+            return [self._map_single(op, register_length=register_length) for op in second_q_ops]
+        else:
             print(second_q_ops)
-            raise TypeError("Incorrect argument type: second_q_ops should be FermionicOperator")
-
-        return self._map_single(second_q_ops, register_length=register_length) 
+            raise TypeError(f"Incorrect argument type: second_q_ops should be FermionicOperator and not {type(second_q_ops)}")
     
     @classmethod
     @lru_cache(maxsize=32)
