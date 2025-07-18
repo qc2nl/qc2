@@ -3,8 +3,7 @@
 
 from __future__ import annotations
 
-from abc import ABC
-from typing import TypeVar, Tuple, List 
+from typing import Tuple, List 
 
 import pennylane as qml
 import pennylane.numpy as np
@@ -16,6 +15,7 @@ class PennylaneBaseMapper(BaseMapper):
 
     @staticmethod
     def reformat_str(ops: str) -> str:
+        """Reformat the string from `+_0 -_1` to `0+ 1-`"""
         op_list = ops.split()
         reformatted_op_list = []
         for o in op_list:
@@ -26,7 +26,6 @@ class PennylaneBaseMapper(BaseMapper):
 
     def _return_data(self, pauli_sentence: PauliSentence) -> Tuple[np.ndarray, List]:
         """Return data for the qubit mapper."""
-
         data = (np.array(list(pauli_sentence.values())).real, 
                  list(pauli_sentence.keys()))
         

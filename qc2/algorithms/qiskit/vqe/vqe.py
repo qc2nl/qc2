@@ -9,7 +9,6 @@ from qiskit.circuit import QuantumCircuit
 from qc2.algorithms.base.vqe_base import VQEBASE
 from qc2.algorithms.algorithms_results import VQEResults
 from qc2.second_q.active_space import ActiveSpace
-from qc2.algorithms.utils.mappers import FermionicToQubitMapper
 from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
 from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
 

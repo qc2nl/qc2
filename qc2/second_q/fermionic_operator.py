@@ -23,7 +23,9 @@ import numpy as np
 
 class FermionicOperator(Dict):
 
-    num_spatial_orbitals = None
+    def __init__(self, data: Mapping[str, float] | None = None, num_spatial_orbitals: int | None = None):
+        super().__init__(data)
+        self.num_spatial_orbitals = num_spatial_orbitals
 
     @property
     def register_length(self) -> int:

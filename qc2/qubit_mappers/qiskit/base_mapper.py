@@ -177,6 +177,11 @@ class BaseMapper(BaseMapper):
         # # Note the output of the mapping will never be None for standard mappers other than the
         # # TaperedQubitMapper.
         # return returned_ops
+
+        if not isinstance(second_q_ops, FermionicOperator):
+            print(second_q_ops)
+            raise TypeError("Incorrect argument type: second_q_ops should be FermionicOperator")
+
         return self._map_single(second_q_ops, register_length=register_length) 
     
     @classmethod
