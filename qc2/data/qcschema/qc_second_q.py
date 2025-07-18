@@ -27,6 +27,8 @@ class QCSecondQ(_QCBase):
     """Number of active electrons, e.g. (2,2)."""
     active_spatial_orbitals: int
     """Number of active spatial orbitals."""
+    inactive_energy: float
+    """Energy of inactive orbitals."""
     creation_anhiliton_operators: Sequence[str]
     """Creation and annihilation operators, e.g. +_2 -_3."""
     creation_anhiliton_coefficients: Sequence[float]

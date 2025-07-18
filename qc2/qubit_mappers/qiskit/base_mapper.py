@@ -28,8 +28,8 @@ except ImportError:
         "The Qubit Mapper requires qiskit and qiskit-algorithms to be installed."
     )
 
-
-from ...second_q.fermionic_operator import FermionicOpertor
+from ..base_mapper import BaseMapper
+from ...second_q.fermionic_operator import FermionicOperator
 
 # from qiskit_nature import QiskitNatureError
 # from qiskit_nature.second_q.operators import SparseLabelOp
@@ -126,13 +126,13 @@ class _ListOrDict(Dict, Iterable, Generic[T]):
         return _qubit_op_type_wrapper(list(iter(self))[0][1])
 
 
-class BaseMapper(ABC):
+class BaseMapper(BaseMapper):
     """The interface for implementing methods which map from a ``SparseLabelOp`` to a
     qubit operator in the form of a ``SparsePauliOp``.
     """
 
     def _map_single(
-        self, second_q_op: FermionicOpertor, *, register_length: int | None = None
+        self, second_q_op: FermionicOperator, *, register_length: int | None = None
     ) -> SparsePauliOp:
         """Maps a :class:`~qiskit_nature.second_q.operators.SparseLabelOp`
         to a ``SparsePauliOp``.
@@ -150,7 +150,7 @@ class BaseMapper(ABC):
 
     def map(
         self,
-        second_q_ops: FermionicOpertor,
+        second_q_ops: FermionicOperator,
         *,
         register_length: int | None = None,
     ) -> SparsePauliOp | ListOrDictType[SparsePauliOp]:
@@ -232,7 +232,7 @@ class BaseMapper(ABC):
     @classmethod
     def mode_based_mapping(
         cls,
-        second_q_op: FermionicOpertor,
+        second_q_op: FermionicOperator,
         register_length: int | None = None,
     ) -> SparsePauliOp:
         # pylint: disable=unused-argument

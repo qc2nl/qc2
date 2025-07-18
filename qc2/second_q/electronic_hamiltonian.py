@@ -15,7 +15,7 @@ import numpy as np
 from typing import Dict, MutableMapping
 from ..data.qcschema import QCSchema
 from .electronic_integrals import ElectronicIntegrals, TensorDict
-from .fermionic_operator import FermionicOpertor
+from .fermionic_operator import FermionicOperator
 
 def _reshape_2( arr, size):
         return np.asarray(arr).reshape((size, size))
@@ -128,7 +128,7 @@ class ElectronicHamiltonian:
     def second_q_op(self) -> Dict:
 
         # see FermionicOp.from_polynomial_tensor()
-        second_q_ops = FermionicOpertor()
+        second_q_ops = FermionicOperator()
         norb = self.coeffs['+-'].shape[0]
 
         for i in range(norb):

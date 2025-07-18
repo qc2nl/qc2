@@ -21,7 +21,7 @@ from typing import Iterator, Sequence, Dict
 
 import numpy as np
 
-class FermionicOpertor(Dict):
+class FermionicOperator(Dict):
 
     num_spatial_orbitals = None
 

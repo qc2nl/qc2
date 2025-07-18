@@ -8,11 +8,12 @@ from ase.units import Ha
 
 
 from .qcschema import QCSchema
+from ..qubit_mappers.base_mapper import BaseMapper
 from ..second_q.electronic_hamiltonian import ElectronicHamiltonian
 from ..second_q.active_space_transformer import ActiveSpaceTransformer
+from ..second_q.fermionic_operator import FermionicOperator
 
 from qiskit.quantum_info import SparsePauliOp
-from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
 
 
 
@@ -21,7 +22,7 @@ from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
 # try importing PennyLane and set `PennyLaneOperatorType`
 try:
     from pennylane.operation import Operator
-    from qc2.qubit_mappers.pennylane.convert import import_operator
+    from qc2.qubit_mappers.convert import import_operator
     PennyLaneOperatorType = Operator
 except ImportError:
     PennyLaneOperatorType = object
@@ -330,7 +331,7 @@ class qc2Data:
             self,
             num_electrons: Union[int, Tuple[int, int]],
             num_spatial_orbitals: int
-    ) -> Tuple[float, Dict]:
+    ) -> Tuple[float, FermionicOperator]:
         """Builds the fermionic Hamiltonian of a target molecule.
 
         This method constructs the electronic Hamiltonian in 2nd-quantization
@@ -428,9 +429,7 @@ class qc2Data:
             self,
             num_electrons: Union[int, Tuple[int, int]],
             num_spatial_orbitals: int,
-            mapper: QubitMapper = JordanWignerMapper(),
-            *,
-            format: str = "qiskit",
+            mapper: BaseMapper,
     ) -> Tuple[float, Union[SparsePauliOp, PennyLaneOperatorType]]:
         """Generates the qubit Hamiltonian of a target molecule.
 
@@ -450,10 +449,6 @@ class qc2Data:
             mapper (QubitMapper, optional):
                 The qubit mapping strategy to convert fermionic operators to
                 qubit operators. Defaults to ``JordanWignerMapper()``.
-            format (str, optional):
-                The format in which to return the qubit Hamiltonian.
-                Supported formats are ``qiskit`` and ``pennylane``.
-                Defaults to ``qiskit``.
 
         Returns:
             Tuple[float, Union[SparsePauliOp, Operator]]:
@@ -489,8 +484,6 @@ class qc2Data:
         ...     n_electrons, n_spatial_orbitals, mapper, format='qiskit'
         ... )
         """
-        if format not in ["qiskit", "pennylane"]:
-            raise TypeError(f"Format {format} not yet suported.")
 
         # get fermionic hamiltonian
         core_energy, second_q_op = self.get_fermionic_hamiltonian(
@@ -501,11 +494,5 @@ class qc2Data:
         # perform fermionic-to-qubit transformation using the given mapper
         # and obtain `SparsePauliOp` qiskit qubit hamiltonian
         qubit_op = mapper.map(second_q_op)
-
-        if format == "pennylane":
-            # generate pennylane qubit hamiltonian `Operator` instance
-            # from qiskit `SparsePauliOp`;
-            # see qc2/pennylane/convert.py
-            qubit_op = import_operator(qubit_op, format="qiskit")
 
         return core_energy, qubit_op

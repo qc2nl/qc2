@@ -1,6 +1,16 @@
-from pennylane.fermi import jordan_wigner
-from .base_mapper import BaseMapper
+from pennylane.pauli.pauli_arithmetic import PauliSentence
+from pennylane.fermi import jordan_wigner, from_string
+from .base_mapper import PennylaneBaseMapper
+from ...second_q.fermionic_operator import FermionicOperator
 
 
-class JordanWigner(BaseMapper):
-    mapper = jordan_wigner
+class JordanWigner(PennylaneBaseMapper):
+    
+    def map(self, second_q_ops: FermionicOperator):
+        qubit_ops = PauliSentence()
+        for op, coeff in second_q_ops.items():
+            qubit_ops += coeff * jordan_wigner(
+                                    from_string(self.reformat_str(op)), 
+                                    ps=True)
+
+        return qubit_ops

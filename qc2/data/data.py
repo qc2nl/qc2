@@ -25,7 +25,7 @@ from qiskit_nature.second_q.operators import ElectronicIntegrals
 # try importing PennyLane and set `PennyLaneOperatorType`
 try:
     from pennylane.operation import Operator
-    from qc2.qubit_mappers.pennylane.convert import import_operator
+    from qc2.qubit_mappers.convert import import_operator
     PennyLaneOperatorType = Operator
 except ImportError:
     PennyLaneOperatorType = object

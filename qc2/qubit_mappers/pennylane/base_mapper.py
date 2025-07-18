@@ -11,28 +11,16 @@ import numpy as np
 
 import pennylane as qml
 from pennylane.fermi import from_string
+from ..base_mapper import BaseMapper
 
-class BaseMapper(ABC):
+class PennylaneBaseMapper(BaseMapper):
 
-    mapper = None
-
-    def format_str(op: str) -> str:
-        op = op.split('_')
-        op.reverse()
-        return ''.join(op)
-
-    def _map_single(self, second_q_op):
-
-        single_op_list = second_q_op.split()
-        for op in single_op_list:
-            self.mapper(from_string(self.format_str(op), ps=True))
-
-
-
-    def map(self, second_q_ops: Dict):
-
-        qubit_ops = {}
-        for name, second_q_op in second_q_ops.items():
-            qubit_ops[name] = self._map_single(second_q_op)
-
-        return qubit_ops
+    @staticmethod
+    def reformat_str(ops: str) -> str:
+        op_list = ops.split()
+        reformatted_op_list = []
+        for o in op_list:
+            o = o.split('_')
+            o.reverse()
+            reformatted_op_list.append(''.join(o))
+        return ' '.join(reformatted_op_list)
