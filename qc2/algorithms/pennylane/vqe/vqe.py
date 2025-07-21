@@ -1,5 +1,5 @@
 """Module defining VQE algorithm for PennyLane."""
-from typing import Callable
+from typing import Callable, List, Any
 import pennylane as qml
 from pennylane import numpy as np
 from pennylane import QNode
@@ -9,6 +9,9 @@ from qc2.algorithms.base.vqe_base import VQEBASE
 from qc2.algorithms.algorithms_results import VQEResults
 from qc2.ansatz.pennylane.generate_ansatz import generate_ansatz
 from qc2.qubit_mappers.pennylane.jordan_wigner import JordanWigner
+from qc2.qc2_driver import QC2
+from qc2.second_q.active_space import ActiveSpace
+from qc2.qubit_mappers.base_mapper import BaseMapper
 
 class VQE(VQEBASE):
     """
@@ -23,7 +26,7 @@ class VQE(VQEBASE):
         active_space (ActiveSpace): Instance of
             :class:`~qc2.algorithm.utils.activate_space.ActiveSpace`.
             Defaults to ``ActiveSpace((2, 2), 2)``.
-        mapper (QubitMapper): Strategy for fermionic-to-qubit mapping.
+        mapper (BaseMapper): Strategy for fermionic-to-qubit mapping.
             Defaults to ``JordanWignerMapper``.
         device (qml.device): Device for estimating the expectation value.
             Defaults to ``default.qubit``.
@@ -42,16 +45,16 @@ class VQE(VQEBASE):
 
     def __init__(
         self,
-        qc2data=None,
-        ansatz=None,
-        active_space=None,
-        mapper=None,
-        device=None,
-        optimizer=None,
-        init_params=None,
-        max_iterations=50,
-        conv_tol=1e-7,
-        verbose=0
+        qc2data: QC2 | None = None,
+        ansatz: Callable | None = None,
+        active_space: ActiveSpace | None = None,
+        mapper: BaseMapper | None = None,
+        device: str | None =None,
+        optimizer: Any = None,
+        init_params: List | None = None,
+        max_iterations: int = 50,
+        conv_tol: float = 1e-7,
+        verbose: int = 0
     ):
         """Initializes the VQE class.
 
@@ -62,9 +65,8 @@ class VQE(VQEBASE):
             active_space (ActiveSpace): Instance of
                 :class:`~qc2.algorithm.utils.active_space.ActiveSpace`.
                 Defaults to ``ActiveSpace((2, 2), 2)``.
-            mapper (str): Strategy for fermionic-to-qubit mapping.
-                Common options are ``jw`` for ``JordanWignerMapper``
-                or "bk" for ``BravyiKitaevMapper``. Defaults to ``jw``.
+            mapper (BaseMapper): Strategy for fermionic-to-qubit mapping.
+                 Defaults to ``JordanWigner``.
             device (qml.device): Device for estimating the expectation value.
                 Defaults to ``default.qubit``.
             optimizer (qml.optimizer): Optimization routine for circuit

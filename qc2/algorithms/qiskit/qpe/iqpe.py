@@ -5,6 +5,10 @@ from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.primitives import BaseSampler
 from .pebase import PEBase
 
+from qc2.qc2_driver import QC2
+from qc2.second_q.active_space import ActiveSpace
+from qc2.qubit_mappers.base_mapper import BaseMapper
+
 class QC2IterativePhaseEstimation(IterativePhaseEstimation):
     """Run the Iterative quantum phase estimation (QPE) algorithm.
 
@@ -80,13 +84,13 @@ class QC2IterativePhaseEstimation(IterativePhaseEstimation):
 
 class IQPE(PEBase):
     def __init__(self, 
-                 qc2data=None, 
-                 num_iterations=None,
-                 active_space=None, 
-                 mapper=None, 
-                 sampler=None, 
-                 reference_state=None,  
-                 verbose=0):
+                 qc2data: QC2 | None = None, 
+                 num_iterations: int | None = None,
+                 active_space: ActiveSpace | None = None, 
+                 mapper: BaseMapper | None = None, 
+                 sampler: BaseSampler | None = None, 
+                 reference_state: QuantumCircuit | None = None,  
+                 verbose: int = 0):
         super().__init__(qc2data, active_space, mapper, sampler, reference_state, verbose)
         self.num_iterations = 3 if num_iterations is None else num_iterations
         self.solver = QC2IterativePhaseEstimation(self.num_iterations, self.sampler)

@@ -3,18 +3,25 @@ import pennylane as qml
 from pennylane import numpy as np
 from pennylane import QNode
 from pennylane.operation import Operator
+
+
+from qc2.qc2_driver import QC2
+from qc2.second_q.active_space import ActiveSpace
+from qc2.qubit_mappers.base_mapper import BaseMapper
+
 from .pebase import PEBase
+
 
 class IQPE(PEBase):
     def __init__(
         self,
-        qc2data=None,
-        active_space=None,
-        mapper=None,
-        device=None,
-        reference_state=None,
-        num_iterations=None,
-        verbose=0
+        qc2data: QC2| None = None,
+        active_space: ActiveSpace | None = None,
+        mapper : BaseMapper | None = None,
+        device: str | None = None,
+        reference_state: np.ndarray | None = None,
+        num_iterations: int | None = None,
+        verbose: int = 0
     ):
         
         super().__init__(qc2data, active_space, mapper, device, reference_state, verbose)

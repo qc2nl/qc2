@@ -1,7 +1,6 @@
 """Module defining VQE algorithm for Qiskit-Nature."""
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Any
 import numpy as np
-from qiskit_nature.second_q.mappers import QubitMapper
 from qiskit_algorithms.minimum_eigensolvers import VQE as vqe_solver
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
@@ -11,6 +10,10 @@ from qc2.algorithms.algorithms_results import VQEResults
 from qc2.second_q.active_space import ActiveSpace
 from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
 from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
+from qc2.qc2_driver import QC2
+from qc2.second_q.active_space import ActiveSpace
+from qc2.qubit_mappers.base_mapper import BaseMapper
+
 
 class VQE(VQEBASE):
     """
@@ -38,14 +41,14 @@ class VQE(VQEBASE):
 
     def __init__(
         self,
-        qc2data=None,
-        ansatz=None,
-        active_space=None,
-        mapper=None,
-        estimator=None,
-        optimizer=None,
-        init_params=None,
-        verbose=0
+        qc2data: QC2 | None = None,
+        ansatz: QuantumCircuit | None = None,
+        active_space: ActiveSpace | None = None,
+        mapper: BaseMapper | None = None,
+        estimator: Estimator | None = None,
+        optimizer: Any = None,
+        init_params: List | None = None,
+        verbose: int = 0
     ):
         """Initializes the VQE class.
 
@@ -130,7 +133,7 @@ class VQE(VQEBASE):
     def _get_default_ansatz(
         ansatz: Union[str, None],
         active_space: ActiveSpace,
-        mapper: QubitMapper,
+        mapper: BaseMapper,
     ) -> QuantumCircuit:
         """Set up the default UCC ansatz from a Hartree Fock reference state.
 

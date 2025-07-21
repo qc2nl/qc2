@@ -1,7 +1,11 @@
 """Module defining oo-VQE algorithm for PennyLane."""
-from typing import Callable
+from typing import Callable, Any, List
 from qc2.algorithms.pennylane.vqe.sa_oo_vqe import SA_OO_VQE
 from qc2.ansatz.pennylane.generate_ansatz import generate_ansatz
+
+from qc2.qc2_driver import QC2
+from qc2.second_q.active_space import ActiveSpace
+from qc2.qubit_mappers.base_mapper import BaseMapper
 
 class OO_VQE(SA_OO_VQE):
     """Main class for orbital-optimized VQE with PennyLane.
@@ -28,18 +32,19 @@ class OO_VQE(SA_OO_VQE):
     """
     def __init__(
         self,
-        qc2data=None,
-        ansatz=None,
-        active_space=None,
-        mapper=None,
-        device=None,
-        optimizer=None,
-        init_circuit_params=None,
-        init_orbital_params=None,
-        freeze_active=False,
-        max_iterations=50,
-        conv_tol=1e-7,
-        verbose=0
+        qc2data: QC2 | None = None,
+        ansatz: Callable | None = None,
+        active_space: ActiveSpace | None = None,
+        mapper: BaseMapper | None = None,
+        device: str | None =None,
+        optimizer: Any = None,
+        init_circuit_params: List | None = None,
+        init_orbital_params: List | None =None,
+        freeze_active: bool = False,
+        state_resolution: bool = True,
+        max_iterations: int = 50,
+        conv_tol:float = 1e-7,
+        verbose: int = 0
     ):
         """Initializes the oo-VQE class.
 

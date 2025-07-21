@@ -4,21 +4,25 @@ from scipy.linalg import expm
 from qiskit import QuantumCircuit
 from qiskit.primitives import Sampler
 from qiskit.circuit.library import UnitaryGate
-from qiskit_nature.second_q.circuit.library import HartreeFock
+
 from qc2.algorithms.base.base_algorithm import BaseAlgorithm
 from qc2.second_q.active_space import ActiveSpace
-from qiskit_nature.second_q.mappers import QubitMapper
+
 from qc2.algorithms.algorithms_results import QPEResults
 from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
+from qc2.qc2_driver import QC2
+from qc2.second_q.active_space import ActiveSpace
+from qc2.qubit_mappers.base_mapper import BaseMapper
+from qc2.ansatz.qiskit.hatree_fock import HartreeFock
 
 class PEBase(BaseAlgorithm):
     def __init__(self, 
-                 qc2data=None, 
-                 active_space=None, 
-                 mapper=None, 
-                 sampler=None, 
-                 reference_state=None,  
-                 verbose=0):
+                 qc2data: QC2 | None = None, 
+                 active_space: ActiveSpace | None = None, 
+                 mapper: BaseMapper | None = None, 
+                 sampler: Sampler | None = None, 
+                 reference_state: QuantumCircuit | None = None,  
+                 verbose: int = 0):
         
         self.qc2data = qc2data
         self.format = "qiskit"
@@ -49,7 +53,7 @@ class PEBase(BaseAlgorithm):
 
     @staticmethod
     def _get_default_reference(
-        active_space: ActiveSpace, mapper: QubitMapper
+        active_space: ActiveSpace, mapper: BaseMapper
     ) -> QuantumCircuit:
         """Set up the default reference state circuit based on Hartree Fock.
 
@@ -66,17 +70,6 @@ class PEBase(BaseAlgorithm):
             mapper,
         )
     
-    # def _init_qubit_hamiltonian(self):
-    #     if self.qc2data is None:
-    #         raise ValueError("qc2data attribute set incorrectly in QPE.")
-
-    #     self.e_core, self.qubit_op = self.qc2data.get_qubit_hamiltonian(
-    #         self.active_space.num_active_electrons,
-    #         self.active_space.num_active_spatial_orbitals,
-    #         self.mapper,
-    #         format=self.format,
-    #     )
-
     @staticmethod
     def _phase_to_energy(phase: float) -> float:
         """

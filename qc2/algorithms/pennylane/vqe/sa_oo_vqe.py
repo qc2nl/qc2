@@ -1,5 +1,5 @@
 """Module defining SA_OO-VQE algorithm for PennyLane."""
-from typing import List,Tuple, Callable
+from typing import List,Tuple, Callable, Any
 import itertools as itt
 from pennylane import numpy as np
 import pennylane as qml
@@ -8,9 +8,11 @@ from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.algorithms.algorithms_results import SAOOVQEResults
 from qc2.ansatz.pennylane.state_resolution import state_resolution_initializer
 from qc2.qubit_mappers.convert import _qiskit_nature_to_pennylane
-# from qiskit_nature.second_q.operators import FermionicOp
 from qc2.second_q.fermionic_operator import FermionicOperator
 from qc2.ansatz.pennylane.generate_ansatz import generate_state_resolution_ansatz
+from qc2.qc2_driver import QC2
+from qc2.second_q.active_space import ActiveSpace
+from qc2.qubit_mappers.base_mapper import BaseMapper
 
 class SA_OO_VQE(VQE):
     """Main class for orbital-optimized VQE with PennyLane.
@@ -37,20 +39,20 @@ class SA_OO_VQE(VQE):
     """
     def __init__(
         self,
-        qc2data=None,
-        ansatz=None,
-        active_space=None,
-        mapper=None,
-        device=None,
-        optimizer=None,
-        state_weights=None,
-        init_circuit_params=None,
-        init_orbital_params=None,
-        freeze_active=False,
-        state_resolution=True,
-        max_iterations=50,
-        conv_tol=1e-7,
-        verbose=0
+        qc2data: QC2 | None = None,
+        ansatz: Callable | None = None,
+        active_space: ActiveSpace | None = None,
+        mapper: BaseMapper | None = None,
+        device: str | None =None,
+        optimizer: Any = None,
+        state_weights: List | None = None,
+        init_circuit_params: List | None = None,
+        init_orbital_params: List | None =None,
+        freeze_active: bool = False,
+        state_resolution: bool = True,
+        max_iterations: int = 50,
+        conv_tol:float = 1e-7,
+        verbose: int = 0
     ):
         """Initializes the SA-OO-VQE class.
 

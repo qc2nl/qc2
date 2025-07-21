@@ -7,6 +7,10 @@ from qiskit.circuit.library import QFT
 from qiskit.primitives import BaseSampler
 from .pebase import PEBase
 
+from qc2.qc2_driver import QC2
+from qc2.second_q.active_space import ActiveSpace
+from qc2.qubit_mappers.base_mapper import BaseMapper
+from qc2.ansatz.qiskit.hatree_fock import HartreeFock
 
 class QC2PhaseEstimation(PhaseEstimation):
     r"""Run the Quantum Phase Estimation (QPE) algorithm.
@@ -114,13 +118,13 @@ class QC2PhaseEstimation(PhaseEstimation):
 
 class QPE(PEBase):
     def __init__(self, 
-                 qc2data=None, 
-                 num_evaluation_qubits=None,
-                 active_space=None, 
-                 mapper=None, 
-                 sampler=None, 
-                 reference_state=None,  
-                 verbose=0):
+                 qc2data: QC2 | None = None, 
+                 num_evaluation_qubits: int = None,
+                 active_space: ActiveSpace | None = None, 
+                 mapper: BaseMapper | None = None, 
+                 sampler: BaseSampler | None= None, 
+                 reference_state: QuantumCircuit | None = None,  
+                 verbose: int = 0):
         super().__init__(qc2data, active_space, mapper, sampler, reference_state, verbose)
         self.num_evaluation_qubits = 3 if num_evaluation_qubits is None else num_evaluation_qubits
         self.solver = QC2PhaseEstimation(self.num_evaluation_qubits, self.sampler)
