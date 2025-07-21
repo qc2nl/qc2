@@ -8,7 +8,7 @@ from ase.build import molecule
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 
-from qc2.data import qc2Data
+from qc2.qc2_driver import QC2 as qc2Data
 
 from qc2.algorithms.qiskit import SA_OO_VQE
 from qc2.second_q.active_space import ActiveSpace

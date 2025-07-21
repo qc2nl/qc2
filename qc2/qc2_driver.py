@@ -62,7 +62,7 @@ class QC2:
         **Example**
 
         >>> from ase.build import molecule
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.ase import PySCF
         >>> from qc2.second_q.active_space import ActiveSpace
         >>> from qc2.algorithm.qiskit import VQE
@@ -155,7 +155,7 @@ class QC2:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>>
@@ -203,7 +203,7 @@ class QC2:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>>
@@ -266,7 +266,7 @@ class QC2:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>> hdf5_file = 'h2.hdf5'
@@ -286,7 +286,7 @@ class QC2:
             hamiltonian = ElectronicHamiltonian(schema=schema,  tol=1E-5)
         else:
             hamiltonian = initial_hamiltonian
-            
+
         # in case of space selection, reduce the space extent of the
         # fermionic Hamiltonian based on the number of active electrons
         # and orbitals
@@ -375,7 +375,7 @@ class QC2:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>> hdf5_file = 'h2.hdf5'

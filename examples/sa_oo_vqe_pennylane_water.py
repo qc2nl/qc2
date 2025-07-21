@@ -2,7 +2,7 @@ from ase.build import molecule
 
 import pennylane as qml
 
-from qc2.data import qc2Data
+from qc2.qc2_driver import QC2 as qc2Data
 from qc2.ase import PySCF
 
 from qc2.algorithms.pennylane import SA_OO_VQE

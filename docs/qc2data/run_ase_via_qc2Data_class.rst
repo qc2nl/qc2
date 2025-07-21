@@ -14,7 +14,7 @@ An example is given below:
 
     from ase.build import molecule
     from qc2.ase import PySCF
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
 
     # set ASE Atoms object
     mol = molecule('H2')
@@ -50,7 +50,7 @@ via the ASE ``calc`` attribute. As described in :ref:`run_ase`, we can attach an
         :emphasize-lines: 11-12
 
         from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
-        from qc2.data import qc2Data
+        from qc2.qc2_driver import QC2 as qc2Data
 
         # define ROSE target molecule and fragments
         molecule = ROSETargetMolecule(...)

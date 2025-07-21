@@ -7,7 +7,7 @@ from qiskit_nature.second_q.mappers import JordanWignerMapper
 from qiskit_nature.second_q.circuit.library import HartreeFock
 from qiskit.primitives import Sampler
 
-from qc2.data import qc2Data
+from qc2.qc2_driver import QC2 as qc2Data
 from qc2.ase import PySCF
 from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit import IQPE

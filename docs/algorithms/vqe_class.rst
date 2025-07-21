@@ -38,7 +38,7 @@ For illustrative purposes only, the following is a pseudo-code example demonstra
     from qiskit_algorithms.optimizers import COBYLA
     from qiskit.primitives import Estimator
 
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
     from qc2.algorithms.qiskit import VQE
     from qc2.second_q.active_space import ActiveSpace
 
@@ -77,7 +77,7 @@ A corresponding example using :class:`qc2.algorithms.pennylane.vqe.VQE` is:
 
     import pennylane as qml
 
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
     from qc2.algorithms.pennylane import VQE
     from qc2.second_q.active_space import ActiveSpace
 

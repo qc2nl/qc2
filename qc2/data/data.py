@@ -81,7 +81,7 @@ class qc2Data:
         **Example**
 
         >>> from ase.build import molecule
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.ase import PySCF
         >>> from qc2.second_q.active_space import ActiveSpace
         >>> from qc2.algorithm.qiskit import VQE
@@ -174,7 +174,7 @@ class qc2Data:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>>
@@ -222,7 +222,7 @@ class qc2Data:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>>
@@ -277,7 +277,7 @@ class qc2Data:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>>
@@ -344,7 +344,7 @@ class qc2Data:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>> hdf5_file = 'h2.hdf5'
@@ -434,7 +434,7 @@ class qc2Data:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>> hdf5_file = 'h2.hdf5'
@@ -572,7 +572,7 @@ class qc2Data:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>> hdf5_file = 'h2.hdf5'
@@ -702,7 +702,7 @@ class qc2Data:
 
         >>> from ase.build import molecule
         >>> from qc2.ase import DIRAC
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>>
         >>> mol = molecule('H2')
         >>> hdf5_file = 'h2.hdf5'

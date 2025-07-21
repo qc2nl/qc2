@@ -33,7 +33,7 @@ from a `QCSchema <https://molssi.org/software/qcschema-2/>`_ formatted hdf5 file
     from ase.build import molecule
     from qiskit_nature.second_q.mappers import JordanWignerMapper
     from qc2.ase import DIRAC
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
 
     # set ASE Atoms object
     mol = molecule('H2')

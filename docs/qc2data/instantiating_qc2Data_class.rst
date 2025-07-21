@@ -10,7 +10,7 @@ We start with a very simple example:
     :emphasize-lines: 9-11
 
     from ase.build import molecule
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
 
     # set ASE Atoms object
     mol = molecule('H2')
@@ -36,7 +36,7 @@ Here is an example of how to instantiate :class:`~qc2.data.data.qc2Data` to save
     :emphasize-lines: 9-11
 
     from ase.build import molecule
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
 
     # instantiate ASE Atoms object
     mol = molecule('H2')
