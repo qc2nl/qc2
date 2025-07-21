@@ -11,4 +11,3 @@ __version__ = "0.1.0"
 
 import qc2.ase
 import qc2.data
-from .qc2_driver import QC2

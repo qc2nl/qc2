@@ -29,9 +29,11 @@ class ElectronicHamiltonian:
                  schema: QCSchema | None = None,
                  electronic_integrals: ElectronicIntegrals | None = None,
                  constants: MutableMapping[str, float] = {},
+                 basis : str = 'molecular',
                  tol: float = 1E-6):
         
         self.schema = None 
+        self.basis = basis
         self.electronic_integrals = None
         self.num_particles = None
         self.num_spatial_orbitals = None
@@ -49,7 +51,13 @@ class ElectronicHamiltonian:
             self.num_spatial_orbitals = self.schema.properties.calcinfo_nmo
             self.num_particles = (self.schema.properties.calcinfo_nalpha, 
                                   self.schema.properties.calcinfo_nbeta)
-            self.electronic_integrals = self.read_electronic_integrals_from_schema()
+            
+            if self.basis == 'molecular':
+                self.electronic_integrals = self.read_electronic_integrals_from_schema_mo_basis()
+            elif self.basis == 'atomic':
+                self.electronic_integrals = self.read_electronic_integrals_from_schema_ao_basis()
+            else:
+                raise ValueError("basis must be either 'molecular' or 'atomic'")
 
         elif electronic_integrals is not None:
             self.electronic_integrals = electronic_integrals
@@ -58,12 +66,11 @@ class ElectronicHamiltonian:
         else:
             raise ValueError("Either schema or electronic_integrals must be provided.")
         
-        self.coeffs = self.second_q_coeffs()
+        # self.coeffs = self.second_q_coeffs()
+        # self.ops = self.second_q_op()
 
-        self.ops = self.second_q_op()
 
-
-    def read_electronic_integrals_from_schema(self):
+    def read_electronic_integrals_from_schema_mo_basis(self):
 
         # see qcshema_translator.get_mo_hamiltonian_direct
         alpha = TensorDict({'+-': None, '++--': None})
@@ -88,6 +95,16 @@ class ElectronicHamiltonian:
 
         return ElectronicIntegrals(alpha=alpha, beta=beta, beta_alpha=beta_alpha)
 
+    def read_electronic_integrals_from_schema_ao_basis(self):
+
+        nao = int(np.sqrt(len(self.schema.wavefunction.scf_fock_a)))
+        hcore = _reshape_2(self.schema.wavefunction.scf_fock_a, nao)
+        hcore_b = hcore
+        if self.schema.wavefunction.scf_fock_b is not None:
+            hcore_b = _reshape_2(self.schema.wavefunction.scf_fock_b, nao)
+        eri = _reshape_4(self.schema.wavefunction.scf_eri, nao)
+
+        return ElectronicIntegrals.from_raw_integrals(h1_a=hcore, h2_aa=eri, h1_b=hcore_b)
 
 
     def second_q_coeffs(self) -> Dict:
@@ -126,6 +143,8 @@ class ElectronicHamiltonian:
 
     
     def second_q_op(self) -> Dict:
+
+        self.coeffs = self.second_q_coeffs()
 
         # see FermionicOp.from_polynomial_tensor()
         second_q_ops = FermionicOperator()
