@@ -125,7 +125,7 @@ class OO_VQE(SA_OO_VQE):
     def _get_default_ansatzes(
         ansatz: Union[str, None],
         active_space: ActiveSpace,
-        mapper: QubitMapper
+        mapper: BaseMapper
     ) -> List[QuantumCircuit]:
         """Set up the default UCC ansatz from a Hartree Fock reference state.
 
