@@ -1,13 +1,13 @@
 """Tests for the qiskit ansatz"""
-from qiskit_nature.second_q.circuit.library import HartreeFock
-from qiskit_nature.second_q.mappers import JordanWignerMapper
+from qc2.ansatz.qiskit.hatree_fock import HartreeFock
+from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
 from qc2.ansatz.qiskit import LUCJ, GateFabric
 import pyscf
 
 def test_gate_fabric():
     num_spatial_orbitals = 4
     num_particles = (2, 2)
-    mapper = JordanWignerMapper()
+    mapper = JordanWigner()
     reference_state = HartreeFock(num_spatial_orbitals, num_particles, mapper)
     gate_fabric = GateFabric(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
     gate_fabric._build()

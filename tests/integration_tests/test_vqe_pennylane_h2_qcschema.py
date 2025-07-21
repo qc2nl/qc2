@@ -5,6 +5,7 @@ from ase.build import molecule
 from qc2.ase import PySCF
 from qc2.qc2_driver import QC2 as qc2Data
 from qc2.second_q.active_space import ActiveSpace
+from qc2.qubit_mappers.pennylane.jordan_wigner import JordanWigner
 
 try:
     import pennylane as qml
@@ -53,7 +54,7 @@ def vqe_calculation():
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2
         ),
-        mapper="jw",
+        mapper=JordanWigner(),
         optimizer=qml.GradientDescentOptimizer(stepsize=0.5)
     )
 

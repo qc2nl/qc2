@@ -8,6 +8,7 @@ from qc2.second_q.active_space import ActiveSpace
 try:
     import pennylane as qml
     from qc2.algorithms.pennylane import VQE
+    from qc2.qubit_mappers.pennylane.jordan_wigner import JordanWigner
 except ImportError:
     pytest.skip(
         "Skipping PennyLane tests...",
@@ -60,7 +61,7 @@ def vqe_calculation():
             num_active_electrons=(2, 2),
             num_active_spatial_orbitals=3
         ),
-        mapper="jw",
+        mapper=JordanWigner(),
         optimizer=qml.GradientDescentOptimizer(stepsize=0.5)
     )
 

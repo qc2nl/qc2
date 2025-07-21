@@ -3,15 +3,14 @@ import pytest
 
 from ase.build import molecule
 
-from qiskit_nature.second_q.mappers import JordanWignerMapper
-from qiskit_nature.second_q.circuit.library import HartreeFock
 from qiskit.primitives import Sampler
 
 from qc2.qc2_driver import QC2 as qc2Data
 from qc2.ase import PySCF
 from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit import QPE
-
+from qc2.ansatz.qiskit.hatree_fock import HartreeFock
+from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
 
 @pytest.fixture
 def qc2data():
@@ -52,7 +51,7 @@ def test_initialization():
     reference_state = HartreeFock(
         num_spatial_orbitals=2,
         num_particles=(1, 1),
-        qubit_mapper=JordanWignerMapper(),
+        qubit_mapper=JordanWigner(),
     )
 
     qpe = QPE(
@@ -61,7 +60,7 @@ def test_initialization():
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2
         ),
-        mapper="jw",
+        mapper=JordanWigner(),
         sampler=Sampler(),
     )
     assert isinstance(qpe, QPE)

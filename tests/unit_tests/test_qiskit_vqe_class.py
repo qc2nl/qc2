@@ -3,11 +3,6 @@ import pytest
 
 from ase.build import molecule
 
-from qiskit.circuit import QuantumCircuit
-from qiskit_nature.second_q.mappers import JordanWignerMapper
-from qiskit_nature.second_q.circuit.library import UCC
-from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
-from qiskit_nature.second_q.mappers import BravyiKitaevMapper
 from qiskit_algorithms.optimizers import COBYLA
 from qiskit.primitives import Estimator
 
@@ -15,7 +10,10 @@ from qc2.qc2_driver import QC2 as qc2Data
 from qc2.ase import PySCF
 from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit import VQE
-
+from qc2.ansatz.qiskit.hatree_fock import HartreeFock
+from qc2.ansatz.qiskit.ucc import UCC
+from qc2.ansatz.qiskit.uccsd import UCCSD
+from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
 
 @pytest.fixture
 def qc2data():
@@ -56,13 +54,13 @@ def test_initialization_with_ansatz():
     reference_state = HartreeFock(
         num_spatial_orbitals=2,
         num_particles=(1, 1),
-        qubit_mapper=BravyiKitaevMapper(),
+        qubit_mapper=JordanWigner(),
     )
     # set up ansatz
     ansatz = UCCSD(
         num_spatial_orbitals=2,
         num_particles=(1, 1),
-        qubit_mapper=BravyiKitaevMapper(),
+        qubit_mapper=JordanWigner(),
         initial_state=reference_state
     )
     vqe = VQE(
@@ -71,7 +69,7 @@ def test_initialization_with_ansatz():
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2
         ),
-        mapper="bk",
+        mapper=JordanWigner(),
         optimizer=COBYLA(),
         estimator=Estimator(),
     )
@@ -80,7 +78,7 @@ def test_initialization_with_ansatz():
 def test_default_ansatz(active_space):
     """Test the generation of default ansatz."""
     ansatz = VQE._get_default_ansatz(None,
-        active_space, JordanWignerMapper()
+        active_space, JordanWigner()
     )
     assert isinstance(ansatz, UCC)
 
