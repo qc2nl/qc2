@@ -3,9 +3,10 @@ from typing import List, Tuple, Optional, Union
 import numpy as np
 from scipy.linalg import expm
 from qiskit.quantum_info import SparsePauliOp
-from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
-from qiskit_nature.second_q.problems import ElectronicBasis
-from qiskit_nature.second_q.operators.tensor_ordering import to_chemist_ordering
+
+# from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
+# from qiskit_nature.second_q.problems import ElectronicBasis
+# from qiskit_nature.second_q.operators.tensor_ordering import to_chemist_ordering
 
 # try importing PennyLane and set `PennyLaneOperatorType`
 try:
@@ -19,12 +20,18 @@ from qc2.second_q.active_space import (
     ActiveSpace,
     get_active_space_idx
 )
+from qc2.second_q.basis_transformer import BasisTransformer
+from qc2.second_q.electronic_integrals import ElectronicIntegrals
+from qc2.second_q.electronic_hamiltonian import ElectronicHamiltonian
+from qc2.qubit_mappers.base_mapper import BaseMapper
+from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
 from qc2.algorithms.utils.helper_funcs import (
     vector_to_skew_symmetric,
     skew_symmetric_to_vector,
     reshape_2,
     get_non_redundant_indices
 )
+from .tensor_ordering import to_chemist_ordering
 
 
 class OrbitalOptimization():
@@ -58,7 +65,7 @@ class OrbitalOptimization():
                 qc2data: qc2Data,
                 active_space: ActiveSpace,
                 freeze_active: bool = False,
-                mapper: QubitMapper = JordanWignerMapper(),
+                mapper: BaseMapper = JordanWigner(),
                 format: str = "qiskit"
     ) -> None:
         """
@@ -109,14 +116,15 @@ class OrbitalOptimization():
         # molecule related attributes
         self.qc2data = qc2data
         self.schema_dataclass = self.qc2data.read_schema()
-        self.es_problem = self.qc2data.process_schema(
-            basis=ElectronicBasis.AO
-        )
+        # self.es_problem = self.qc2data.process_schema(
+        #     basis=ElectronicBasis.AO
+        # )
+
         self.n_electrons = (
-            self.es_problem.num_alpha,
-            self.es_problem.num_beta
+            self.schema_dataclass.properties.calcinfo_nalpha,
+            self.schema_dataclass.properties.calcinfo_nbeta
         )
-        self.nao = self.es_problem.num_spatial_orbitals
+        self.nao = self.schema_dataclass.properties.calcinfo_nmo
 
         # active space parameters
         self.n_active_orbitals = active_space.num_active_spatial_orbitals
@@ -517,19 +525,22 @@ class OrbitalOptimization():
         (k_matrix_transform_a,
          k_matrix_transform_b) = self.get_transformed_mos(kappa)
 
-        # get rotated qubit hamiltonian in MO basis
-        core_energy, qubit_op = self.qc2data.get_qubit_hamiltonian(
+        basis_transformer = BasisTransformer(
+            coefficients = ElectronicIntegrals.from_raw_integrals(
+                h1_a=k_matrix_transform_a, 
+                h2_b=k_matrix_transform_b
+            )
+        )
+        original_hamiltonian = ElectronicHamiltonian(schema=self.schema_dataclass) 
+        transformed_hamiltonian = basis_transformer.transform_hamiltonian(original_hamiltonian)
+
+        core_energy, active_space_hamiltonian = self.qc2data.get_active_space_hamiltonian(
             self.n_active_electrons,
             self.n_active_orbitals,
-            self.mapper,
-            format=self.format,
-            transform=True,
-            initial_es_problem=self.es_problem,
-            matrix_transform_a=k_matrix_transform_a,
-            matrix_transform_b=k_matrix_transform_b,
-            initial_basis='atomic',
-            final_basis='molecular'
+            initial_hamiltonian = transformed_hamiltonian
         )
+        qubit_op = self.mapper.map(active_space_hamiltonian.second_q_op())        
+
         return core_energy, qubit_op
 
     def get_transformed_mos(self, kappa: List) -> Tuple[

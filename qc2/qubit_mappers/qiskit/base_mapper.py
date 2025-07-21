@@ -31,8 +31,6 @@ except ImportError:
 from ..base_mapper import BaseMapper
 from ...second_q.fermionic_operator import FermionicOperator
 
-# from qiskit_nature import QiskitNatureError
-# from qiskit_nature.second_q.operators import SparseLabelOp
 
 # pylint: disable=invalid-name
 T = TypeVar("T")
@@ -181,6 +179,7 @@ class BaseMapper(BaseMapper):
         if  isinstance(second_q_ops, FermionicOperator):
             return self._map_single(second_q_ops, register_length=register_length) 
         elif isinstance(second_q_ops, List):
+            # TODO CHECK IF THAT'S OK !!
             return [self._map_single(op, register_length=register_length) for op in second_q_ops]
         else:
             print(second_q_ops)

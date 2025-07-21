@@ -232,6 +232,7 @@ class QC2:
             self,
             num_electrons: Union[int, Tuple[int, int]],
             num_spatial_orbitals: int,
+            initial_hamiltonian: ElectronicHamiltonian | None = None
     ) -> Tuple[float, ElectronicHamiltonian]:
         """Builds the active-space reduced Hamiltonian.
 
@@ -279,11 +280,13 @@ class QC2:
         ... )
         """
 
-
-        # create the initial ElectronicHamiltonian
-        schema = self.read_schema()
-        hamiltonian = ElectronicHamiltonian(schema=schema,  tol=1E-5)
-
+        if initial_hamiltonian is None:
+            # create the initial ElectronicHamiltonian
+            schema = self.read_schema()
+            hamiltonian = ElectronicHamiltonian(schema=schema,  tol=1E-5)
+        else:
+            hamiltonian = initial_hamiltonian
+            
         # in case of space selection, reduce the space extent of the
         # fermionic Hamiltonian based on the number of active electrons
         # and orbitals

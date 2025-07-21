@@ -367,6 +367,64 @@ class ElectronicIntegrals:
             )
         return cls(alpha, beta, beta_alpha)
 
+    @classmethod
+    def from_raw_integrals(
+        cls,
+        h1_a: np.ndarray ,
+        h2_aa: np.ndarray | None = None,
+        h1_b: np.ndarray | None = None,
+        h2_bb: np.ndarray| None = None,
+        h2_ba: np.ndarray| None = None,
+        *,
+        validate: bool = True,
+    ) -> ElectronicIntegrals:
+        """Loads the provided integral matrices into an ``ElectronicIntegrals`` instance.
+
+        When ``auto_index_order`` is enabled,
+        :meth:`qiskit_nature.second_q.operators.tensor_ordering.find_index_order` will be used to
+        determine the index ordering of the ``h2_aa`` matrix, based on which the two-body matrices
+        will automatically be transformed to the physicist' order, which is required by the
+        :class:`qiskit_nature.second_q.operators.PolynomialTensor`.
+
+        Args:
+            h1_a: the alpha-spin one-body integrals.
+            h2_aa: the alpha-alpha-spin two-body integrals.
+            h1_b: the beta-spin one-body integrals.
+            h2_bb: the beta-beta-spin two-body integrals.
+            h2_ba: the beta-alpha-spin two-body integrals.
+            validate: whether or not to validate the integral matrices. Disable this setting with
+                care!
+            auto_index_order: whether or not to automatically convert the matrices to physicists'
+                order.
+
+        Raises:
+            QiskitNatureError: if `auto_index_order=True`, upon encountering an invalid
+                :class:`qiskit_nature.second_q.operators.tensor_ordering.IndexType`.
+
+        Returns:
+            The resulting ``ElectronicIntegrals``.
+        """
+        alpha_dict = {"+-": h1_a}
+
+        if h2_aa is not None:
+            alpha_dict["++--"] = h2_aa
+
+        alpha = TensorDict(alpha_dict)
+
+        beta = None
+        beta_dict = {}
+        if h1_b is not None:
+            beta_dict["+-"] = h1_b
+        if h2_bb is not None:
+            beta_dict["++--"] = h2_bb
+        if beta_dict:
+            beta = TensorDict(beta_dict)
+
+        beta_alpha = None
+        if h2_ba is not None:
+            beta_alpha = TensorDict({"++--": h2_ba})
+
+        return cls(alpha, beta, beta_alpha, validate=validate)
 
     
 def get_einsum() -> tuple[Callable, bool]:
