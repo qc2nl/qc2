@@ -486,6 +486,10 @@ class OrbitalOptimization():
              mo_coeff_a, mo_coeff_b
          )
 
+        print('Core energy: ', core_energy)
+        print('One electorn integrals: ', one_electron_integrals[0])
+        print('Two electron integrals: ', two_electron_integrals[0])
+
         # for restricted cases only?
         return sum(
             (core_energy,
