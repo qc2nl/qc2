@@ -490,6 +490,9 @@ class OrbitalOptimization():
          two_electron_integrals) = self._get_activate_space_integrals(
              mo_coeff_a, mo_coeff_b
          )
+        print('Core energy: ', core_energy)
+        print('One electorn integrals: ', one_electron_integrals.alpha.get('+-'))
+        print('Two electron integrals: ', two_electron_integrals.alpha.get('++--'))
 
         # for restricted cases only?
         return sum(
