@@ -196,14 +196,6 @@ def _check_two_body_symmetry(
         Whether the tensor remains unchanged under the applied permutation.
     """
     permuted_tensor = np.moveaxis(two_body_tensor, permutation[0], permutation[1])
-
-    if isinstance(two_body_tensor):
-        return np.allclose(
-            two_body_tensor.data, permuted_tensor.data, rtol=rtol, atol=atol
-        ) and np.array_equal(
-            two_body_tensor.coords, permuted_tensor.coords  # type: ignore[attr-defined]
-        )
-
     return np.allclose(two_body_tensor, permuted_tensor, rtol=rtol, atol=atol)
 
 

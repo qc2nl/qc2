@@ -4,10 +4,16 @@ import numpy as np
 import itertools as itt
 from qiskit.circuit import QuantumCircuit
 from functools import partial
-from qiskit_nature.second_q.circuit.library import UCC
-from qiskit_nature.second_q.mappers import QubitMapper
-from qiskit_nature.second_q.operators import FermionicOp
 
+# from qiskit_nature.second_q.circuit.library import UCC
+# from qiskit_nature.second_q.mappers import QubitMapper
+# from qiskit_nature.second_q.operators import FermionicOp
+
+
+from qc2.ansatz.qiskit.ucc import UCC
+from qc2.second_q.fermionic_operator import FermionicOperator
+from qc2.qubit_mappers.base_mapper import BaseMapper
+from qc2.qc2_driver import QC2
 from qc2.algorithms.qiskit.vqe.vqe import VQE
 from qc2.algorithms.algorithms_results import SAOOVQEResults
 from qc2.second_q.active_space import ActiveSpace
@@ -42,7 +48,7 @@ class SA_OO_VQE(VQE):
     """
     def __init__(
         self,
-        qc2data=None,
+        qc2data : QC2 | None = None,
         ansatz=None,
         active_space=None,
         mapper=None,
@@ -60,7 +66,7 @@ class SA_OO_VQE(VQE):
         """Initializes the oo-VQE class.
 
         Args:
-            qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`.
+            qc2data (QC2): An instance of :class:`~qc2.data.data.qc2Data`.
             ansatz (UCC): The ansatz for the VQE algorithm.
                 Defaults to :class:`qiskit.UCCSD`.
             active_space (ActiveSpace): Instance of
@@ -261,7 +267,7 @@ class SA_OO_VQE(VQE):
     def _get_default_ansatzes(
         ansatz: Union[str, None],
         active_space: ActiveSpace,
-        mapper: QubitMapper
+        mapper: BaseMapper
     ) -> List[QuantumCircuit]:
         """Set up the default UCC ansatz from a Hartree Fock reference state.
 
@@ -515,7 +521,7 @@ class SA_OO_VQE(VQE):
         rdm2_spin = np.zeros((n_spin_orbitals,) * 4, dtype=complex)
 
         # get the fermionic hamiltonian
-        _, _, fermionic_op = self.qc2data.get_fermionic_hamiltonian(
+        _, fermionic_op = self.qc2data.get_fermionic_hamiltonian(
             self.active_space.num_active_electrons,
             self.active_space.num_active_spatial_orbitals
         )
@@ -530,7 +536,7 @@ class SA_OO_VQE(VQE):
                 iele, jele, kele, lele = (int(ele[1]) for ele in tuple(key[0:4]))
 
             # get fermionic and qubit representation of each term
-            fermionic_ham_temp = FermionicOp.from_terms([(key, 1.0)])
+            fermionic_ham_temp = FermionicOperator.from_terms([(key, 1.0)])
             qubit_ham_temp = self.mapper.map(
                 fermionic_ham_temp, register_length=n_spin_orbitals
             )

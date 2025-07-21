@@ -254,15 +254,15 @@ class OrbitalOptimization():
 
         # get fock matrix
         _, _, fock_matrix = self.get_fock_matrix(
-            one_electron_integrals[0],
-            two_electron_integrals[0],
+            one_electron_integrals.alpha.get('+-'),
+            two_electron_integrals.alpha.get('++--'),
             rdm1, rdm2
         )
         fock_general_symm = fock_matrix + np.transpose(fock_matrix)
 
         # convert two-electron integrals to chemistry notation
-        int2e_mo = to_chemist_ordering(two_electron_integrals[0])
-        int1e_mo = one_electron_integrals[0]
+        int2e_mo = to_chemist_ordering(two_electron_integrals.alpha.get('++--'))
+        int1e_mo = one_electron_integrals.alpha.get('+-')
 
         # prepare rdms
         one_rdm = rdm1.real
@@ -361,8 +361,8 @@ class OrbitalOptimization():
 
         # calculate fock matrix
         _, _, fock_matrix = self.get_fock_matrix(
-            one_electron_integrals[0],
-            two_electron_integrals[0],
+            one_electron_integrals.alpha.get('+-'),
+            two_electron_integrals.alpha.get('++--'),
             rdm1, rdm2
         )
 
@@ -494,8 +494,8 @@ class OrbitalOptimization():
         # for restricted cases only?
         return sum(
             (core_energy,
-             np.einsum("pq, pq", one_electron_integrals[0], rdm1),
-             0.5 * np.einsum("pqrs, pqrs", two_electron_integrals[0], rdm2))
+             np.einsum("pq, pq", one_electron_integrals.alpha.get('+-'), rdm1),
+             0.5 * np.einsum("pqrs, pqrs", two_electron_integrals.alpha.get('++--'), rdm2))
         ).real
 
 
@@ -526,7 +526,7 @@ class OrbitalOptimization():
         basis_transformer = BasisTransformer(
             coefficients = ElectronicIntegrals.from_raw_integrals(
                 h1_a=k_matrix_transform_a, 
-                h2_b=k_matrix_transform_b
+                h1_b=k_matrix_transform_b
             )
         )
         original_hamiltonian = ElectronicHamiltonian(schema=self.schema_dataclass) 
@@ -626,7 +626,7 @@ class OrbitalOptimization():
         basis_transformer = BasisTransformer(
             coefficients = ElectronicIntegrals.from_raw_integrals(
                 h1_a=mo_coeff_a, 
-                h2_b=mo_coeff_b
+                h1_b=mo_coeff_b
             )
         )
         original_hamiltonian = ElectronicHamiltonian(schema=self.schema_dataclass) 
@@ -641,8 +641,8 @@ class OrbitalOptimization():
 
 
         return (core_energy, 
-                active_space_hamiltonian.electronic_integrals.one_body(), 
-                active_space_hamiltonian.electronic_integrals.two_body())
+                active_space_hamiltonian.electronic_integrals.one_body, 
+                active_space_hamiltonian.electronic_integrals.two_body)
     
         # (active_space_es_problem,
         #  core_energy, _) = self.qc2data.get_fermionic_hamiltonian(
@@ -678,7 +678,7 @@ class OrbitalOptimization():
         basis_transformer = BasisTransformer(
             coefficients = ElectronicIntegrals.from_raw_integrals(
                 h1_a=mo_coeff_a, 
-                h2_b=mo_coeff_b
+                h1_b=mo_coeff_b
             )
         )
         original_hamiltonian = ElectronicHamiltonian(schema=self.schema_dataclass) 
@@ -686,8 +686,8 @@ class OrbitalOptimization():
 
         return (
             transformed_hamiltonian.constants['nuclear_repulsion_energy'],
-            transformed_hamiltonian.electronic_integrals.one_body(),
-            transformed_hamiltonian.electronic_integrals.two_body(),
+            transformed_hamiltonian.electronic_integrals.one_body,
+            transformed_hamiltonian.electronic_integrals.two_body,
         )
     
         # alpha = hamiltonian_MO_basis.electronic_integrals.alpha
