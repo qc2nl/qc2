@@ -632,41 +632,16 @@ class OrbitalOptimization():
         original_hamiltonian = ElectronicHamiltonian(schema=self.schema_dataclass) 
         transformed_hamiltonian = basis_transformer.transform_hamiltonian(original_hamiltonian)
 
-
         core_energy, active_space_hamiltonian = self.qc2data.get_active_space_hamiltonian(
             self.n_active_electrons,
             self.n_active_orbitals,
             initial_hamiltonian = transformed_hamiltonian
         )
 
-
         return (core_energy, 
                 active_space_hamiltonian.electronic_integrals.one_body, 
                 active_space_hamiltonian.electronic_integrals.two_body)
     
-        # (active_space_es_problem,
-        #  core_energy, _) = self.qc2data.get_fermionic_hamiltonian(
-        #     self.n_active_electrons,
-        #     self.n_active_orbitals,
-        #     transform=True,
-        #     initial_es_problem=self.es_problem,
-        #     matrix_transform_a=mo_coeff_a,
-        #     matrix_transform_b=mo_coeff_b,
-        #     initial_basis='atomic',
-        #     final_basis='molecular'
-        # )
-
-        # alpha = active_space_es_problem.hamiltonian.electronic_integrals.alpha
-        # beta = active_space_es_problem.hamiltonian.electronic_integrals.beta
-        # beta_alpha = (
-        #     active_space_es_problem.hamiltonian.electronic_integrals.beta_alpha
-        # )
-
-        # one_electron_integrals = [alpha['+-'].array, beta['+-'].array]
-        # two_electron_integrals = [
-        #     alpha['++--'].array, beta_alpha['++--'].array, beta['++--'].array
-        # ]
-        # return core_energy, one_electron_integrals, two_electron_integrals
 
     def _get_full_space_integrals(
             self,
@@ -689,14 +664,3 @@ class OrbitalOptimization():
             transformed_hamiltonian.electronic_integrals.one_body,
             transformed_hamiltonian.electronic_integrals.two_body,
         )
-    
-        # alpha = hamiltonian_MO_basis.electronic_integrals.alpha
-        # beta = hamiltonian_MO_basis.electronic_integrals.beta
-        # beta_alpha = hamiltonian_MO_basis.electronic_integrals.beta_alpha
-
-        # one_electron_integrals = [alpha['+-'].array, beta['+-'].array]
-        # two_electron_integrals = [
-        #     alpha['++--'].array, beta_alpha['++--'].array, beta['++--'].array
-        # ]
-        # core_energy = hamiltonian_MO_basis.nuclear_repulsion_energy
-        # return core_energy, one_electron_integrals, two_electron_integrals
