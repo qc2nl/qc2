@@ -633,7 +633,8 @@ class OrbitalOptimization():
             )
         )
         ## BUG THIS NEEDS TO BE IN THE AO BASIS
-        hamiltonian_atomic_basis = ElectronicHamiltonian(schema=self.schema_dataclass, basis='atomic') 
+        hamiltonian_atomic_basis = ElectronicHamiltonian(schema=self.schema_dataclass, basis='atomic')
+        print('Atomic Integrals: ', hamiltonian_atomic_basis.electronic_integrals.one_body.alpha.get('+-'))
         hamiltonian_molecular_basis = basis_transformer.transform_hamiltonian(hamiltonian_atomic_basis)
 
         core_energy, active_space_hamiltonian = self.qc2data.get_active_space_hamiltonian(
