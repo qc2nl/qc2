@@ -630,6 +630,7 @@ class qc2Data:
          )
         print('1body active Integrals: ', es_problem.hamiltonian.electronic_integrals.one_body.alpha['+-'])
         print('2body ctive Integrals: ',  es_problem.hamiltonian.electronic_integrals.two_body.alpha['++--'])
+        exit()
 
         # now convert the reduced Hamiltonian (`Hamiltonian` instance)
         # into a `FermionicOp` instance
