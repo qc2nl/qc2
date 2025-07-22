@@ -66,9 +66,6 @@ class ElectronicHamiltonian:
         else:
             raise ValueError("Either schema or electronic_integrals must be provided.")
         
-        # self.coeffs = self.second_q_coeffs()
-        # self.ops = self.second_q_op()
-
 
     def read_electronic_integrals_from_schema_mo_basis(self):
 

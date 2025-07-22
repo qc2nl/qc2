@@ -184,17 +184,6 @@ class ActiveSpaceTransformer():
 
         inactive_fock_operator = reference_inactive_fock - active_fock_operator
 
-        # print('hamiltonian: ', hamiltonian.electronic_integrals.one_body.alpha.get("+-", 0.0))
-        # print('hamiltonian: ', hamiltonian.electronic_integrals.one_body.beta.get("+-", 0.0))
-        # # print('hamiltonian: ', hamiltonian.electronic_integrals.one_body.beta_alpha.get("", 0.0))
-        # print('')
-
-        # print('reference_inactive_fock: ', reference_inactive_fock.one_body.alpha.get("+-", 0.0))
-        # print('reference_inactive_fock: ', reference_inactive_fock.one_body.beta.get("+-", 0.0))
-        # # print('hamiltonian: ', hamiltonian.electronic_integrals.one_body.beta_alpha.get("", 0.0))
-        # print('')
-
-
         reference_inactive_energy = cast(
             ElectronicIntegrals,
             ElectronicIntegrals.einsum(
@@ -204,10 +193,6 @@ class ActiveSpaceTransformer():
             ) * 0.5,
         )
 
-        # print('reference_inactive_energy: ', reference_inactive_energy.alpha.get("+-", 0.0))
-        # print('reference_inactive_energy: ', reference_inactive_energy.beta.get("+-", 0.0))
-        # print('reference_inactive_energy: ', reference_inactive_energy.beta_alpha.get("", 0.0))
-        # print('')
 
         reference_inactive_energy = (
             reference_inactive_energy.alpha.get("", 0.0)
@@ -228,11 +213,6 @@ class ActiveSpaceTransformer():
                 {"ij,ji": ("+-", "+-", "")}, active_fock_operator, self._active_density
             ) * 0.5,
         )
-
-        # print('e_inactive_sum: ', e_inactive.alpha.get("", 0.0))
-        # print('e_inactive_sum: ', e_inactive.beta.get("", 0.0))
-        # print('e_inactive_sum: ', e_inactive.beta_alpha.get("", 0.0))
-        # print('')
 
         e_inactive_sum = (
             reference_inactive_energy
