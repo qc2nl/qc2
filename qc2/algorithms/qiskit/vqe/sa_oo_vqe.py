@@ -213,7 +213,6 @@ class SA_OO_VQE(VQE):
 
         # get initial energy from initial circuit params
         energy_init = self._get_energy_from_parameters(theta, kappa)
-        print('Initial Energy (Hartree):', energy_init)
         
         # update lists with intermediate data
         results.update(theta, kappa, energy_init)

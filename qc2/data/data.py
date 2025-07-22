@@ -401,9 +401,6 @@ class qc2Data:
         inactive_space_energy = active_space_hamiltonian.constants[
             "ActiveSpaceTransformer"
         ]
-
-        print('nuclear_repulsion_energy', nuclear_repulsion_energy)
-        print('inactive_space_energy', inactive_space_energy)
         
         core_energy = nuclear_repulsion_energy + inactive_space_energy
 
@@ -612,13 +609,6 @@ class qc2Data:
         if transform is True:
             if initial_es_problem is not None:
                 # Transform `ElectronicStructureProblem` to a new basis
-
-                print('1body AO Integrals alpha[+-]: ', initial_es_problem.hamiltonian.electronic_integrals.one_body.alpha['+-'])
-                print('1body AO Integrals beta[+-]: ', initial_es_problem.hamiltonian.electronic_integrals.one_body.beta.get('+-',0))
-                print('1body AO Integrals alpha[++--]: ', initial_es_problem.hamiltonian.electronic_integrals.one_body.alpha.get('++--',0))
-                print('1body AO Integrals beta[++--]: ', initial_es_problem.hamiltonian.electronic_integrals.one_body.beta.get('++--',0))
-                # print('2body aactive Integrals: ',  initial_es_problem.hamiltonian.electronic_integrals.two_body.alpha['++--'])
-                exit()
                 transformed_es_problem, _ = self.get_transformed_hamiltonian(
                     initial_es_problem=initial_es_problem,
                     matrix_transform_a=matrix_transform_a,
@@ -639,11 +629,7 @@ class qc2Data:
              num_spatial_orbitals,
              initial_es_problem=transformed_es_problem
          )
-        
-        print('Core Energy: ', core_energy)
-        # print('1body active Integrals: ', es_problem.hamiltonian.electronic_integrals.one_body.alpha['+-'])
-        # print('2body aactive Integrals: ',  es_problem.hamiltonian.electronic_integrals.two_body.alpha['++--'])
-        # exit()
+    
 
         # now convert the reduced Hamiltonian (`Hamiltonian` instance)
         # into a `FermionicOp` instance
