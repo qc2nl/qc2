@@ -616,8 +616,6 @@ class OrbitalOptimization():
             mo_coeff_b: Optional[np.ndarray]
     ) -> Tuple[float, List, List]:
         """Extracts activate space integrals in MO basis."""
-        print('1body Atomic Integrals: ', self.es_problem.hamiltonian.electronic_integrals.one_body.alpha['+-'])
-        print('2body Atomic Integrals: ', self.es_problem.hamiltonian.electronic_integrals.two_body.alpha['++--'])
         (active_space_es_problem,
          core_energy, _) = self.qc2data.get_fermionic_hamiltonian(
             self.n_active_electrons,
