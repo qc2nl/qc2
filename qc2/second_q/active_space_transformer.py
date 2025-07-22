@@ -193,11 +193,18 @@ class ActiveSpaceTransformer():
                 self._density_total,
             ) * 0.5,
         )
+
+        print('reference_inactive_energy: ', reference_inactive_energy.alpha.get("", 0.0))
+        print('reference_inactive_energy: ', reference_inactive_energy.beta.get("", 0.0))
+        print('reference_inactive_energy: ', reference_inactive_energy.beta_alpha.get("", 0.0))
+        print('')
+
         reference_inactive_energy = (
             reference_inactive_energy.alpha.get("", 0.0)
             + reference_inactive_energy.beta.get("", 0.0)
             + reference_inactive_energy.beta_alpha.get("", 0.0)
         )
+        
 
         e_inactive = cast(
             ElectronicIntegrals,
@@ -211,6 +218,12 @@ class ActiveSpaceTransformer():
                 {"ij,ji": ("+-", "+-", "")}, active_fock_operator, self._active_density
             ) * 0.5,
         )
+
+        print('e_inactive_sum: ', e_inactive.alpha.get("", 0.0))
+        print('e_inactive_sum: ', e_inactive.beta.get("", 0.0))
+        print('e_inactive_sum: ', e_inactive.beta_alpha.get("", 0.0))
+        print('')
+
         e_inactive_sum = (
             reference_inactive_energy
             + e_inactive.alpha.get("", 0.0)
