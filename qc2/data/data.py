@@ -628,6 +628,8 @@ class qc2Data:
              num_spatial_orbitals,
              initial_es_problem=transformed_es_problem
          )
+        
+        print('Core Energy: ', core_energy)
         print('1body active Integrals: ', es_problem.hamiltonian.electronic_integrals.one_body.alpha['+-'])
         print('2body ctive Integrals: ',  es_problem.hamiltonian.electronic_integrals.two_body.alpha['++--'])
         exit()
