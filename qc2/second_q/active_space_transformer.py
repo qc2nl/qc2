@@ -187,12 +187,12 @@ class ActiveSpaceTransformer():
         # print('hamiltonian: ', hamiltonian.electronic_integrals.one_body.alpha.get("+-", 0.0))
         # print('hamiltonian: ', hamiltonian.electronic_integrals.one_body.beta.get("+-", 0.0))
         # # print('hamiltonian: ', hamiltonian.electronic_integrals.one_body.beta_alpha.get("", 0.0))
-        print('')
+        # print('')
 
-        print('reference_inactive_fock: ', reference_inactive_fock.one_body.alpha.get("+-", 0.0))
-        print('reference_inactive_fock: ', reference_inactive_fock.one_body.beta.get("+-", 0.0))
-        # print('hamiltonian: ', hamiltonian.electronic_integrals.one_body.beta_alpha.get("", 0.0))
-        print('')
+        # print('reference_inactive_fock: ', reference_inactive_fock.one_body.alpha.get("+-", 0.0))
+        # print('reference_inactive_fock: ', reference_inactive_fock.one_body.beta.get("+-", 0.0))
+        # # print('hamiltonian: ', hamiltonian.electronic_integrals.one_body.beta_alpha.get("", 0.0))
+        # print('')
 
 
         reference_inactive_energy = cast(
@@ -207,7 +207,7 @@ class ActiveSpaceTransformer():
         # print('reference_inactive_energy: ', reference_inactive_energy.alpha.get("+-", 0.0))
         # print('reference_inactive_energy: ', reference_inactive_energy.beta.get("+-", 0.0))
         # print('reference_inactive_energy: ', reference_inactive_energy.beta_alpha.get("", 0.0))
-        print('')
+        # print('')
 
         reference_inactive_energy = (
             reference_inactive_energy.alpha.get("", 0.0)

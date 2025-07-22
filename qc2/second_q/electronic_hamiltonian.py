@@ -99,7 +99,7 @@ class ElectronicHamiltonian:
 
         nao = int(np.sqrt(len(self.schema.wavefunction.scf_fock_a)))
         hcore = _reshape_2(self.schema.wavefunction.scf_fock_a, nao)
-        hcore_b = hcore
+        hcore_b = None
         if self.schema.wavefunction.scf_fock_b is not None:
             hcore_b = _reshape_2(self.schema.wavefunction.scf_fock_b, nao)
         eri = _reshape_4(self.schema.wavefunction.scf_eri, nao)

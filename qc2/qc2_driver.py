@@ -310,8 +310,7 @@ class QC2:
         inactive_space_energy = active_space_hamiltonian.constants[
             "ActiveSpaceTransformer"
         ]
-        print('nuclear_repulsion_energy', nuclear_repulsion_energy)
-        print('inactive_space_energy', inactive_space_energy)
+        
         core_energy = nuclear_repulsion_energy + inactive_space_energy
 
         return core_energy, active_space_hamiltonian

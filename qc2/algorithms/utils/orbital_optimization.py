@@ -491,8 +491,8 @@ class OrbitalOptimization():
              mo_coeff_a, mo_coeff_b
          )
         print('Core energy: ', core_energy)
-        print('One electorn integrals: ', one_electron_integrals.alpha.get('+-'))
-        print('Two electron integrals: ', two_electron_integrals.alpha.get('++--'))
+        # print('One electorn integrals: ', one_electron_integrals.alpha.get('+-'))
+        # print('Two electron integrals: ', two_electron_integrals.alpha.get('++--'))
 
         # for restricted cases only?
         return sum(
@@ -532,7 +532,7 @@ class OrbitalOptimization():
                 h1_b=k_matrix_transform_b
             )
         )
-        original_hamiltonian = ElectronicHamiltonian(schema=self.schema_dataclass) 
+        original_hamiltonian = ElectronicHamiltonian(schema=self.schema_dataclass, basis='atomic') 
         transformed_hamiltonian = basis_transformer.transform_hamiltonian(original_hamiltonian)
 
         core_energy, active_space_hamiltonian = self.qc2data.get_active_space_hamiltonian(
@@ -635,21 +635,21 @@ class OrbitalOptimization():
         ## BUG THIS NEEDS TO BE IN THE AO BASIS
         hamiltonian_atomic_basis = ElectronicHamiltonian(schema=self.schema_dataclass, basis='atomic')
 
-        print('1body AO Integrals alpha[+-]: ', hamiltonian_atomic_basis.electronic_integrals.one_body.alpha.get('+-',0))
-        print('1body AO Integrals beta[+-]: ', hamiltonian_atomic_basis.electronic_integrals.one_body.beta.get('+-',0))
-        print('1body AO Integrals alpha[++--]: ', hamiltonian_atomic_basis.electronic_integrals.one_body.alpha.get('++--',0))
-        print('1body AO Integrals beta[++--]: ', hamiltonian_atomic_basis.electronic_integrals.one_body.beta.get('++--',0))
-        print('2body AO Integrals beta_alpha[++--]: ', hamiltonian_atomic_basis.electronic_integrals.two_body.beta.get('++--',0))
-        exit()
-        print('')
+        # print('1body AO Integrals alpha[+-]: ', hamiltonian_atomic_basis.electronic_integrals.one_body.alpha.get('+-',0))
+        # print('1body AO Integrals beta[+-]: ', hamiltonian_atomic_basis.electronic_integrals.one_body.beta.get('+-',0))
+        # print('1body AO Integrals alpha[++--]: ', hamiltonian_atomic_basis.electronic_integrals.one_body.alpha.get('++--',0))
+        # print('1body AO Integrals beta[++--]: ', hamiltonian_atomic_basis.electronic_integrals.one_body.beta.get('++--',0))
+        # print('2body AO Integrals beta_alpha[++--]: ', hamiltonian_atomic_basis.electronic_integrals.two_body.beta.get('++--',0))
+        # # exit()
+        # print('')
 
         hamiltonian_molecular_basis = basis_transformer.transform_hamiltonian(hamiltonian_atomic_basis)
 
         # print('core energy: ', core_energy)
-        print(hamiltonian_molecular_basis.num_particles, hamiltonian_molecular_basis.num_spatial_orbitals)
-        print('1body MO Integrals alpha: ', hamiltonian_molecular_basis.electronic_integrals.one_body.alpha.get('',0))
-        print('1body MO Integrals beta: ', hamiltonian_molecular_basis.electronic_integrals.one_body.beta.get('',0))
-        print('')
+        # print(hamiltonian_molecular_basis.num_particles, hamiltonian_molecular_basis.num_spatial_orbitals)
+        # print('1body MO Integrals alpha: ', hamiltonian_molecular_basis.electronic_integrals.one_body.alpha.get('',0))
+        # print('1body MO Integrals beta: ', hamiltonian_molecular_basis.electronic_integrals.one_body.beta.get('',0))
+        # print('')
         # print('2body Active Integrals: ', active_space_hamiltonian.electronic_integrals.two_body.alpha.get('++--'))
         
 
@@ -659,9 +659,10 @@ class OrbitalOptimization():
             initial_hamiltonian = hamiltonian_molecular_basis
         )
 
-        print('1body Active Integrals alpha: ', active_space_hamiltonian.electronic_integrals.one_body.alpha.get('+-'))
-        print('1body Active Integrals beta: ', active_space_hamiltonian.electronic_integrals.one_body.beta.get('+-'))
-        exit()
+        # print('core energy: ', core_energy)
+        # print('1body Active Integrals alpha: ', active_space_hamiltonian.electronic_integrals.one_body.alpha.get('+-'))
+        # print('1body Active Integrals beta: ', active_space_hamiltonian.electronic_integrals.one_body.beta.get('+-'))
+        # exit()
 
         return (core_energy, 
                 active_space_hamiltonian.electronic_integrals.one_body, 
