@@ -580,6 +580,7 @@ class SA_OO_VQE(VQE):
         )
 
         # run over the hamiltonian terms and calculate expectation values
+        num_spin_orbitals = 2*self.active_space.num_active_spatial_orbitals
         for key, _ in fermionic_op.terms():
             # assign indices depending on one- or two-body term
             length = len(key)
@@ -589,7 +590,8 @@ class SA_OO_VQE(VQE):
                 iele, jele, kele, lele = (int(ele[1]) for ele in tuple(key[0:4]))
 
             # get fermionic and qubit representation of each term
-            fermionic_ham_temp = FermionicOperator.from_terms([(key, 1.0)])
+            fermionic_ham_temp = FermionicOperator.from_terms([(key, 1.0)], 
+                                                              num_spin_orbitals=num_spin_orbitals)
             qubit_ham_temp = self.mapper.map(
                 fermionic_ham_temp
             )

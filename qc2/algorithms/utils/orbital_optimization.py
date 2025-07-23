@@ -530,7 +530,7 @@ class OrbitalOptimization():
                 h1_b=k_matrix_transform_b
             )
         )
-        original_hamiltonian = ElectronicHamiltonian(schema=self.schema_dataclass, basis='atomic') 
+        original_hamiltonian = deepcopy(self.hamiltonian_atomic_basis)
         transformed_hamiltonian = basis_transformer.transform_hamiltonian(original_hamiltonian)
 
         core_energy, active_space_hamiltonian = self.qc2data.get_active_space_hamiltonian(

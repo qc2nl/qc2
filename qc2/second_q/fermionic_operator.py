@@ -114,12 +114,13 @@ class FermionicOperator(Dict):
             yield (terms, self[label])
 
     @classmethod
-    def from_terms(cls, terms: Sequence[tuple[list[tuple[str, int]], float]]) -> FermionicOperator:
+    def from_terms(cls, terms: Sequence[tuple[list[tuple[str, int]], float]], 
+                   num_spin_orbitals: int | None = None  ) -> FermionicOperator:
         data = {
             " ".join(f"{action}_{index}" for action, index in label): value
             for label, value in terms
         }
-        return cls(data)
+        return cls(data, num_spin_orbitals=num_spin_orbitals)
     
     def adjoint(self) -> FermionicOperator:
         """Return the adjoint of the FermionicOperator."""
