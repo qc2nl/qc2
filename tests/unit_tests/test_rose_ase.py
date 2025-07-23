@@ -3,7 +3,7 @@ import subprocess
 import shutil
 import pytest
 
-from qiskit_nature.second_q.formats.fcidump import FCIDump
+from qc2.data.fcidump import FCIDump
 
 try:
     from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
