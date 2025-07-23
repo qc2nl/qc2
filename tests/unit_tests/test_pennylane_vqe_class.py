@@ -93,8 +93,8 @@ def test_default_ansatz():
 def test_run_method(vqe):
     """Test main VQE workflow."""
     results = vqe.run()
-    assert isinstance(results.optimal_energy, float)
+    assert isinstance(results.optimal_energy, np.tensor)
     assert results.optimal_energy == pytest.approx(-1.1373015, 1e-6)
     assert all(num != 0 for num in results.optimal_params)
-    assert all(isinstance(num, float) for num in results.energy)
+    assert all(isinstance(num, np.tensor) for num in results.energy)
     assert all(isinstance(num, list) for num in results.parameters)
