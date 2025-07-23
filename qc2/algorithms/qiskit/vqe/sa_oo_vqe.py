@@ -63,7 +63,7 @@ class SA_OO_VQE(VQE):
         """Initializes the oo-VQE class.
 
         Args:
-            qc2data (QC2): An instance of :class:`~qc2.data.data.qc2Data`.
+            qc2data (QC2): An instance of :class:`~qc2.qc2_driver.QC2`.
             ansatz (UCC): The ansatz for the VQE algorithm.
                 Defaults to :class:`qiskit.UCCSD`.
             active_space (ActiveSpace): Instance of

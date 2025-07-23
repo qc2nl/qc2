@@ -35,24 +35,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-# from qiskit_nature import QiskitNatureError
-# import qiskit_nature.optionals as _optionals
-
-# if TYPE_CHECKING:
-#     from .symmetric_two_body import SymmetricTwoBodyIntegrals
-
-# if _optionals.HAS_SPARSE:
-#     # pylint: disable=import-error
-#     from sparse import SparseArray
-# else:
-
-#     class SparseArray:  # type: ignore
-#         """Empty SparseArray class
-#         Replacement if sparse.SparseArray is not present.
-#         """
-
-#         pass
-
 
 def to_chemist_ordering(
     two_body_tensor: np.ndarray ,

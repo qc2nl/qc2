@@ -38,11 +38,11 @@ class OrbitalOptimization():
     orbital optimization part of the oo-VQE algorithm.
 
     Attributes:
-        qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`.
+        qc2data (qc2Data): An instance of :class:`~qc2.qc2_driver.QC2`.
         schema_dataclass (QCSchema): An instance of :class:`QCSchema`.
         es_problem (ElectronicStructureProblem): Instance of
             :class:`ElectronicStructureProblem` in AO basis as
-            processed from :meth:`~qc2.data.data.qc2Data.process_schema`.
+            processed from :meth:`~qc2.qc2_driver.QC2.process_schema`.
         n_electrons (Tuple[int, int]): Number of alpha and beta electrons.
         nao (int): Number of spatial orbitals.
         n_active_orbitals (int): Number of active orbitals to consider.
@@ -68,7 +68,7 @@ class OrbitalOptimization():
         Initializes the OrbitalOptimization class.
 
         Args:
-            qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`
+            qc2data (qc2Data): An instance of :class:`~qc2.qc2_driver.QC2`
                 containing quantum chemistry information.
             active_space (ActiveSpace): Instance of
                 :class:`~qc2.algorithms.utils.activate_space.ActiveSpace`

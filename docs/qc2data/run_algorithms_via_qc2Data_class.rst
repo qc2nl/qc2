@@ -3,12 +3,12 @@
 Running quantum-classical algorithms via qc2Data class
 ======================================================
 
-As key component of qc2, the :class:`~qc2.data.data.qc2Data` class is designed
+As key component of qc2, the :class:`~qc2.qc2_driver.QC2` class is designed
 not only to smoothly connect with qc2-ASE calculators (see :ref:`run_ase_with_qc2Data`) but also to seamlessly
 integrate with its built-in package of native of :ref:`algorithms_section`. This is precisely the goal of qc2,
 and it is what users should expect in actual qc2 runs.
 
-This connection is facilitated through the :class:`~qc2.data.data.qc2Data`'s :attr:`~qc2.data.data.qc2Data.algorithm` attribute.
+This connection is facilitated through the :class:`~qc2.qc2_driver.QC2`'s :attr:`~qc2.qc2_driver.QC2.algorithm` attribute.
 Below, we present examples of complete hybrid quantum-classical runs using qc2.
 For more detailed guidance, users are referred to the :ref:`tutorial_section` section and ``examples`` directory.
 

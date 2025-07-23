@@ -12,8 +12,8 @@ class VQEBASE(BaseAlgorithm):
             qc2data (data container): qc2 data container with scf information.
             active_space (ActiveSpace, optional): Description of the active
                 space. Defaults to ActiveSpace((2, 2), 2).
-            mapper (qiskit_nature.second_q.mappers, optional): Method used to
-                map the qubits. Defaults to JordanWignerMapper().
+            mapper (qc2,qubi_mapper.base_mapper, optional): Method used to
+                map the qubits. Defaults to JordanWigner().
             format (str, optional): Which quantum backend we want to use.
                 Defaults to "qiskit".
         """

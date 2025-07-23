@@ -1,7 +1,5 @@
 from typing import Tuple
 from qiskit.circuit import QuantumCircuit
-# from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD, SUCCD, PUCCSD, PUCCD
-# from qiskit_nature.second_q.mappers import QubitMapper
 from ...qubit_mappers.qiskit.base_mapper import BaseMapper
 from .uccsd import UCCSD  # Import UCCSD ansatz
 from .hatree_fock import HartreeFock  # Import Hartree-Fock ansatz

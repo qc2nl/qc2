@@ -25,8 +25,8 @@ the algorithm and its instantiation entails the following input information:
 * **Fermionic-to-qubit mapper & qubit Hamiltonian**: Strategy to transform the initial fermionic Hamiltonian (constructed from classical qchem data) to qubit space; by default, this set to ``Jordan-Wigner``.
 * **Classical optimizer**: the optimization routine for the circuit variational parameters. Default routines are: ``SLSQP`` for `Qiskit Nature <https://qiskit.org/ecosystem/nature/>`_ and ``GradientDescentOptimizer`` for `PennyLane <https://pennylane.ai/>`_ .
 
-Like in the case of qc2-ASE calculators, the algorithm ``VQE`` class is naturally abstracted within :class:`~qc2.data.data.qc2Data`. So,
-in actual runs, users only need to instantiate it as part of its :attr:`~qc2.data.data.qc2Data.algorithm` method (to be discussed in :ref:`run_algorithms_with_qc2Data` section).
+Like in the case of qc2-ASE calculators, the algorithm ``VQE`` class is naturally abstracted within :class:`~qc2.qc2_driver.QC2`. So,
+in actual runs, users only need to instantiate it as part of its :attr:`~qc2.qc2_driver.QC2.algorithm` method (to be discussed in :ref:`run_algorithms_with_qc2Data` section).
 For illustrative purposes only, the following is a pseudo-code example demonstrating how ``VQE`` can be instantiated independently:
 
 .. code-block:: python
@@ -41,7 +41,7 @@ For illustrative purposes only, the following is a pseudo-code example demonstra
     from qc2.qc2_driver import QC2 as qc2Data
     from qc2.algorithms.qiskit import VQE
     from qc2.second_q.active_space import ActiveSpace
-
+    from qc2.qubit_mapper.qiskit import BravyiKitaev
     # set ASE Atoms object
     mol = molecule('H2')
 
@@ -58,14 +58,14 @@ For illustrative purposes only, the following is a pseudo-code example demonstra
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2
         ),
-        mapper='bk',
+        mapper=BrabiyKitaev(),
         optimizer=COBYLA(),
         estimator=Estimator(),
     )
 
-where the ``active_space`` argument is set to an instance of the :class:`~qc2.algorithms.utils.active_space.ActiveSpace` class. The
+where the ``active_space`` argument is set to an instance of the :class:`~qc2.second_q.active_space.ActiveSpace` class. The
 ``'bk'`` string in ``mapper`` invokes the Bravyi-Kitaev fermionic-to-qubit transformation
-(qiskit_nature.BravyiKitaevMapper) as implemented in :class:`~qc2.algorithms.utils.mappers.FermionicToQubitMapper`
+(qc2.qubit_mapper.qiskit.BravyiKitaev) as implemented in :class:`~qc2.qubit_mapper.qiskit.BrabiyKitaev`
 
 A corresponding example using :class:`qc2.algorithms.pennylane.vqe.VQE` is:
 
@@ -80,6 +80,7 @@ A corresponding example using :class:`qc2.algorithms.pennylane.vqe.VQE` is:
     from qc2.qc2_driver import QC2 as qc2Data
     from qc2.algorithms.pennylane import VQE
     from qc2.second_q.active_space import ActiveSpace
+    from qc2.qubit_mapper.pennylane import JordanWigner
 
     # set ASE Atoms object
     mol = molecule('H2')
@@ -97,7 +98,7 @@ A corresponding example using :class:`qc2.algorithms.pennylane.vqe.VQE` is:
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2
         ),
-        mapper='jw',
+        mapper=JordanWigner(),
         optimizer=qml.GradientDescentOptimizer(stepsize=0.5),
         device='default.qubit'
     )

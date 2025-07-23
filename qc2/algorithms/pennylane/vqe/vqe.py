@@ -59,7 +59,7 @@ class VQE(VQEBASE):
         """Initializes the VQE class.
 
         Args:
-            qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`.
+            qc2data (qc2Data): An instance of :class:`~qc2.qc2_driver.QC2`.
             ansatz (Callable): The ansatz for the VQE algorithm.
                 Defaults to ``qml.UCCSD``.
             active_space (ActiveSpace): Instance of
