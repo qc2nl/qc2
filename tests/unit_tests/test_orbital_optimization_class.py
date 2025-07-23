@@ -10,7 +10,8 @@ from qc2.qc2_driver import QC2 as qc2Data
 from qc2.ase import PySCF
 from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.utils import OrbitalOptimization
-
+from qc2.qubit_mappers.pennylane.jordan_wigner import JordanWigner as JordanWignerPennylane
+from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner as JordanWignerQiskit
 # try importing PennyLane and set a flag
 try:
     from pennylane.operation import Operator
@@ -78,7 +79,12 @@ def test_get_transformed_qubit_hamiltonian(qc2data, format):
     if format == "pennylane" and not pennylane_available:
         pytest.skip()
 
-    oo = OrbitalOptimization(qc2data, active_space, format=format)
+    if format == "qiskit":
+        mapper = JordanWignerQiskit()
+    if format == "pennylane":
+        mapper = JordanWignerPennylane()
+
+    oo = OrbitalOptimization(qc2data, active_space, mapper=mapper, format=format)
     kappa = [0.0] * oo.n_kappa
     core_energy, qubit_op = oo.get_transformed_qubit_hamiltonian(kappa)
 
