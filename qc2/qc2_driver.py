@@ -1,5 +1,5 @@
 """This module defines the main qc2 data class."""
-from typing import Tuple, Union, Dict
+from typing import Tuple, Union
 import os
 
 

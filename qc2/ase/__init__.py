@@ -1,10 +1,7 @@
 """qc2 ASE package."""
-# handling package imports
-try:
-    from .pyscf import PySCF
-except ImportError:
-    print('What do you want to do?')
-    pass
+# # handling package imports
+
+from .pyscf import PySCF
 
 try:
     from .psi4 import Psi4
@@ -16,7 +13,10 @@ try:
 except ImportError:
     pass
 
-from .dirac import DIRAC
+try:
+    from .dirac import DIRAC
+except ImportError:
+    pass
 
 __all__ = [
     'PySCF',
