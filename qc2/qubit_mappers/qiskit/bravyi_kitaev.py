@@ -22,13 +22,13 @@ try:
     from qiskit.quantum_info.operators import Pauli
 except ImportError:
     raise ImportError(
-        "The Jordan-Wigner Mapper requires qiskit to be installed."
+        "The Baravyi-Kitaev Mapper requires qiskit to be installed."
     )
 
 from .base_mapper import BaseMapper
 
 
-class BravyiKitaevMapper(BaseMapper):
+class BravyiKitaev(BaseMapper):
     """The Bravyi-Kitaev fermion-to-qubit mapping."""
 
     @classmethod
