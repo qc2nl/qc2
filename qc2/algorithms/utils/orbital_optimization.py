@@ -3,12 +3,8 @@ from typing import List, Tuple, Optional, Union
 import numpy as np
 from scipy.linalg import expm
 from qiskit.quantum_info import SparsePauliOp
+from copy import deepcopy
 
-# from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
-# from qiskit_nature.second_q.problems import ElectronicBasis
-# from qiskit_nature.second_q.operators.tensor_ordering import to_chemist_ordering
-
-# try importing PennyLane and set `PennyLaneOperatorType`
 try:
     from pennylane.operation import Operator
     PennyLaneOperatorType = Operator
@@ -145,6 +141,11 @@ class OrbitalOptimization():
 
         # set dimension of the kappa vector
         self.n_kappa = len(self.params_idx)
+
+        # hamiltonian in atomic basis
+        self.hamiltonian_atomic_basis = ElectronicHamiltonian(
+            schema=self.schema_dataclass, basis='atomic'
+        )
 
         # set fermionic-to-qubit mapper
         self.mapper = mapper
@@ -631,8 +632,9 @@ class OrbitalOptimization():
             )
         )
         
-        hamiltonian_atomic_basis = ElectronicHamiltonian(schema=self.schema_dataclass, basis='atomic')
-        hamiltonian_molecular_basis = basis_transformer.transform_hamiltonian(hamiltonian_atomic_basis)
+        # transform hamiltonian to the new  molecular basis
+        original_hamiltonian = deepcopy(self.hamiltonian_atomic_basis)
+        hamiltonian_molecular_basis = basis_transformer.transform_hamiltonian(original_hamiltonian)
         
 
         core_energy, active_space_hamiltonian = self.qc2data.get_active_space_hamiltonian(
@@ -659,8 +661,10 @@ class OrbitalOptimization():
                 h1_b=mo_coeff_b
             )
         )
-        hamiltonian_atomic_basis = ElectronicHamiltonian(schema=self.schema_dataclass, basis='atomic') 
-        hamiltonian_molecular_basis = basis_transformer.transform_hamiltonian(hamiltonian_atomic_basis)
+        
+        # transform hamiltonian to the new  molecular basis 
+        original_hamiltonian = deepcopy(self.hamiltonian_atomic_basis)
+        hamiltonian_molecular_basis = basis_transformer.transform_hamiltonian(original_hamiltonian)
 
         return (
             hamiltonian_molecular_basis.constants['nuclear_repulsion_energy'],
