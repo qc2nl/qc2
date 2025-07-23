@@ -15,8 +15,7 @@ try:
     import warnings
     import pennylane as qml
     from pennylane import numpy as np
-    from pennylane.operation import active_new_opmath, Tensor
-    from pennylane.ops import Hamiltonian, Prod, SProd, Sum
+    from pennylane.ops import Prod, SProd, Sum
     from pennylane.qchem.convert import _process_wires
     from pennylane.qchem.convert import _openfermion_to_pennylane
     from pennylane.wires import Wires
@@ -28,7 +27,7 @@ except ImportError as Error:
         ) from Error
 
 
-def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
+def _qiskit_to_pennylane(qubit_operator, wires=None):
     """Convert Qiskit SparsePauliOp to 2-tuple of coeffs and PennyLane Paulis.
 
     This functions is usefull to convert fermionic-to-qubit transformed
@@ -55,7 +54,7 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
     >>> qubit_op
     SparsePauliOp(['XIIZI', 'IYIIY'],
               coeffs=[1.+0.j, 2.+0.j])
-    >>> _qiskit_nature_to_pennylane(qubit_op,wires=['w0','w1','w2','w3','w4'])
+    >>> _qiskit_to_pennylane(qubit_op,wires=['w0','w1','w2','w3','w4'])
     (tensor([1., 2.], requires_grad=False),
     [PauliX(wires=['w2']) @ PauliZ(wires=['w3']),
     PauliY(wires=['w0']) @ PauliY(wires=['w4'])])
@@ -95,13 +94,9 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
             term = ''.join([term[i::n] for i in range(n)])
             # this could also be done by using the `_process_wires` function.
 
-            if active_new_opmath():
-                return qml.prod(
-                    qml.pauli.string_to_pauli_word(term, wire_map=wire_map))
-
-            return Tensor(qml.pauli.string_to_pauli_word(
-                term, wire_map=wire_map
-            ))
+            
+            return qml.prod(
+                qml.pauli.string_to_pauli_word(term, wire_map=wire_map))
 
         return qml.Identity(wires[0])
 
@@ -113,7 +108,7 @@ def _qiskit_nature_to_pennylane(qubit_operator, wires=None):
     return np.array(coeffs).real, list(ops)
 
 
-def _pennylane_to_qiskit_nature(coeffs, ops, wires):
+def _pennylane_to_qiskit(coeffs, ops, wires):
     """Convert Pennylane to Qiskit-Nature formats.
 
     Convert a 2-tuple of complex coefficients and PennyLane operations to
@@ -157,7 +152,7 @@ def _pennylane_to_qiskit_nature(coeffs, ops, wires):
     ...     qml.operation.Tensor(qml.PauliY(wires=[0]), qml.PauliZ(wires=[2])),
     ...     qml.prod(qml.PauliX(wires=[0]), qml.PauliZ(wires=[3]))
     ... ]
-    >>> _pennylane_to_qiskit_nature(coeffs, ops, wires=[0, 1, 2, 3])
+    >>> _pennylane_to_qiskit(coeffs, ops, wires=[0, 1, 2, 3])
     SparsePauliOp(['IIIX', 'IZIY', 'ZIIX'],
                   coeffs=[0.1+0.j, 0.2+0.j, 0.3+0.j])
     """
@@ -190,7 +185,7 @@ def _pennylane_to_qiskit_nature(coeffs, ops, wires):
 
     q_op_list = []
     for coeff, op in zip(coeffs, ops):
-        if isinstance(op, (Tensor, Prod, SProd, Hamiltonian)):
+        if isinstance(op, (Prod, SProd)):
             string = qml.pauli.pauli_word_to_string(op, wire_map=wire_map)
             n = len(string)//2  # => valid for closed shell singlets only
             string = ''.join([string[i::n] for i in range(n)])
@@ -205,10 +200,10 @@ def _pennylane_to_qiskit_nature(coeffs, ops, wires):
     return SparsePauliOp.from_list(q_op_list)
 
 
-def _qiskit_nature_pennylane_equivalent(
+def _qiskit_pennylane_equivalent(
     qiskit_qubit_operator, pennylane_qubit_operator, wires=None
 ):
-    """Check functionality of :func:`_pennylane_to_qiskit_nature`.
+    """Check functionality of :func:`_pennylane_to_qiskit`.
 
     Check equivalence between Qiskit :class:`~.SparsePauliOp` and Pennylane
     VQE ``Hamiltonian`` (Tensor product of Pauli matrices).
@@ -231,7 +226,7 @@ def _qiskit_nature_pennylane_equivalent(
         (bool): True if equivalent
     """
     coeffs, ops = pennylane_qubit_operator.terms()
-    return qiskit_qubit_operator == _pennylane_to_qiskit_nature(
+    return qiskit_qubit_operator == _pennylane_to_qiskit(
         coeffs, ops, wires=wires)
 
 
@@ -307,17 +302,11 @@ def import_operator(qubit_observable, format="openfermion",
         )
 
     if format == "openfermion":
-        if active_new_opmath():
-            return qml.dot(*_openfermion_to_pennylane(
-                qubit_observable, wires=wires))
 
-        return qml.Hamiltonian(*_openfermion_to_pennylane(
+        return qml.dot(*_openfermion_to_pennylane(
             qubit_observable, wires=wires))
 
     if format == "qiskit":
-        if active_new_opmath():
-            return qml.dot(*_qiskit_nature_to_pennylane(
-                qubit_observable, wires=wires))
-
-        return qml.Hamiltonian(*_qiskit_nature_to_pennylane(
+        return qml.dot(*_qiskit_to_pennylane(
             qubit_observable, wires=wires))
+

@@ -56,7 +56,7 @@ jobs:
         shell: bash -l {0}
         run : |
           conda activate test
-          python -m pip install .[dev,publishing,pennylane]
+          python -m pip install .[dev,publishing,pennylane,qiskit]
       - name: PSI4 install for tests
         shell: bash -l {0}
         run : |

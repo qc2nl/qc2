@@ -7,7 +7,6 @@ from typing import Tuple, List
 
 import pennylane as qml
 import pennylane.numpy as np
-from pennylane.operation import active_new_opmath
 from pennylane.pauli.pauli_arithmetic import PauliSentence
 from ..base_mapper import BaseMapper
 
@@ -28,8 +27,5 @@ class PennylaneBaseMapper(BaseMapper):
         """Return data for the qubit mapper."""
         data = (np.array(list(pauli_sentence.values())).real, 
                  list(pauli_sentence.keys()))
-        
-        if active_new_opmath():
-            return qml.dot(*data)
-        return qml.Hamiltonian(*data)
+        return qml.dot(*data)
 

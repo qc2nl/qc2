@@ -7,7 +7,7 @@ from qc2.algorithms.pennylane.vqe.vqe import VQE
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.algorithms.algorithms_results import SAOOVQEResults
 from qc2.ansatz.pennylane.state_resolution import state_resolution_initializer
-from qc2.qubit_mappers.convert import _qiskit_nature_to_pennylane
+from qc2.qubit_mappers.convert import _qiskit_to_pennylane
 from qc2.second_q.fermionic_operator import FermionicOperator
 from qc2.ansatz.pennylane.generate_ansatz import generate_state_resolution_ansatz
 from qc2.qc2_driver import QC2
@@ -596,7 +596,7 @@ class SA_OO_VQE(VQE):
             )
 
             # convert qiskit `SparsePauliOp` to pennylane `Operator`
-            coefficients, operators = _qiskit_nature_to_pennylane(qubit_ham_temp_qiskit)
+            coefficients, operators = _qiskit_to_pennylane(qubit_ham_temp_qiskit)
             qubit_ham_temp = sum(c * op for c, op in zip(coefficients, operators))
 
             # calculate expectation values
