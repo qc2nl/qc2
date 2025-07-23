@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import Tuple, List 
+from typing import Tuple, List, Dict
 
 import pennylane as qml
 import pennylane.numpy as np
@@ -22,6 +22,11 @@ class PennylaneBaseMapper(BaseMapper):
             o.reverse()
             reformatted_op_list.append(''.join(o))
         return ' '.join(reformatted_op_list)
+    @staticmethod
+    def get_wire_map(length: int) -> Dict:
+        """get the wire map."""
+        n = length - 1
+        return { i: 2*i%n for i in range(1, n) }
 
     def _return_data(self, pauli_sentence: PauliSentence) -> Tuple[np.ndarray, List]:
         """Return data for the qubit mapper."""
