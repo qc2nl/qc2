@@ -138,13 +138,6 @@ class QC2:
                 "*.hdf5 or *.h5 extensions."
             )
 
-        if self._schema == "fcidump" and not file_extension == ".fcidump":
-            raise ValueError(
-                f"{file_extension} is not a valid extension. "
-                "For FCIDump format provide a file with "
-                "*.fcidump extension."
-            )
-
     def run(self) -> None:
         """Runs ASE qchem calculator and saves the data into a formated file.
 

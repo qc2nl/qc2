@@ -17,7 +17,7 @@ class BaseQc2ASECalculator(ABC):
         Astract base class for all qc2 ASE calculators.
         """
         # format in which to read/write qchem data
-        self._implemented_formats = ["qcschema", "fcidump"]
+        self._implemented_formats = ["qcschema"]
         self._schema_format = None
         self.schema_format = "qcschema"
 
