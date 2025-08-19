@@ -150,8 +150,7 @@ class VQE(VQEBASE):
             num_particles=active_space.num_active_electrons,
             mapper=mapper,
             ansatz_type=ansatz,
-            mol_data=None,
-            scf=None
+            mol=None,
         )
 
     @staticmethod

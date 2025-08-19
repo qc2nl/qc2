@@ -287,8 +287,6 @@ class SA_OO_VQE(VQE):
                 mapper=mapper,
                 ansatz_type=ansatz,
                 reference_state=reference_state.assign_parameters([phase], inplace=False),
-                mol_data=None,
-                scf=None
             ) 
             for phase in [0, np.pi/2]
         ]
