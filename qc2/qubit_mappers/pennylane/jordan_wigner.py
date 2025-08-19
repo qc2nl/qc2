@@ -7,6 +7,7 @@ from ...second_q.fermionic_operator import FermionicOperator
 class JordanWigner(PennylaneBaseMapper):
     
     def map(self, second_q_ops: FermionicOperator):
+        
         qubit_ops = PauliSentence()
         wire_map = self.get_wire_map(second_q_ops.register_length)
 

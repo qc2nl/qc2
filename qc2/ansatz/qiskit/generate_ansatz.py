@@ -35,8 +35,7 @@ def generate_ansatz(
     mapper: BaseMapper, 
     ansatz_type: str, 
     reference_state: QuantumCircuit | None = None, 
-    mol_data=None, 
-    scf=None
+    mol=None, 
 ) -> QuantumCircuit:
     """
     Creates an ansatz based on the given type.
@@ -46,8 +45,7 @@ def generate_ansatz(
         mapper (QubitMapper): The fermion-to-qubit mapper
         ansatz_type (str): The type of ansatz ('UCCSD', 'SUCCD', 'PUCCSD', 'PUCCD', 'GateFabric', 'LUCJ')
         reference_state (QuantumCircuit|None): Reference state circuit
-        mol_data: Molecular data (needed only for LUCJ)
-        scf: SCF object (needed only for LUCJ)
+        mol: Molecular data (needed only for LUCJ)
     Returns:
         QuantumCircuit or np.ndarray: The constructed ansatz circuit/state
     """
@@ -69,13 +67,13 @@ def generate_ansatz(
     # elif ansatz_type.upper() == "PUCCD":
     #     return PUCCD(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
 
-    elif ansatz_type.upper() == "GateFabric":
+    elif ansatz_type.upper() == "GATEFABRIC":
         return GateFabric(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
 
     elif ansatz_type.upper() == "LUCJ":
-        if mol_data is None or scf is None:
-            raise ValueError("LUCJ requires 'mol_data' and 'scf' objects.")
-        return LUCJ(mol_data, scf, num_spatial_orbitals, num_particles)
+        if mol is None :
+            raise ValueError("LUCJ requires 'mol' argument.")
+        return LUCJ(mol)
 
     else:
         raise ValueError("Unsupported ansatz type. Choose from 'UCCSD', 'SUCCD', 'PUCCSD', 'PUCCD', 'GateFabric', or 'LUCJ'.")

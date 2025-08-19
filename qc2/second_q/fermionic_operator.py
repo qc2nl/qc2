@@ -31,6 +31,11 @@ class FermionicOperator(Dict):
         super().__init__(data)
         self.num_spin_orbitals = num_spin_orbitals
 
+    def __repr__(self) -> str:
+        data_str = f"{dict(self.items())}"
+        return "FermionicOp(" f"{data_str}, " f"num_spin_orbitals={self.num_spin_orbitals}, " ")"
+
+
     def __add__(self, other: FermionicOperator, qargs: None = None) -> FermionicOperator:
         """Return Operator addition of self and other.
 

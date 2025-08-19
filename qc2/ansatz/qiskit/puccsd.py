@@ -19,6 +19,7 @@ from __future__ import annotations
 import logging
 from typing import Sequence, cast
 from collections import defaultdict
+from functools import reduce
 
 from qiskit.circuit import QuantumCircuit
 from ...qubit_mappers.qiskit.base_mapper import BaseMapper
@@ -165,7 +166,9 @@ class PUCCSD(UCC):
                 self._excitations_dict[exc].append(exc)
 
         for exc_list in self._excitations_dict.values():
-            sum_ops = cast(FermionicOperator, sum(super()._build_fermionic_excitation_ops(exc_list)))
+            fermionc_ops_list = super()._build_fermionic_excitation_ops(exc_list)
+            sum_ops = reduce((lambda x,y:x+y), fermionc_ops_list)
+            sum_ops = cast(FermionicOperator, sum_ops)
             operators.append(sum_ops)
 
         return operators

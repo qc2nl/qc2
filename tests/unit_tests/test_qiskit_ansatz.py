@@ -1,29 +1,82 @@
-"""Tests for the qiskit ansatz"""
+import unittest
+from pyscf.gto import Mole 
+from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
 from qc2.ansatz.qiskit.hatree_fock import HartreeFock
 from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
-from qc2.ansatz.qiskit import LUCJ, GateFabric
-import pyscf
+from qc2.ansatz.qiskit import LUCJ, GateFabric, UCCSD, PUCCSD
 
-def test_gate_fabric():
-    num_spatial_orbitals = 4
-    num_particles = (2, 2)
-    mapper = JordanWigner()
-    reference_state = HartreeFock(num_spatial_orbitals, num_particles, mapper)
-    gate_fabric = GateFabric(num_spatial_orbitals, num_particles, mapper, initial_state=reference_state)
-    gate_fabric._build()
-    assert gate_fabric.num_qubits == 8
-    
 
-def test_lucj():
+class TestGenerateAnsatz(unittest.TestCase):
+    def test_uccsd_ansatz(self):
+        num_spatial_orbitals = 4
+        num_particles = (2, 2)
+        mapper = JordanWigner()
+        ansatz_type = "UCCSD"
+        ansatz = generate_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type)
+        self.assertIsInstance(ansatz, UCCSD)
 
-    # Build an N2 molecule
-    mol = pyscf.gto.Mole()
-    mol.build(atom=[["N", (0, 0, 0)], ["N", (1.0, 0, 0)]], basis="6-31g", symmetry="Dooh")
-    active_space = range(4, mol.nao_nr())
-    lucj = LUCJ(mol, active_space)
-    lucj.get_state()
-    lucj._build()
+    def test_puccsd_ansatz(self):
+        num_spatial_orbitals = 4
+        num_particles = (2, 2)
+        mapper = JordanWigner()
+        ansatz_type = "PUCCSD"
+        ansatz = generate_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type)
+        self.assertIsInstance(ansatz, PUCCSD)
 
-if __name__ == "__main__":
-    test_gate_fabric()
-    test_lucj()
+    def test_gate_fabric_ansatz(self):
+        num_spatial_orbitals = 4
+        num_particles = (2, 2)
+        mapper = JordanWigner()
+        ansatz_type = "GateFabric"
+        ansatz = generate_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type)
+        self.assertIsInstance(ansatz, GateFabric)
+
+    def test_lucj_ansatz(self):
+        num_spatial_orbitals = 4
+        num_particles = (2, 2)
+        mapper = JordanWigner()
+        mol = Mole()
+        mol.atom = '''O 0 0 0; H  0 1 0; H 0 0 1'''
+        mol.basis = 'sto-3g'
+        mol.build()
+        ansatz_type = "LUCJ"
+        ansatz = generate_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type, mol=mol)
+        self.assertIsInstance(ansatz, LUCJ)
+
+    def test_unsupported_ansatz_type(self):
+        num_spatial_orbitals = 4
+        num_particles = (2, 2)
+        mapper = JordanWigner()
+        ansatz_type = "Unsupported"
+        with self.assertRaises(ValueError):
+            generate_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type)
+
+    def test_lucj_without_mol_data_and_scf(self):
+        num_spatial_orbitals = 4
+        num_particles = (2, 2)
+        mapper = JordanWigner()
+        ansatz_type = "LUCJ"
+        with self.assertRaises(ValueError):
+            generate_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type)
+
+    def test_default_reference_state(self):
+        num_spatial_orbitals = 4
+        num_particles = (2, 2)
+        mapper = JordanWigner()
+        ansatz_type = "UCCSD"
+        ansatz = generate_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type)
+        self.assertIsInstance(ansatz.initial_state, HartreeFock)
+
+    def test_provided_reference_state(self):
+        num_spatial_orbitals = 4
+        num_particles = (2, 2)
+        mapper = JordanWigner()
+        ansatz_type = "UCCSD"
+        reference_state = HartreeFock(num_spatial_orbitals, num_particles, mapper)
+        ansatz = generate_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type, reference_state=reference_state)
+        self.assertEqual(ansatz.initial_state, reference_state)
+
+if __name__ == '__main__':
+    # unittest.main()
+    t = TestGenerateAnsatz()
+    t.test_puccsd_ansatz()     
