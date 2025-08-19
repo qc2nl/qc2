@@ -19,8 +19,8 @@ from qc2.second_q.active_space import (
 from qc2.second_q.basis_transformer import BasisTransformer
 from qc2.second_q.electronic_integrals import ElectronicIntegrals
 from qc2.second_q.electronic_hamiltonian import ElectronicHamiltonian
-from qc2.qubit_mappers.base_mapper import BaseMapper
-from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
+from qc2.algorithms.utils.base_mapper import BaseMapper
+from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
 from qc2.algorithms.utils.helper_funcs import (
     vector_to_skew_symmetric,
     skew_symmetric_to_vector,

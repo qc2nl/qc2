@@ -2,7 +2,7 @@ from typing import Callable
 import unittest
 import pennylane as qml
 import numpy as np
-from qc2.ansatz.pennylane.generate_ansatz import generate_ansatz
+from qc2.algorithms.pennylane.ansatz.generate_ansatz import generate_ansatz
 
 class TestGenerateAnsatz(unittest.TestCase):
     def test_uccsd_ansatz_generation(self):

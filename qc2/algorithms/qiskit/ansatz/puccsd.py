@@ -22,8 +22,8 @@ from collections import defaultdict
 from functools import reduce
 
 from qiskit.circuit import QuantumCircuit
-from ...qubit_mappers.qiskit.base_mapper import BaseMapper
-from ...second_q.fermionic_operator import FermionicOperator
+from ..qubit_mappers.base_mapper import BaseMapper
+from ....second_q.fermionic_operator import FermionicOperator
 
 from .ucc import UCC
 from .fermionic_excitation_generator import (

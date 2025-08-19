@@ -28,8 +28,8 @@ except ImportError:
         "The Qubit Mapper requires qiskit and qiskit-algorithms to be installed."
     )
 
-from ..base_mapper import BaseMapper
-from ...second_q.fermionic_operator import FermionicOperator
+from ...utils.base_mapper import BaseMapper
+from ....second_q.fermionic_operator import FermionicOperator
 
 
 # pylint: disable=invalid-name
@@ -124,7 +124,7 @@ class _ListOrDict(Dict, Iterable, Generic[T]):
         return _qubit_op_type_wrapper(list(iter(self))[0][1])
 
 
-class BaseMapper(BaseMapper):
+class QiskitBaseMapper(BaseMapper):
     """The interface for implementing methods which map from a ``SparseLabelOp`` to a
     qubit operator in the form of a ``SparsePauliOp``.
     """

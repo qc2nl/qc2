@@ -25,10 +25,10 @@ except ImportError:
         "The Baravyi-Kitaev Mapper requires qiskit to be installed."
     )
 
-from .base_mapper import BaseMapper
+from .base_mapper import QiskitBaseMapper
 
 
-class BravyiKitaev(BaseMapper):
+class BravyiKitaev(QiskitBaseMapper):
     """The Bravyi-Kitaev fermion-to-qubit mapping."""
 
     @classmethod

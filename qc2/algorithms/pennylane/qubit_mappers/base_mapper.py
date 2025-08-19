@@ -8,7 +8,7 @@ from typing import Tuple, List, Dict
 import pennylane as qml
 import pennylane.numpy as np
 from pennylane.pauli.pauli_arithmetic import PauliSentence
-from ..base_mapper import BaseMapper
+from ...utils.base_mapper import BaseMapper
 
 class PennylaneBaseMapper(BaseMapper):
 

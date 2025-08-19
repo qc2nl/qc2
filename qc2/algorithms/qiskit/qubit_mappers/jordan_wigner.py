@@ -25,10 +25,10 @@ except ImportError:
         "The Jordan-Wigner Mapper requires qiskit to be installed."
     )
 
-from .base_mapper import BaseMapper
+from .base_mapper import QiskitBaseMapper
 
 
-class JordanWigner(BaseMapper):
+class JordanWigner(QiskitBaseMapper):
     """The Jordan-Wigner fermion-to-qubit mapping."""
 
     @classmethod

@@ -7,7 +7,7 @@ from qiskit.primitives import BaseEstimator
 from functools import partial
 
 
-from qc2.ansatz.qiskit.ucc import UCC
+from qc2.algorithms.qiskit.ansatz.ucc import UCC
 from qc2.second_q.fermionic_operator import FermionicOperator
 from qc2.qubit_mappers.base_mapper import BaseMapper
 from qc2.qc2_driver import QC2
@@ -15,8 +15,8 @@ from qc2.algorithms.qiskit.vqe.vqe import VQE
 from qc2.algorithms.algorithms_results import SAOOVQEResults
 from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
-from qc2.ansatz.qiskit.state_resolution import StateResolution
-from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
+from qc2.algorithms.qiskit.ansatz.state_resolution import StateResolution
+from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz
 
 class SA_OO_VQE(VQE):
     """Main class for state-averaged orbital-optimized VQE with Qiskit-Nature.

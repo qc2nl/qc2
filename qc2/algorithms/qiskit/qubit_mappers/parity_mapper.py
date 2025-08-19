@@ -29,12 +29,12 @@ except ImportError:
     )
 
 from qc2.second_q import FermionicOperator
-from .base_mapper import BaseMapper
+from .base_mapper import QiskitBaseMapper
 
 logger = logging.getLogger(__name__)
 
 
-class ParityMapper(BaseMapper):
+class ParityMapper(QiskitBaseMapper):
     """The Parity fermion-to-qubit mapping.
 
     When using this mapper, :attr:`num_particles` can optionally be used to apply an additional step

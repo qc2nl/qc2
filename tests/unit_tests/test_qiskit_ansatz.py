@@ -1,9 +1,9 @@
 import unittest
 from pyscf.gto import Mole 
-from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
-from qc2.ansatz.qiskit.hatree_fock import HartreeFock
-from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
-from qc2.ansatz.qiskit import LUCJ, GateFabric, UCCSD, PUCCSD
+from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz
+from qc2.algorithms.qiskit.ansatz.hatree_fock import HartreeFock
+from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
+from qc2.algorithms.qiskit.ansatz import LUCJ, GateFabric, UCCSD, PUCCSD
 
 
 class TestGenerateAnsatz(unittest.TestCase):

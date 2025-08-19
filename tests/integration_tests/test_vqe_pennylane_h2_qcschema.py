@@ -10,7 +10,7 @@ from qc2.second_q.active_space import ActiveSpace
 try:
     import pennylane as qml
     from qc2.algorithms.pennylane import VQE
-    from qc2.qubit_mappers.pennylane.jordan_wigner import JordanWigner
+    from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
 except ImportError:
     pytest.skip(
         "Skipping PennyLane tests...",

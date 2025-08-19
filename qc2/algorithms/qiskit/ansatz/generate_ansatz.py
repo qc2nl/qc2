@@ -1,6 +1,6 @@
 from typing import Tuple
 from qiskit.circuit import QuantumCircuit
-from ...qubit_mappers.qiskit.base_mapper import BaseMapper
+from ..qubit_mappers.base_mapper import BaseMapper
 from .uccsd import UCCSD  # Import UCCSD ansatz
 from .hatree_fock import HartreeFock  # Import Hartree-Fock ansatz
 from .ucc import UCC  # Import UCC ansatz
