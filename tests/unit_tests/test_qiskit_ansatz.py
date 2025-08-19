@@ -77,6 +77,4 @@ class TestGenerateAnsatz(unittest.TestCase):
         self.assertEqual(ansatz.initial_state, reference_state)
 
 if __name__ == '__main__':
-    # unittest.main()
-    t = TestGenerateAnsatz()
-    t.test_puccsd_ansatz()     
+    unittest.main() 
