@@ -51,7 +51,7 @@ class TestGenerateAnsatz(unittest.TestCase):
         with self.assertRaises(ValueError):
             generate_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type)
 
-    def test_lucj_without_mol_data_and_scf(self):
+    def test_lucj_without_mol(self):
         num_spatial_orbitals = 4
         num_particles = (2, 2)
         mapper = JordanWigner()

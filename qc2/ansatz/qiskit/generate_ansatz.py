@@ -23,7 +23,7 @@ from .lucj import LUCJ  # Import LUCJ ansatz
 	
 	# Example usage
 	ansatz_type = "LUCJ"
-	ansatz = create_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type, mol_data, scf)
+	ansatz = create_ansatz(num_spatial_orbitals, num_particles, mapper, ansatz_type, mol=mol)
 	print(ansatz)  # Prints LUCJ ansatz state as a numpy array
 """
 

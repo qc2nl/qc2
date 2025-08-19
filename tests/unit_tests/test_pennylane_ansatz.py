@@ -45,6 +45,4 @@ class TestGenerateAnsatz(unittest.TestCase):
             ansatz(params)
             
 if __name__ == "__main__":
-    # unittest.main()
-    t = TestGenerateAnsatz()
-    t.test_uccsd_ansatz_generation()
+    unittest.main()

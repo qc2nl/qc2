@@ -142,7 +142,5 @@ class OO_VQE(SA_OO_VQE):
             num_spatial_orbitals=active_space.num_active_spatial_orbitals,
             num_particles=active_space.num_active_electrons,
             mapper=mapper,
-            ansatz_type=ansatz,
-            mol_data=None,
-            scf=None
+            ansatz_type=ansatz
         )]
