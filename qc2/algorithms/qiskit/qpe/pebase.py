@@ -9,17 +9,17 @@ from qc2.algorithms.base.base_algorithm import BaseAlgorithm
 from qc2.second_q.active_space import ActiveSpace
 
 from qc2.algorithms.algorithms_results import QPEResults
-from qc2.qubit_mappers.qiskit.jordan_wigner import JordanWigner
+from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
 from qc2.qc2_driver import QC2
 from qc2.second_q.active_space import ActiveSpace
-from qc2.qubit_mappers.base_mapper import BaseMapper
-from qc2.ansatz.qiskit.hatree_fock import HartreeFock
+from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
+from qc2.algorithms.qiskit.ansatz.hatree_fock import HartreeFock
 
 class PEBase(BaseAlgorithm):
     def __init__(self, 
                  qc2data: QC2 | None = None, 
                  active_space: ActiveSpace | None = None, 
-                 mapper: BaseMapper | None = None, 
+                 mapper: QiskitBaseMapper | None = None, 
                  sampler: Sampler | None = None, 
                  reference_state: QuantumCircuit | None = None,  
                  verbose: int = 0):
@@ -53,7 +53,7 @@ class PEBase(BaseAlgorithm):
 
     @staticmethod
     def _get_default_reference(
-        active_space: ActiveSpace, mapper: BaseMapper
+        active_space: ActiveSpace, mapper: QiskitBaseMapper
     ) -> QuantumCircuit:
         """Set up the default reference state circuit based on Hartree Fock.
 

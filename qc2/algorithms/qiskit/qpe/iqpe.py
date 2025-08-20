@@ -7,7 +7,7 @@ from .pebase import PEBase
 
 from qc2.qc2_driver import QC2
 from qc2.second_q.active_space import ActiveSpace
-from qc2.qubit_mappers.base_mapper import BaseMapper
+from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 
 class QC2IterativePhaseEstimation(IterativePhaseEstimation):
     """Run the Iterative quantum phase estimation (QPE) algorithm.
@@ -87,7 +87,7 @@ class IQPE(PEBase):
                  qc2data: QC2 | None = None, 
                  num_iterations: int | None = None,
                  active_space: ActiveSpace | None = None, 
-                 mapper: BaseMapper | None = None, 
+                 mapper: QiskitBaseMapper | None = None, 
                  sampler: BaseSampler | None = None, 
                  reference_state: QuantumCircuit | None = None,  
                  verbose: int = 0):

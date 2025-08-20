@@ -9,7 +9,7 @@ from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz
 
 from qc2.qc2_driver import QC2
 from qc2.second_q.active_space import ActiveSpace
-from qc2.qubit_mappers.base_mapper import BaseMapper
+from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 
 class OO_VQE(SA_OO_VQE):
     """Main class for orbital-optimized VQE with Qiskit-Nature.
@@ -41,7 +41,7 @@ class OO_VQE(SA_OO_VQE):
         qc2data : QC2 | None = None,
         ansatz: QuantumCircuit | None = None,
         active_space: ActiveSpace | None = None,
-        mapper: BaseMapper | None = None,
+        mapper: QiskitBaseMapper | None = None,
         estimator: BaseEstimator | None = None,
         optimizer: Any = None,
         init_circuit_params:List | None = None,
@@ -125,7 +125,7 @@ class OO_VQE(SA_OO_VQE):
     def _get_default_ansatzes(
         ansatz: Union[str, None],
         active_space: ActiveSpace,
-        mapper: BaseMapper
+        mapper: QiskitBaseMapper
     ) -> List[QuantumCircuit]:
         """Set up the default UCC ansatz from a Hartree Fock reference state.
 
