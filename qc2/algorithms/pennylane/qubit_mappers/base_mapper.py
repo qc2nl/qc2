@@ -9,7 +9,7 @@ import pennylane as qml
 import pennylane.numpy as np
 from pennylane.pauli.pauli_arithmetic import PauliSentence
 from pennylane.ops.op_math.sum import Sum
-from ...utils.base_mapper import BaseMapper
+from ...base.qc2_qubit_mapper_base_class import BaseMapper
 
 class PennylaneBaseMapper(BaseMapper):
 

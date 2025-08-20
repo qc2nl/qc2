@@ -2,17 +2,12 @@
 from typing import Tuple, Union
 import os
 
-import h5py
 from ase import Atoms
 from ase.units import Ha
 
 
 from .data.qcschema import QCSchema
-from .data.qcschema.qc_second_q import QCSecondQ
-from .second_q.electronic_hamiltonian import ElectronicHamiltonian
-from .second_q.active_space_transformer import ActiveSpaceTransformer
-from .second_q.fermionic_operator import FermionicOperator
-from .algorithms.base.base_algorithm import BaseAlgorithm
+from .algorithms.base.qc2_algorithm_base_class import BaseAlgorithm
 from .ase.qc2_ase_base_class import BaseQc2ASECalculator
 
 

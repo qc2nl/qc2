@@ -5,7 +5,7 @@ from qiskit import QuantumCircuit
 from qiskit.primitives import Sampler
 from qiskit.circuit.library import UnitaryGate
 
-from qc2.algorithms.base.base_algorithm import BaseAlgorithm
+from qc2.algorithms.base.qc2_algorithm_base_class import BaseAlgorithm
 from qc2.second_q.active_space import ActiveSpace
 
 from qc2.algorithms.results import QPEResults

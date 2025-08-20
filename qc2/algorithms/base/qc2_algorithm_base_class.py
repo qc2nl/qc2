@@ -7,7 +7,6 @@ import h5py
 
 from ...data.qcschema.qc_qcircuit import QCQCircuit
 from ...data.qcschema.qc_second_q import QCSecondQ
-from ...second_q.fermionic_operator import FermionicOperator
 from ...second_q.second_quantizer import SecondQuantizer
 
 # from ...qc2_driver import QC2

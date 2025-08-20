@@ -28,7 +28,7 @@ except ImportError:
         "The Qubit Mapper requires qiskit and qiskit-algorithms to be installed."
     )
 
-from ...utils.base_mapper import BaseMapper
+from ...base.qc2_qubit_mapper_base_class import BaseMapper
 from ....second_q.fermionic_operator import FermionicOperator
 
 

@@ -5,7 +5,7 @@ from qiskit_algorithms.minimum_eigensolvers import VQE as vqe_solver
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 from qiskit.circuit import QuantumCircuit
-from qc2.algorithms.base.base_algorithm import BaseAlgorithm
+from qc2.algorithms.base.qc2_algorithm_base_class import BaseAlgorithm
 from qc2.algorithms.results import VQEResults
 from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz

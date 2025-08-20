@@ -6,7 +6,7 @@ from pennylane import QNode
 from pennylane.operation import Operator
 from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.results import QPEResults
-from qc2.algorithms.base.base_algorithm import BaseAlgorithm
+from qc2.algorithms.base.qc2_algorithm_base_class import BaseAlgorithm
 from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
 
 
