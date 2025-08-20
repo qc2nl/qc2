@@ -12,7 +12,7 @@ from qc2.second_q.fermionic_operator import FermionicOperator
 from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 from qc2.qc2_driver import QC2
 from qc2.algorithms.qiskit.vqe.vqe import VQE
-from qc2.algorithms.algorithms_results import SAOOVQEResults
+from qc2.algorithms.results import SAOOVQEResults
 from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.algorithms.qiskit.ansatz.state_resolution import StateResolution

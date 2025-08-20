@@ -5,7 +5,7 @@ from pennylane import numpy as np
 import pennylane as qml
 from qc2.algorithms.pennylane.vqe.vqe import VQE
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
-from qc2.algorithms.algorithms_results import SAOOVQEResults
+from qc2.algorithms.results import SAOOVQEResults
 from qc2.algorithms.pennylane.ansatz.state_resolution import state_resolution_initializer
 from qc2.second_q.fermionic_operator import FermionicOperator
 from qc2.algorithms.pennylane.ansatz.generate_ansatz import generate_state_resolution_ansatz
