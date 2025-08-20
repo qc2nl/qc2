@@ -1,7 +1,7 @@
 from qiskit.circuit.library.blueprintcircuit import BlueprintCircuit
 from qiskit.exceptions import QiskitError
 from qiskit.circuit import QuantumCircuit, Parameter, QuantumRegister
-from qc2.algorithms.utils.base_mapper import BaseMapper
+from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 from typing import Optional
 import numpy as np
 
@@ -12,7 +12,7 @@ class GateFabric(BlueprintCircuit):
         self,
         num_spatial_orbitals: int,
         num_particles: tuple,
-        qubit_mapper: BaseMapper,
+        qubit_mapper: QiskitBaseMapper,
         initial_state: Optional[QuantumCircuit] = None,
         num_layers: int = 1,
         include_pi: bool = False,
@@ -44,12 +44,12 @@ class GateFabric(BlueprintCircuit):
         self._initial_state = initial_state if initial_state is not None else QuantumCircuit(self.num_qubits)
 
     @property
-    def qubit_mapper(self) -> BaseMapper | None:
+    def qubit_mapper(self) -> QiskitBaseMapper | None:
         """The qubit operator mapper."""
         return self._qubit_mapper
 
     @qubit_mapper.setter
-    def qubit_mapper(self, mapper: BaseMapper | None) -> None:
+    def qubit_mapper(self, mapper: QiskitBaseMapper | None) -> None:
         """Sets the qubit operator mapper."""
         self._invalidate()
         self._qubit_mapper = mapper

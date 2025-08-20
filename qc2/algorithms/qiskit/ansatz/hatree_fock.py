@@ -19,9 +19,9 @@ from qiskit.circuit.library import BlueprintCircuit
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_algorithms.utils.validation import validate_min
 
-from ...qubit_mappers.qiskit.base_mapper import BaseMapper
-from ...qubit_mappers.qiskit.jordan_wigner import JordanWigner
-from ...second_q.fermionic_operator import FermionicOperator
+from ..qubit_mappers.base_mapper import QiskitBaseMapper
+from ..qubit_mappers.jordan_wigner import JordanWigner
+from ....second_q.fermionic_operator import FermionicOperator
 
 class HartreeFock(BlueprintCircuit):
     """A Hartree-Fock initial state."""
@@ -30,7 +30,7 @@ class HartreeFock(BlueprintCircuit):
         self,
         num_spatial_orbitals: int | None = None,
         num_particles: tuple[int, int] | None = None,
-        qubit_mapper: BaseMapper | None = None,
+        qubit_mapper: QiskitBaseMapper | None = None,
     ) -> None:
         # pylint: disable=unused-argument
         """

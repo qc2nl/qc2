@@ -23,7 +23,7 @@ from typing import Callable, Sequence, Dict
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit.library import EvolvedOperatorAnsatz
 
-from ..qubit_mappers.base_mapper import BaseMapper
+from ..qubit_mappers.base_mapper import QiskitBaseMapper
 from ....second_q.fermionic_operator import FermionicOperator
 
 
@@ -136,7 +136,7 @@ class UCC(EvolvedOperatorAnsatz):
             list[tuple[tuple[int, ...], tuple[int, ...]]],
         ]
         | None = None,
-        qubit_mapper: BaseMapper | None = None,
+        qubit_mapper: QiskitBaseMapper | None = None,
         *,
         alpha_spin: bool = True,
         beta_spin: bool = True,
@@ -223,12 +223,12 @@ class UCC(EvolvedOperatorAnsatz):
         _ = self.operators
 
     @property
-    def qubit_mapper(self) -> BaseMapper | None:
+    def qubit_mapper(self) -> QiskitBaseMapper | None:
         """The qubit operator mapper."""
         return self._qubit_mapper
 
     @qubit_mapper.setter
-    def qubit_mapper(self, mapper: BaseMapper | None) -> None:
+    def qubit_mapper(self, mapper: QiskitBaseMapper | None) -> None:
         """Sets the qubit operator mapper."""
         self._operators = None
         self._invalidate()

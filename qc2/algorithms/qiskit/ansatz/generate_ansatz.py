@@ -1,6 +1,6 @@
 from typing import Tuple
 from qiskit.circuit import QuantumCircuit
-from ..qubit_mappers.base_mapper import BaseMapper
+from ..qubit_mappers.base_mapper import QiskitBaseMapper
 from .uccsd import UCCSD  # Import UCCSD ansatz
 from .hatree_fock import HartreeFock  # Import Hartree-Fock ansatz
 from .ucc import UCC  # Import UCC ansatz
@@ -32,7 +32,7 @@ from .lucj import LUCJ  # Import LUCJ ansatz
 def generate_ansatz(
     num_spatial_orbitals: int, 
     num_particles: Tuple[int, int], 
-    mapper: BaseMapper, 
+    mapper: QiskitBaseMapper, 
     ansatz_type: str, 
     reference_state: QuantumCircuit | None = None, 
     mol=None, 
