@@ -11,7 +11,7 @@ from qc2.algorithms.pennylane.ansatz.generate_ansatz import generate_ansatz
 from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
 from qc2.qc2_driver import QC2
 from qc2.second_q.active_space import ActiveSpace
-from qc2.algorithms.utils.base_mapper import BaseMapper
+from qc2.algorithms.pennylane.qubit_mappers.base_mapper import PennylaneBaseMapper
 
 class VQE(VQEBASE):
     """
@@ -48,7 +48,7 @@ class VQE(VQEBASE):
         qc2data: QC2 | None = None,
         ansatz: Callable | None = None,
         active_space: ActiveSpace | None = None,
-        mapper: BaseMapper | None = None,
+        mapper: PennylaneBaseMapper | None = None,
         device: str | None =None,
         optimizer: Any = None,
         init_params: List | None = None,

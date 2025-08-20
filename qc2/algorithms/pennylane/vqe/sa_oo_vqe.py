@@ -6,12 +6,12 @@ import pennylane as qml
 from qc2.algorithms.pennylane.vqe.vqe import VQE
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.algorithms.algorithms_results import SAOOVQEResults
-from qc2.ansatz.pennylane.state_resolution import state_resolution_initializer
+from qc2.algorithms.pennylane.ansatz.state_resolution import state_resolution_initializer
 from qc2.second_q.fermionic_operator import FermionicOperator
-from qc2.ansatz.pennylane.generate_ansatz import generate_state_resolution_ansatz
+from qc2.algorithms.pennylane.ansatz.generate_ansatz import generate_state_resolution_ansatz
 from qc2.qc2_driver import QC2
 from qc2.second_q.active_space import ActiveSpace
-from qc2.qubit_mappers.base_mapper import BaseMapper
+from qc2.algorithms.pennylane.qubit_mappers.base_mapper import PennylaneBaseMapper
 
 class SA_OO_VQE(VQE):
     """Main class for orbital-optimized VQE with PennyLane.
@@ -41,7 +41,7 @@ class SA_OO_VQE(VQE):
         qc2data: QC2 | None = None,
         ansatz: Callable | None = None,
         active_space: ActiveSpace | None = None,
-        mapper: BaseMapper | None = None,
+        mapper: PennylaneBaseMapper | None = None,
         device: str | None =None,
         optimizer: Any = None,
         state_weights: List | None = None,
