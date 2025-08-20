@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from abc import ABC
 from functools import lru_cache
-from typing import TypeVar, Dict, Iterable, Generic, Generator, List
+from typing import TypeVar, Dict, Iterable, Generic, Generator, List, Tuple, Any
 
 import numpy as np
 
@@ -128,6 +128,8 @@ class QiskitBaseMapper(BaseMapper):
     """The interface for implementing methods which map from a ``SparseLabelOp`` to a
     qubit operator in the form of a ``SparsePauliOp``.
     """
+
+    backend: str = "qiskit"
 
     def _map_single(
         self, second_q_op: FermionicOperator, *, register_length: int | None = None
@@ -289,3 +291,7 @@ class QiskitBaseMapper(BaseMapper):
 
         sparse_op = SparsePauliOp.sum(ret_op_list).simplify()
         return sparse_op
+
+    def get_representation(self, qubit_op: SparsePauliOp) -> Tuple[List[Any], List[Any]]:
+        """Returns the coefficients and paulis of a qubit operator."""
+        return qubit_op.coeffs, qubit_op.paulis

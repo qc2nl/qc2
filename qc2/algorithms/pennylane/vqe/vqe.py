@@ -5,7 +5,7 @@ from pennylane import numpy as np
 from pennylane import QNode
 from pennylane.operation import Operator
 from qc2.second_q.active_space import ActiveSpace
-from qc2.algorithms.base.vqe_base import VQEBASE
+from qc2.algorithms.base.base_algorithm import BaseAlgorithm
 from qc2.algorithms.algorithms_results import VQEResults
 from qc2.algorithms.pennylane.ansatz.generate_ansatz import generate_ansatz
 from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
@@ -13,7 +13,7 @@ from qc2.qc2_driver import QC2
 from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.pennylane.qubit_mappers.base_mapper import PennylaneBaseMapper
 
-class VQE(VQEBASE):
+class VQE(BaseAlgorithm):
     """
     Main class for the VQE algorithm with PennyLane.
 
@@ -105,7 +105,8 @@ class VQE(VQEBASE):
         ... )
         >>> results = qc2data.algorithm.run()
         """
-        super().__init__(qc2data, "pennylane")
+        self.qc2data = qc2data
+        self.format = "pennylane"
 
         # init active space and mapper
         self.active_space = (

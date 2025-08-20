@@ -574,7 +574,7 @@ class SA_OO_VQE(VQE):
         rdm2_spin = np.zeros((n_spin_orbitals,) * 4, dtype=complex)
 
         # get the fermionic hamiltonian
-        _, fermionic_op = self.qc2data.get_fermionic_hamiltonian(
+        _, fermionic_op = self.second_quantizer.get_fermionic_hamiltonian(
             self.active_space.num_active_electrons,
             self.active_space.num_active_spatial_orbitals
         )
