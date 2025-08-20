@@ -1,7 +1,7 @@
 from qiskit.circuit.library.blueprintcircuit import BlueprintCircuit
 from qiskit.exceptions import QiskitError
 from qiskit.circuit import QuantumCircuit, Parameter, QuantumRegister
-from qc2.qubit_mappers.base_mapper import BaseMapper
+from qc2.algorithms.utils.base_mapper import BaseMapper
 from typing import Optional
 import numpy as np
 

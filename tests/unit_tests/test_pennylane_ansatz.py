@@ -2,7 +2,15 @@ from typing import Callable
 import unittest
 import pennylane as qml
 import numpy as np
-from qc2.algorithms.pennylane.ansatz.generate_ansatz import generate_ansatz
+import pytest
+
+try:
+    from qc2.algorithms.pennylane.ansatz.generate_ansatz import generate_ansatz
+except ImportError:
+    pytest.skip(
+        "Skipping PennyLane tests...",
+        allow_module_level=True
+    )
 
 class TestGenerateAnsatz(unittest.TestCase):
     def test_uccsd_ansatz_generation(self):

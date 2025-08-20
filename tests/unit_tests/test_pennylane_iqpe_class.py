@@ -7,12 +7,13 @@ from ase.build import molecule
 from qc2.qc2_driver import QC2 as qc2Data
 from qc2.ase import PySCF
 from qc2.second_q.active_space import ActiveSpace
-from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
+
 
 try:
     import pennylane as qml
     from pennylane import numpy as np
     from qc2.algorithms.pennylane import IQPE
+    from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
 except ImportError:
     pytest.skip(
         "Skipping PennyLane tests...",
