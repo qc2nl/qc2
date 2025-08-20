@@ -28,7 +28,7 @@ except ImportError:
         "The Parity Mapper requires qiskit to be installed."
     )
 
-from qc2.second_q import FermionicOperator
+from qc2.algorithms.second_q import FermionicOperator
 from .base_mapper import QiskitBaseMapper
 
 logger = logging.getLogger(__name__)

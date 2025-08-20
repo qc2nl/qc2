@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import numpy as np
 from typing import Dict, MutableMapping
-from ..data.qcschema import QCSchema
+from ...data.qcschema import QCSchema
 from .electronic_integrals import ElectronicIntegrals, TensorDict
 from .fermionic_operator import FermionicOperator
 
