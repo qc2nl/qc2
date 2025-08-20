@@ -6,19 +6,18 @@ from qiskit.quantum_info import SparsePauliOp
 from copy import deepcopy
 
 try:
-    from pennylane.operation import Operator
-    PennyLaneOperatorType = Operator
+    from pennylane.operation import Operator as PennyLaneOperator
 except ImportError:
-    PennyLaneOperatorType = object
+    pass
 
 from qc2.qc2_driver import QC2
-from qc2.second_q.active_space import (
+from qc2.algorithms.second_q.active_space import (
     ActiveSpace,
     get_active_space_idx
 )
-from qc2.second_q.basis_transformer import BasisTransformer
-from qc2.second_q.electronic_integrals import ElectronicIntegrals
-from qc2.second_q.electronic_hamiltonian import ElectronicHamiltonian
+from qc2.algorithms.second_q.basis_transformer import BasisTransformer
+from qc2.algorithms.second_q.electronic_integrals import ElectronicIntegrals
+from qc2.algorithms.second_q.electronic_hamiltonian import ElectronicHamiltonian
 from qc2.algorithms.base.qc2_qubit_mapper_base_class import BaseMapper
 from qc2.algorithms.utils.helper_funcs import (
     vector_to_skew_symmetric,
@@ -26,7 +25,7 @@ from qc2.algorithms.utils.helper_funcs import (
     reshape_2,
     get_non_redundant_indices
 )
-from qc2.second_q.second_quantizer import _get_active_space_hamiltonian
+from qc2.algorithms.second_q.second_quantizer import _get_active_space_hamiltonian
 from .tensor_ordering import to_chemist_ordering
 
 
@@ -503,7 +502,7 @@ class OrbitalOptimization():
     def get_transformed_qubit_hamiltonian(
             self,
             kappa: List
-    ) -> Tuple[float, Union[SparsePauliOp, PennyLaneOperatorType]]:
+    ) -> Tuple[float, Union[SparsePauliOp, PennyLaneOperator]]:
         """Sets up the qubit Hamiltonian in the transformed MO basis.
 
         Args:

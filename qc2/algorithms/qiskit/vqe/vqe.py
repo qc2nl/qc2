@@ -7,11 +7,10 @@ from qiskit.primitives import Estimator
 from qiskit.circuit import QuantumCircuit
 from qc2.algorithms.base.qc2_algorithm_base_class import BaseAlgorithm
 from qc2.algorithms.results import VQEResults
-from qc2.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz
 from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
 from qc2.qc2_driver import QC2
-from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 
 

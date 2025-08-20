@@ -4,11 +4,10 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.primitives import BaseEstimator
 
 from qc2.algorithms.qiskit.vqe.sa_oo_vqe import SA_OO_VQE
-from qc2.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz
 
 from qc2.qc2_driver import QC2
-from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 
 class OO_VQE(SA_OO_VQE):

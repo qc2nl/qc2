@@ -1,13 +1,13 @@
 """Module defining base class for all algorithms."""
 from abc import ABC
-from typing import Tuple, Union
+from typing import Union
 from typing import Any
 import h5py
 
 
 from ...data.qcschema.qc_qcircuit import QCQCircuit
 from ...data.qcschema.qc_second_q import QCSecondQ
-from ...second_q.second_quantizer import SecondQuantizer
+from ..second_q.second_quantizer import SecondQuantizer
 
 # from ...qc2_driver import QC2
 

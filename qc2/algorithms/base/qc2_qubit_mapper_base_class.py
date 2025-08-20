@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from abc import ABC
 from typing import List, Any, Tuple
-from ...second_q.fermionic_operator import FermionicOperator
+from ..second_q.fermionic_operator import FermionicOperator
 class BaseMapper(ABC):
     """Qubit Mapper interface."""
 

@@ -1,12 +1,5 @@
 from typing import Tuple, Union
-from typing import Any
-import h5py
-
-from ..data.qcschema import QCSchema
-from ..data.qcschema.qc_second_q import QCSecondQ
-from ..data.qcschema.qc_qcircuit import QCQCircuit
-
-
+from ...data.qcschema import QCSchema
 from .electronic_hamiltonian import ElectronicHamiltonian
 from .active_space_transformer import ActiveSpaceTransformer
 from .fermionic_operator import FermionicOperator

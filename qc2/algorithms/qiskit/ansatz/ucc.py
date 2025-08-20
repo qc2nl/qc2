@@ -24,7 +24,7 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.circuit.library import EvolvedOperatorAnsatz
 
 from ..qubit_mappers.base_mapper import QiskitBaseMapper
-from ....second_q.fermionic_operator import FermionicOperator
+from ...second_q.fermionic_operator import FermionicOperator
 
 
 from .fermionic_excitation_generator import generate_fermionic_excitations

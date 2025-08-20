@@ -29,7 +29,7 @@ except ImportError:
     )
 
 from ...base.qc2_qubit_mapper_base_class import BaseMapper
-from ....second_q.fermionic_operator import FermionicOperator
+from ...second_q.fermionic_operator import FermionicOperator
 
 
 # pylint: disable=invalid-name
