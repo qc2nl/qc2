@@ -1,5 +1,4 @@
 from typing import Tuple, Union, Any
-from ...qc2_driver import QC2
 from ...data.qcschema import QCSchema
 from .electronic_hamiltonian import ElectronicHamiltonian
 from .active_space_transformer import ActiveSpaceTransformer
@@ -10,7 +9,7 @@ from ..base.qc2_qubit_mapper_base_class import BaseMapper
 class SecondQuantizer:
 
     def __init__(self, 
-                 qc2data: QC2,
+                 qc2data,
                  ):
         
         self.qc2data = qc2data
