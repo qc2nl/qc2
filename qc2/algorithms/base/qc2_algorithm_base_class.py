@@ -22,7 +22,7 @@ class QC2BaseAlgorithm(ABC):
     def set_qc2data(self, qc2data):
         """set the data"""
         self.qc2data = qc2data
-        self.second_quantizer = SecondQuantizer(qc2data.read_schema())
+        self.second_quantizer = SecondQuantizer(qc2data)
 
     def run(self, *args, **kwargs):
         """run it"""

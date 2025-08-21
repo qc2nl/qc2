@@ -1,4 +1,5 @@
 from typing import Tuple, Union, Any
+from ...qc2_driver import QC2
 from ...data.qcschema import QCSchema
 from .electronic_hamiltonian import ElectronicHamiltonian
 from .active_space_transformer import ActiveSpaceTransformer
@@ -9,10 +10,16 @@ from ..base.qc2_qubit_mapper_base_class import BaseMapper
 class SecondQuantizer:
 
     def __init__(self, 
-                 schema: QCSchema
+                 qc2data: QC2,
                  ):
+        
+        self.qc2data = qc2data
+        self.schema_data = None
 
-        self.schema = schema
+    def read_data(self):
+        """read the data conained in the schema if necessary."""
+        if self.schema_data is None:
+            self.schema_data =  self.qc2data.read_schema()
 
     def get_active_space_hamiltonian(
             self,
@@ -68,7 +75,8 @@ class SecondQuantizer:
 
         if initial_hamiltonian is None:
             # create the initial ElectronicHamiltonian
-            hamiltonian = ElectronicHamiltonian(schema=self.schema,  tol=1E-5)
+            self.read_data()
+            hamiltonian = ElectronicHamiltonian(schema=self.schema_data,  tol=1E-5)
         else:
             hamiltonian = initial_hamiltonian
 
