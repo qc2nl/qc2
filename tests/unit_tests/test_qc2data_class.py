@@ -3,8 +3,7 @@ import os
 import pytest
 from ase import Atoms
 
-from qc2.second_q.electronic_hamiltonian import ElectronicHamiltonian
-
+from qc2.algorithms.second_q.electronic_hamiltonian import ElectronicHamiltonian
 from qc2.qc2_driver import QC2 as qc2Data
 from qc2.data.qcschema import QCSchema
 from qc2.ase.pyscf import PySCF
