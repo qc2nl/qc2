@@ -47,7 +47,7 @@ class QC2BaseAlgorithm(ABC):
 
         with h5py.File(datafile, 'a') as h5file:
             qcsecondq.to_hdf5(h5file)    
-            qcqcircuit.to_hdf5(h5file)
+            # qcqcircuit.to_hdf5(h5file)
 
     def _init_qubit_hamiltonian(self):
 
