@@ -1,8 +1,9 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, Any
 from ...data.qcschema import QCSchema
 from .electronic_hamiltonian import ElectronicHamiltonian
 from .active_space_transformer import ActiveSpaceTransformer
 from .fermionic_operator import FermionicOperator
+from ..base.qc2_qubit_mapper_base_class import BaseMapper
 
 
 class SecondQuantizer:
@@ -13,7 +14,6 @@ class SecondQuantizer:
 
         self.schema = schema
 
-    
     def get_active_space_hamiltonian(
             self,
             num_electrons: Union[int, Tuple[int, int]],
@@ -155,7 +155,7 @@ class SecondQuantizer:
         second_q_op = reduced_hamiltonian.second_q_op()
 
         return core_energy, second_q_op
-    
+
 # needed to be able to compute active space without 
 # creating a new instance in OrbitalOptimization
 def _get_active_space_hamiltonian(
