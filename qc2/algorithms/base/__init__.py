@@ -1,6 +1,6 @@
 """Base Algo package."""
-from .qc2_algorithm_base_class import BaseAlgorithm
+from .qc2_algorithm_base_class import QC2BaseAlgorithm
 
 __all__ = [
-    "BaseAlgorithm",
+    "QC2BaseAlgorithm",
 ]

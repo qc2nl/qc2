@@ -7,7 +7,7 @@ from ase.units import Ha
 
 
 from .data.qcschema import QCSchema
-from .algorithms.base.qc2_algorithm_base_class import BaseAlgorithm
+from .algorithms.base.qc2_algorithm_base_class import QC2BaseAlgorithm
 from .ase.qc2_ase_base_class import BaseQc2ASECalculator
 
 
@@ -28,7 +28,7 @@ class QC2:
         molecule (Atoms): Attribute representing the
             molecular structure as an ASE :class:`ase.atoms.Atoms` instance.
 
-        algorithm (BaseAlgorithm): Instance of the algorithm to be run.
+        algorithm (QC2BaseAlgorithm): Instance of the algorithm to be run.
             Examples are :class:`~qc2.algorithm.qiskit.vqe.VQE` and
             :class:`~qc2.algorithm.pennylane.oo_vqe.OO_VQE`.
     """
@@ -37,7 +37,7 @@ class QC2:
         self,
         filename: str = "qchem_data.hdf5",
         molecule: Atoms = Atoms(),
-        algorithm: BaseAlgorithm = BaseAlgorithm(),
+        algorithm: QC2BaseAlgorithm = QC2BaseAlgorithm(),
         *,
         schema: str = "qcschema",
     ):
@@ -48,7 +48,7 @@ class QC2:
                 data. Defaults to ``qchem_data.hdf5``
             molecule (Atoms): An optional :class:`ase.atoms.Atoms`
                 instance representing the target molecule.
-            algorithm (BaseAlgorithm): Algorithm to be run.
+            algorithm (QC2BaseAlgorithm): Algorithm to be run.
                 Examples are :class:`~qc2.algorithm.qiskit.vqe.VQE` and
                 :class:`~qc2.algorithm.pennylane.oo_vqe.OO_VQE`.
             schema (Optional[str]): An optional attribute defining the format
@@ -103,7 +103,7 @@ class QC2:
         self._molecule = Atoms(*args, **kwargs)
 
     @property
-    def algorithm(self) -> BaseAlgorithm:
+    def algorithm(self) -> QC2BaseAlgorithm:
         """Returns the chosen algorithm.
 
         Returns:
@@ -112,7 +112,7 @@ class QC2:
         return self._algorithm
 
     @algorithm.setter
-    def algorithm(self, algorithm: BaseAlgorithm) -> None:
+    def algorithm(self, algorithm: QC2BaseAlgorithm) -> None:
         """Sets the algorithm attribute."""
         self._algorithm = algorithm
         if hasattr(algorithm, "set_qc2data"):

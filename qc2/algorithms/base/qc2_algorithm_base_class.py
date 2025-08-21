@@ -11,7 +11,7 @@ from ..second_q.second_quantizer import SecondQuantizer
 
 # from ...qc2_driver import QC2
 
-class BaseAlgorithm(ABC):
+class QC2BaseAlgorithm(ABC):
     """Base class for all qc2 algos."""
 
     second_quantizer: SecondQuantizer
@@ -26,7 +26,7 @@ class BaseAlgorithm(ABC):
 
     def run(self, *args, **kwargs):
         """run it"""
-        raise NotImplementedError("BaseAlgorithm doens't have a .run() implemented ")
+        raise NotImplementedError("QC2BaseAlgorithm doens't have a .run() implemented ")
     
     def save(self, datafile: Union[h5py.File, str]) -> None:
         """Dumps qchem data to a datafile using QCSchema or FCIDump formats."""

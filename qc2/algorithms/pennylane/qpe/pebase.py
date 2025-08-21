@@ -5,7 +5,7 @@ from pennylane import numpy as np
 from pennylane import QNode
 from pennylane.operation import Operator
 from qc2.algorithms.results import QPEResults
-from qc2.algorithms.base.qc2_algorithm_base_class import BaseAlgorithm
+from qc2.algorithms.base.qc2_algorithm_base_class import QC2BaseAlgorithm
 from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
 
 
@@ -14,7 +14,7 @@ from qc2.algorithms.second_q.active_space import ActiveSpace
 from qc2.algorithms.pennylane.qubit_mappers.base_mapper import PennylaneBaseMapper
 
 
-class PEBase(BaseAlgorithm):
+class PEBase(QC2BaseAlgorithm):
     def __init__(
         self,
         qc2data: QC2 | None = None,
