@@ -5,17 +5,16 @@ from qiskit import QuantumCircuit
 from qiskit.primitives import Sampler
 from qiskit.circuit.library import UnitaryGate
 
-from qc2.algorithms.base.base_algorithm import BaseAlgorithm
-from qc2.second_q.active_space import ActiveSpace
+from qc2.algorithms.base.qc2_algorithm_base_class import QC2BaseAlgorithm
 
-from qc2.algorithms.algorithms_results import QPEResults
+from qc2.algorithms.results import QPEResults
 from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
 from qc2.qc2_driver import QC2
-from qc2.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 from qc2.algorithms.qiskit.ansatz.hatree_fock import HartreeFock
 
-class PEBase(BaseAlgorithm):
+class PEBase(QC2BaseAlgorithm):
     def __init__(self, 
                  qc2data: QC2 | None = None, 
                  active_space: ActiveSpace | None = None, 

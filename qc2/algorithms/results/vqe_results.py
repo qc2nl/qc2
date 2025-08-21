@@ -1,9 +1,8 @@
 """This module defines the base class for VQE algorithms results."""
 from typing import Optional, List, Dict
-from qc2.algorithms.base.base_algorithm_results import BaseAlgorithmResults
 
 
-class VQEBASEResults(BaseAlgorithmResults):
+class VQEResults:
     """VQE result base class."""
 
     def __init__(self) -> None:

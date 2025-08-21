@@ -20,8 +20,7 @@ from qiskit.quantum_info import SparsePauliOp
 from qiskit_algorithms.utils.validation import validate_min
 
 from ..qubit_mappers.base_mapper import QiskitBaseMapper
-from ..qubit_mappers.jordan_wigner import JordanWigner
-from ....second_q.fermionic_operator import FermionicOperator
+from ...second_q.fermionic_operator import FermionicOperator
 
 class HartreeFock(BlueprintCircuit):
     """A Hartree-Fock initial state."""
@@ -55,12 +54,12 @@ class HartreeFock(BlueprintCircuit):
         self._reset_register()
 
     @property
-    def qubit_mapper(self) -> BaseMapper | None:
+    def qubit_mapper(self) -> QiskitBaseMapper | None:
         """The qubit mapper."""
         return self._qubit_mapper
 
     @qubit_mapper.setter
-    def qubit_mapper(self, mapper: BaseMapper | None) -> None:
+    def qubit_mapper(self, mapper: QiskitBaseMapper | None) -> None:
         """Sets the qubit mapper."""
         self._invalidate()
         self._qubit_mapper = mapper
@@ -187,7 +186,7 @@ class HartreeFock(BlueprintCircuit):
 def hartree_fock_bitstring_mapped(
     num_spatial_orbitals: int,
     num_particles: tuple[int, int],
-    qubit_mapper: BaseMapper,
+    qubit_mapper: QiskitBaseMapper,
 ) -> list[bool]:
     # pylint: disable=unused-argument
     """Compute the bitstring representing the mapped Hartree-Fock state for the specified system.

@@ -1,7 +1,7 @@
 from pennylane.pauli.pauli_arithmetic import PauliSentence
 from pennylane.fermi import jordan_wigner, from_string
 from .base_mapper import PennylaneBaseMapper
-from ....second_q.fermionic_operator import FermionicOperator
+from ...second_q.fermionic_operator import FermionicOperator
 
 
 class JordanWigner(PennylaneBaseMapper):

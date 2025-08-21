@@ -5,17 +5,16 @@ from qiskit_algorithms.minimum_eigensolvers import VQE as vqe_solver
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 from qiskit.circuit import QuantumCircuit
-from qc2.algorithms.base.vqe_base import VQEBASE
-from qc2.algorithms.algorithms_results import VQEResults
-from qc2.second_q.active_space import ActiveSpace
+from qc2.algorithms.base.qc2_algorithm_base_class import QC2BaseAlgorithm
+from qc2.algorithms.results import VQEResults
+from qc2.algorithms.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz
 from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
 from qc2.qc2_driver import QC2
-from qc2.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 
 
-class VQE(VQEBASE):
+class VQE(QC2BaseAlgorithm):
     """
     Main class for the VQE algorithm with Qiskit-Nature.
 
@@ -96,7 +95,8 @@ class VQE(VQEBASE):
         >>> results = qc2data.algorithm.run()
         """
 
-        super().__init__(qc2data, "qiskit")
+        self.qc2data = qc2data
+        self.format = "qiskit"
 
         # init active space and mapper
         self.active_space = (

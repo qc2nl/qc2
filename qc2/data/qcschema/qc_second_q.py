@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Sequence, cast
-
-import h5py
+from typing import  Sequence
 
 from .qc_base import _QCBase
-from .qc_basis_set import QCBasisSet
 
 
 @dataclass

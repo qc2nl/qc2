@@ -23,7 +23,7 @@ from functools import reduce
 
 from qiskit.circuit import QuantumCircuit
 from ..qubit_mappers.base_mapper import QiskitBaseMapper
-from ....second_q.fermionic_operator import FermionicOperator
+from ...second_q.fermionic_operator import FermionicOperator
 
 from .ucc import UCC
 from .fermionic_excitation_generator import (

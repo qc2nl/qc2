@@ -8,12 +8,12 @@ from functools import partial
 
 
 from qc2.algorithms.qiskit.ansatz.ucc import UCC
-from qc2.second_q.fermionic_operator import FermionicOperator
+from qc2.algorithms.second_q.fermionic_operator import FermionicOperator
 from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 from qc2.qc2_driver import QC2
 from qc2.algorithms.qiskit.vqe.vqe import VQE
-from qc2.algorithms.algorithms_results import SAOOVQEResults
-from qc2.second_q.active_space import ActiveSpace
+from qc2.algorithms.results import SAOOVQEResults
+from qc2.algorithms.second_q.active_space import ActiveSpace
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.algorithms.qiskit.ansatz.state_resolution import StateResolution
 from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz
@@ -516,7 +516,7 @@ class SA_OO_VQE(VQE):
         rdm2_spin = np.zeros((n_spin_orbitals,) * 4, dtype=complex)
 
         # get the fermionic hamiltonian
-        _, fermionic_op = self.qc2data.get_fermionic_hamiltonian(
+        _, fermionic_op = self.second_quantizer.get_fermionic_hamiltonian(
             self.active_space.num_active_electrons,
             self.active_space.num_active_spatial_orbitals
         )

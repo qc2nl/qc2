@@ -8,9 +8,8 @@ from qiskit.primitives import BaseSampler
 from .pebase import PEBase
 
 from qc2.qc2_driver import QC2
-from qc2.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.active_space import ActiveSpace
 from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
-from qc2.algorithms.qiskit.ansatz.hatree_fock import HartreeFock
 
 class QC2PhaseEstimation(PhaseEstimation):
     r"""Run the Quantum Phase Estimation (QPE) algorithm.
