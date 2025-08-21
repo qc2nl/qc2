@@ -75,7 +75,7 @@ class VQE(QC2BaseAlgorithm):
         >>> from qc2.ase import PySCF
         >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.qiskit import VQE
-        >>> from qc2.second_q.active_space import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -185,7 +185,7 @@ class VQE(QC2BaseAlgorithm):
         >>> from qc2.ase import PySCF
         >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.qiskit import VQE
-        >>> from qc2.second_q.active_space import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
