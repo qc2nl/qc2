@@ -11,6 +11,7 @@ from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
 
 from qc2.qc2_driver import QC2
 from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.second_quantizer import SecondQuantizer
 from qc2.algorithms.pennylane.qubit_mappers.base_mapper import PennylaneBaseMapper
 
 
@@ -26,6 +27,7 @@ class PEBase(QC2BaseAlgorithm):
     ):
         
         self.qc2data = qc2data
+        self.second_quantizer = SecondQuantizer(qc2data)
         self.format = "pennylane"
         self.verbose = verbose
         self.circuit = None

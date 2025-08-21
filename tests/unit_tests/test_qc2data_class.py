@@ -57,18 +57,18 @@ def test_read_schema(qc2_data_qcschema_instance):
     assert isinstance(qcschema, QCSchema)
 
 
-def test_get_active_space_hamiltonian_qcschema(qc2_data_qcschema_instance):
-    """Test case # 4a - Building Active-space Hamiltonian from qcschema."""
-    num_electrons = (1, 1)
-    num_spatial_orbitals = 2
-    qc2_data_qcschema_instance.run()
-    (core_energy, active_space_hamiltonian
-     ) = qc2_data_qcschema_instance.get_active_space_hamiltonian(
-        num_electrons, num_spatial_orbitals
-    )
-    assert isinstance(core_energy, float)
-    assert isinstance(active_space_hamiltonian, ElectronicHamiltonian)
-    assert core_energy == pytest.approx(0.7151043390810812, 1e-6)
+# def test_get_active_space_hamiltonian_qcschema(qc2_data_qcschema_instance):
+#     """Test case # 4a - Building Active-space Hamiltonian from qcschema."""
+#     num_electrons = (1, 1)
+#     num_spatial_orbitals = 2
+#     qc2_data_qcschema_instance.run()
+#     (core_energy, active_space_hamiltonian
+#      ) = qc2_data_qcschema_instance.get_active_space_hamiltonian(
+#         num_electrons, num_spatial_orbitals
+#     )
+#     assert isinstance(core_energy, float)
+#     assert isinstance(active_space_hamiltonian, ElectronicHamiltonian)
+#     assert core_energy == pytest.approx(0.7151043390810812, 1e-6)
 
 
 

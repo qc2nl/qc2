@@ -10,6 +10,7 @@ from qc2.algorithms.pennylane.ansatz.generate_ansatz import generate_ansatz
 from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
 from qc2.qc2_driver import QC2
 from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.second_quantizer import SecondQuantizer
 from qc2.algorithms.pennylane.qubit_mappers.base_mapper import PennylaneBaseMapper
 
 class VQE(QC2BaseAlgorithm):
@@ -105,6 +106,7 @@ class VQE(QC2BaseAlgorithm):
         >>> results = qc2data.algorithm.run()
         """
         self.qc2data = qc2data
+        self.second_quantizer = SecondQuantizer(self.qc2data)
         self.format = "pennylane"
 
         # init active space and mapper

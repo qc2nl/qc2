@@ -17,6 +17,9 @@ class SecondQuantizer:
 
     def read_data(self):
         """read the data conained in the schema if necessary."""
+        if self.qc2data is None:
+            raise ValueError("qc2data is not set in SecondQuantizer")
+        
         if self.schema_data is None:
             self.schema_data =  self.qc2data.read_schema()
 

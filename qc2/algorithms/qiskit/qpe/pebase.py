@@ -11,6 +11,7 @@ from qc2.algorithms.results import QPEResults
 from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
 from qc2.qc2_driver import QC2
 from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.second_quantizer import SecondQuantizer
 from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 from qc2.algorithms.qiskit.ansatz.hatree_fock import HartreeFock
 
@@ -24,6 +25,7 @@ class PEBase(QC2BaseAlgorithm):
                  verbose: int = 0):
         
         self.qc2data = qc2data
+        self.second_quantizer = SecondQuantizer(qc2data)
         self.format = "qiskit"
         self.verbose = verbose
         self.solver = None 

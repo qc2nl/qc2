@@ -32,10 +32,11 @@ class QC2BaseAlgorithm(ABC):
         """Dumps qchem data to a datafile using QCSchema or FCIDump formats."""
     
         qcsecondq = QCSecondQ(
-            num_electrons = self.active_space.num_active_electrons,
-            num_spatial_orbitals = self.active_space.num_active_spatial_orbitals,
-            core_energy = self.e_core,
-            second_q_op = self.second_q_op)
+            active_electrons = self.active_space.num_active_electrons,
+            active_spatial_orbitals = self.active_space.num_active_spatial_orbitals,
+            inactive_energy = self.e_core,
+            creation_anhiliton_operators = list(self.second_q_op.keys()),
+            creation_anhiliton_coefficients = list(self.second_q_op.values()))
         
         coeffs, paulis = self.mapper.get_representation(self.qubit_op)
         qcqcircuit = QCQCircuit(
