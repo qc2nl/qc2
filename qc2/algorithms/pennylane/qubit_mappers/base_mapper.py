@@ -40,5 +40,5 @@ class PennylaneBaseMapper(BaseMapper):
     def get_representation(self, qubit_op) -> Tuple[List[float], List[str]]:
         """Returns the coefficients and paulis of a qubit operator."""
         coeffs, paulis = qubit_op.terms()
-        return np.array(coeffs).tolist(), paulis
+        return np.array(coeffs).tolist(), [str(p) for p in paulis]
 
