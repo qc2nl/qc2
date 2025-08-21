@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import  Sequence
-
+import h5py
 from .qc_base import _QCBase
 
 
@@ -31,3 +31,9 @@ class QCSecondQ(_QCBase):
     creation_anhiliton_coefficients: Sequence[float]
     """Creation and annihilation operators."""
     
+    def to_hdf5(self, group: h5py.Group) -> None:
+        for key, value in self.__dict__.items():
+            if value is None:
+                continue
+            else:
+                group.create_dataset(key, data=value)

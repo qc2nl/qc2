@@ -41,13 +41,16 @@ class QC2BaseAlgorithm(ABC):
         coeffs, paulis = self.mapper.get_representation(self.qubit_op)
         qcqcircuit = QCQCircuit(
             backend = self.mapper.backend,
+            mapper = self.mapper.__class__.__name__,
             hamiltonian_pauli_strings = paulis,
             hamiltonian_coefficients = coeffs
         )
 
         with h5py.File(datafile, 'a') as h5file:
-            qcsecondq.to_hdf5(h5file)    
-            # qcqcircuit.to_hdf5(h5file)
+            grp = h5file.create_group("qcsecondq")
+            qcsecondq.to_hdf5(grp)
+            grp = h5file.create_group("qcqcircuit")    
+            qcqcircuit.to_hdf5(grp)
 
     def _init_qubit_hamiltonian(self):
 
