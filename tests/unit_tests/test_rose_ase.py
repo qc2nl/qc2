@@ -5,11 +5,13 @@ import pytest
 
 from qc2.data.fcidump import FCIDump
 
-try:
-    from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
-except ImportError:
-    pytest.skip("Skipping ASE-ROSE tests...",
-                allow_module_level=True)
+# try:
+#     from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
+# except ImportError:
+#     pytest.skip("Skipping ASE-ROSE tests...",
+#                 allow_module_level=True)
+
+from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
 
 # also check if the `genibo.x` and `avas.x` executables are available
 if not shutil.which("genibo.x") or not shutil.which("avas.x"):
