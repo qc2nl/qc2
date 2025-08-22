@@ -3,17 +3,23 @@ import pennylane as qml
 from pennylane import numpy as np
 from pennylane import QNode
 from pennylane.operation import Operator
+
+
+from qc2.qc2_driver import QC2
+from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.pennylane.qubit_mappers.base_mapper import PennylaneBaseMapper
+
 from .pebase import PEBase
 
 class QPE(PEBase):
     def __init__(
         self,
-        qc2data=None,
-        active_space=None,
-        mapper=None,
-        device=None,
-        reference_state=None,
-        num_evaluation_qubits=None,
+        qc2data: QC2| None = None,
+        active_space: ActiveSpace | None = None,
+        mapper : PennylaneBaseMapper | None = None,
+        device: str | None = None,
+        reference_state: np.ndarray | None = None,
+        num_evaluation_qubits: int | None = None,
         verbose=0
     ):
         

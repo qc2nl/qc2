@@ -1,15 +1,17 @@
 """Module defining SA_OO-VQE algorithm for PennyLane."""
-from typing import List,Tuple, Callable
+from typing import List,Tuple, Callable, Any
 import itertools as itt
 from pennylane import numpy as np
 import pennylane as qml
 from qc2.algorithms.pennylane.vqe.vqe import VQE
 from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
-from qc2.algorithms.algorithms_results import SAOOVQEResults
-from qc2.ansatz.pennylane.state_resolution import state_resolution_initializer
-from qc2.pennylane.convert import _qiskit_nature_to_pennylane
-from qiskit_nature.second_q.operators import FermionicOp
-from qc2.ansatz.pennylane.generate_ansatz import generate_state_resolution_ansatz
+from qc2.algorithms.results import SAOOVQEResults
+from qc2.algorithms.pennylane.ansatz.state_resolution import state_resolution_initializer
+from qc2.algorithms.second_q.fermionic_operator import FermionicOperator
+from qc2.algorithms.pennylane.ansatz.generate_ansatz import generate_state_resolution_ansatz
+from qc2.qc2_driver import QC2
+from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.pennylane.qubit_mappers.base_mapper import PennylaneBaseMapper
 
 class SA_OO_VQE(VQE):
     """Main class for orbital-optimized VQE with PennyLane.
@@ -36,25 +38,25 @@ class SA_OO_VQE(VQE):
     """
     def __init__(
         self,
-        qc2data=None,
-        ansatz=None,
-        active_space=None,
-        mapper=None,
-        device=None,
-        optimizer=None,
-        state_weights=None,
-        init_circuit_params=None,
-        init_orbital_params=None,
-        freeze_active=False,
-        state_resolution=True,
-        max_iterations=50,
-        conv_tol=1e-7,
-        verbose=0
+        qc2data: QC2 | None = None,
+        ansatz: Callable | None = None,
+        active_space: ActiveSpace | None = None,
+        mapper: PennylaneBaseMapper | None = None,
+        device: str | None =None,
+        optimizer: Any = None,
+        state_weights: List | None = None,
+        init_circuit_params: List | None = None,
+        init_orbital_params: List | None =None,
+        freeze_active: bool = False,
+        state_resolution: bool = True,
+        max_iterations: int = 50,
+        conv_tol:float = 1e-7,
+        verbose: int = 0
     ):
         """Initializes the SA-OO-VQE class.
 
         Args:
-            qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`.
+            qc2data (qc2Data): An instance of :class:`~qc2.qc2_driver.QC2`.
             ansatz (Callable): The ansatz for the VQE algorithm.
                 Defaults to ``qml.UCCSD``.
             active_space (ActiveSpace): Instance of
@@ -88,9 +90,9 @@ class SA_OO_VQE(VQE):
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.pennylane import OO_VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -169,9 +171,9 @@ class SA_OO_VQE(VQE):
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.pennylane import OO_VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -572,12 +574,13 @@ class SA_OO_VQE(VQE):
         rdm2_spin = np.zeros((n_spin_orbitals,) * 4, dtype=complex)
 
         # get the fermionic hamiltonian
-        _, _, fermionic_op = self.qc2data.get_fermionic_hamiltonian(
+        _, fermionic_op = self.second_quantizer.get_fermionic_hamiltonian(
             self.active_space.num_active_electrons,
             self.active_space.num_active_spatial_orbitals
         )
 
         # run over the hamiltonian terms and calculate expectation values
+        num_spin_orbitals = 2*self.active_space.num_active_spatial_orbitals
         for key, _ in fermionic_op.terms():
             # assign indices depending on one- or two-body term
             length = len(key)
@@ -587,14 +590,11 @@ class SA_OO_VQE(VQE):
                 iele, jele, kele, lele = (int(ele[1]) for ele in tuple(key[0:4]))
 
             # get fermionic and qubit representation of each term
-            fermionic_ham_temp = FermionicOp.from_terms([(key, 1.0)])
-            qubit_ham_temp_qiskit = self.mapper.map(
-                fermionic_ham_temp, register_length=n_spin_orbitals
+            fermionic_ham_temp = FermionicOperator.from_terms([(key, 1.0)], 
+                                                              num_spin_orbitals=num_spin_orbitals)
+            qubit_ham_temp = self.mapper.map(
+                fermionic_ham_temp
             )
-
-            # convert qiskit `SparsePauliOp` to pennylane `Operator`
-            coefficients, operators = _qiskit_nature_to_pennylane(qubit_ham_temp_qiskit)
-            qubit_ham_temp = sum(c * op for c, op in zip(coefficients, operators))
 
             # calculate expectation values
             circuit = VQE._build_circuit(

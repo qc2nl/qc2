@@ -24,7 +24,7 @@ implemented in the :class:`~qc2.algorithms.utils.orbital_optimization.OrbitalOpt
 
 Similarly to VQE, the ``oo-VQE`` algorithm class in qc2 is primarily designed to be instantiated through the :attr:`qc2Data.algorithm`
 attribute; this is further explained in :ref:`run_algorithms_with_qc2Data`. However, it can also be instantiated
-and operated independently, as long as an instance of :class:`~qc2.data.data.qc2Data` is available.
+and operated independently, as long as an instance of :class:`~qc2.qc2_driver.QC2` is available.
 An illustrative example is shown below:
 
 .. code-block:: python
@@ -36,9 +36,9 @@ An illustrative example is shown below:
     from qiskit_algorithms.optimizers import SLSQP
     from qiskit.primitives import Estimator
 
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
     from qc2.algorithms.qiskit import OO_VQE
-    from qc2.algorithms.utils import ActiveSpace
+    from qc2.algorithms.second_q.active_space import ActiveSpace
 
     # set ASE Atoms object
     mol = molecule('H2O')

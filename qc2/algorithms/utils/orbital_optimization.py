@@ -3,28 +3,30 @@ from typing import List, Tuple, Optional, Union
 import numpy as np
 from scipy.linalg import expm
 from qiskit.quantum_info import SparsePauliOp
-from qiskit_nature.second_q.mappers import QubitMapper, JordanWignerMapper
-from qiskit_nature.second_q.problems import ElectronicBasis
-from qiskit_nature.second_q.operators.tensor_ordering import to_chemist_ordering
+from copy import deepcopy
 
-# try importing PennyLane and set `PennyLaneOperatorType`
 try:
-    from pennylane.operation import Operator
-    PennyLaneOperatorType = Operator
+    from pennylane.operation import Operator as PennyLaneOperator
 except ImportError:
-    PennyLaneOperatorType = object
+    pass
 
-from qc2.data.data import qc2Data
-from qc2.algorithms.utils.active_space import (
+from qc2.qc2_driver import QC2
+from qc2.algorithms.second_q.active_space import (
     ActiveSpace,
     get_active_space_idx
 )
+from qc2.algorithms.second_q.basis_transformer import BasisTransformer
+from qc2.algorithms.second_q.electronic_integrals import ElectronicIntegrals
+from qc2.algorithms.second_q.electronic_hamiltonian import ElectronicHamiltonian
+from qc2.algorithms.base.qc2_qubit_mapper_base_class import BaseMapper
 from qc2.algorithms.utils.helper_funcs import (
     vector_to_skew_symmetric,
     skew_symmetric_to_vector,
     reshape_2,
     get_non_redundant_indices
 )
+from qc2.algorithms.second_q.second_quantizer import _get_active_space_hamiltonian
+from .tensor_ordering import to_chemist_ordering
 
 
 class OrbitalOptimization():
@@ -35,11 +37,11 @@ class OrbitalOptimization():
     orbital optimization part of the oo-VQE algorithm.
 
     Attributes:
-        qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`.
+        qc2data (qc2Data): An instance of :class:`~qc2.qc2_driver.QC2`.
         schema_dataclass (QCSchema): An instance of :class:`QCSchema`.
         es_problem (ElectronicStructureProblem): Instance of
             :class:`ElectronicStructureProblem` in AO basis as
-            processed from :meth:`~qc2.data.data.qc2Data.process_schema`.
+            processed from :meth:`~qc2.qc2_driver.QC2.process_schema`.
         n_electrons (Tuple[int, int]): Number of alpha and beta electrons.
         nao (int): Number of spatial orbitals.
         n_active_orbitals (int): Number of active orbitals to consider.
@@ -55,17 +57,17 @@ class OrbitalOptimization():
     """
     def __init__(
                 self,
-                qc2data: qc2Data,
+                qc2data: QC2,
                 active_space: ActiveSpace,
                 freeze_active: bool = False,
-                mapper: QubitMapper = JordanWignerMapper(),
+                mapper: BaseMapper | None = None,
                 format: str = "qiskit"
     ) -> None:
         """
         Initializes the OrbitalOptimization class.
 
         Args:
-            qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`
+            qc2data (qc2Data): An instance of :class:`~qc2.qc2_driver.QC2`
                 containing quantum chemistry information.
             active_space (ActiveSpace): Instance of
                 :class:`~qc2.algorithms.utils.activate_space.ActiveSpace`
@@ -82,9 +84,9 @@ class OrbitalOptimization():
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.utils import OrbitalOptimization
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -109,14 +111,12 @@ class OrbitalOptimization():
         # molecule related attributes
         self.qc2data = qc2data
         self.schema_dataclass = self.qc2data.read_schema()
-        self.es_problem = self.qc2data.process_schema(
-            basis=ElectronicBasis.AO
-        )
+
         self.n_electrons = (
-            self.es_problem.num_alpha,
-            self.es_problem.num_beta
+            self.schema_dataclass.properties.calcinfo_nalpha,
+            self.schema_dataclass.properties.calcinfo_nbeta
         )
-        self.nao = self.es_problem.num_spatial_orbitals
+        self.nao = self.schema_dataclass.properties.calcinfo_nmo
 
         # active space parameters
         self.n_active_orbitals = active_space.num_active_spatial_orbitals
@@ -140,6 +140,11 @@ class OrbitalOptimization():
 
         # set dimension of the kappa vector
         self.n_kappa = len(self.params_idx)
+
+        # hamiltonian in atomic basis
+        self.hamiltonian_atomic_basis = ElectronicHamiltonian(
+            schema=self.schema_dataclass, basis='atomic'
+        )
 
         # set fermionic-to-qubit mapper
         self.mapper = mapper
@@ -167,9 +172,9 @@ class OrbitalOptimization():
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.utils import OrbitalOptimization
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -249,15 +254,15 @@ class OrbitalOptimization():
 
         # get fock matrix
         _, _, fock_matrix = self.get_fock_matrix(
-            one_electron_integrals[0],
-            two_electron_integrals[0],
+            one_electron_integrals.alpha.get('+-'),
+            two_electron_integrals.alpha.get('++--'),
             rdm1, rdm2
         )
         fock_general_symm = fock_matrix + np.transpose(fock_matrix)
 
         # convert two-electron integrals to chemistry notation
-        int2e_mo = to_chemist_ordering(two_electron_integrals[0])
-        int1e_mo = one_electron_integrals[0]
+        int2e_mo = to_chemist_ordering(two_electron_integrals.alpha.get('++--'))
+        int1e_mo = one_electron_integrals.alpha.get('+-')
 
         # prepare rdms
         one_rdm = rdm1.real
@@ -356,8 +361,8 @@ class OrbitalOptimization():
 
         # calculate fock matrix
         _, _, fock_matrix = self.get_fock_matrix(
-            one_electron_integrals[0],
-            two_electron_integrals[0],
+            one_electron_integrals.alpha.get('+-'),
+            two_electron_integrals.alpha.get('++--'),
             rdm1, rdm2
         )
 
@@ -489,14 +494,15 @@ class OrbitalOptimization():
         # for restricted cases only?
         return sum(
             (core_energy,
-             np.einsum("pq, pq", one_electron_integrals[0], rdm1),
-             0.5 * np.einsum("pqrs, pqrs", two_electron_integrals[0], rdm2))
+             np.einsum("pq, pq", one_electron_integrals.alpha.get('+-'), rdm1),
+             0.5 * np.einsum("pqrs, pqrs", two_electron_integrals.alpha.get('++--'), rdm2))
         ).real
+
 
     def get_transformed_qubit_hamiltonian(
             self,
             kappa: List
-    ) -> Tuple[float, Union[SparsePauliOp, PennyLaneOperatorType]]:
+    ) -> Tuple[float, Union[SparsePauliOp, PennyLaneOperator]]:
         """Sets up the qubit Hamiltonian in the transformed MO basis.
 
         Args:
@@ -517,19 +523,23 @@ class OrbitalOptimization():
         (k_matrix_transform_a,
          k_matrix_transform_b) = self.get_transformed_mos(kappa)
 
-        # get rotated qubit hamiltonian in MO basis
-        core_energy, qubit_op = self.qc2data.get_qubit_hamiltonian(
+        basis_transformer = BasisTransformer(
+            coefficients = ElectronicIntegrals.from_raw_integrals(
+                h1_a=k_matrix_transform_a, 
+                h1_b=k_matrix_transform_b
+            )
+        )
+        original_hamiltonian = deepcopy(self.hamiltonian_atomic_basis)
+        transformed_hamiltonian = basis_transformer.transform_hamiltonian(original_hamiltonian)
+
+        core_energy, active_space_hamiltonian = _get_active_space_hamiltonian(
             self.n_active_electrons,
             self.n_active_orbitals,
-            self.mapper,
-            format=self.format,
-            transform=True,
-            initial_es_problem=self.es_problem,
-            matrix_transform_a=k_matrix_transform_a,
-            matrix_transform_b=k_matrix_transform_b,
-            initial_basis='atomic',
-            final_basis='molecular'
+            initial_hamiltonian = transformed_hamiltonian
         )
+        
+        qubit_op = self.mapper.map(active_space_hamiltonian.second_q_op())        
+
         return core_energy, qubit_op
 
     def get_transformed_mos(self, kappa: List) -> Tuple[
@@ -612,29 +622,30 @@ class OrbitalOptimization():
             mo_coeff_b: Optional[np.ndarray]
     ) -> Tuple[float, List, List]:
         """Extracts activate space integrals in MO basis."""
-        (active_space_es_problem,
-         core_energy, _) = self.qc2data.get_fermionic_hamiltonian(
+
+
+        basis_transformer = BasisTransformer(
+            coefficients = ElectronicIntegrals.from_raw_integrals(
+                h1_a=mo_coeff_a, 
+                h1_b=mo_coeff_b
+            )
+        )
+        
+        # transform hamiltonian to the new  molecular basis
+        original_hamiltonian = deepcopy(self.hamiltonian_atomic_basis)
+        hamiltonian_molecular_basis = basis_transformer.transform_hamiltonian(original_hamiltonian)
+        
+
+        core_energy, active_space_hamiltonian = _get_active_space_hamiltonian(
             self.n_active_electrons,
             self.n_active_orbitals,
-            transform=True,
-            initial_es_problem=self.es_problem,
-            matrix_transform_a=mo_coeff_a,
-            matrix_transform_b=mo_coeff_b,
-            initial_basis='atomic',
-            final_basis='molecular'
+            initial_hamiltonian = hamiltonian_molecular_basis
         )
 
-        alpha = active_space_es_problem.hamiltonian.electronic_integrals.alpha
-        beta = active_space_es_problem.hamiltonian.electronic_integrals.beta
-        beta_alpha = (
-            active_space_es_problem.hamiltonian.electronic_integrals.beta_alpha
-        )
-
-        one_electron_integrals = [alpha['+-'].array, beta['+-'].array]
-        two_electron_integrals = [
-            alpha['++--'].array, beta_alpha['++--'].array, beta['++--'].array
-        ]
-        return core_energy, one_electron_integrals, two_electron_integrals
+        return (core_energy, 
+                active_space_hamiltonian.electronic_integrals.one_body, 
+                active_space_hamiltonian.electronic_integrals.two_body)
+    
 
     def _get_full_space_integrals(
             self,
@@ -642,21 +653,20 @@ class OrbitalOptimization():
             mo_coeff_b: Optional[np.ndarray]
     ) -> Tuple[List, List]:
         """Extracts full space one- and two-electron integrals in MO basis."""
-        (_, hamiltonian_MO_basis) = self.qc2data.get_transformed_hamiltonian(
-            initial_es_problem=self.es_problem,
-            matrix_transform_a=mo_coeff_a,
-            matrix_transform_b=mo_coeff_b,
-            initial_basis='atomic',
-            final_basis='molecular'
+        
+        basis_transformer = BasisTransformer(
+            coefficients = ElectronicIntegrals.from_raw_integrals(
+                h1_a=mo_coeff_a, 
+                h1_b=mo_coeff_b
+            )
         )
+        
+        # transform hamiltonian to the new  molecular basis 
+        original_hamiltonian = deepcopy(self.hamiltonian_atomic_basis)
+        hamiltonian_molecular_basis = basis_transformer.transform_hamiltonian(original_hamiltonian)
 
-        alpha = hamiltonian_MO_basis.electronic_integrals.alpha
-        beta = hamiltonian_MO_basis.electronic_integrals.beta
-        beta_alpha = hamiltonian_MO_basis.electronic_integrals.beta_alpha
-
-        one_electron_integrals = [alpha['+-'].array, beta['+-'].array]
-        two_electron_integrals = [
-            alpha['++--'].array, beta_alpha['++--'].array, beta['++--'].array
-        ]
-        core_energy = hamiltonian_MO_basis.nuclear_repulsion_energy
-        return core_energy, one_electron_integrals, two_electron_integrals
+        return (
+            hamiltonian_molecular_basis.constants['nuclear_repulsion_energy'],
+            hamiltonian_molecular_basis.electronic_integrals.one_body,
+            hamiltonian_molecular_basis.electronic_integrals.two_body,
+        )

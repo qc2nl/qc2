@@ -4,14 +4,16 @@ import pytest
 
 from ase.build import molecule
 
-from qc2.data import qc2Data
+from qc2.qc2_driver import QC2 as qc2Data
 from qc2.ase import PySCF
-from qc2.algorithms.utils import ActiveSpace
+from qc2.algorithms.second_q.active_space import ActiveSpace
+
 
 try:
     import pennylane as qml
     from pennylane import numpy as np
     from qc2.algorithms.pennylane import VQE
+    from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
 except ImportError:
     pytest.skip(
         "Skipping PennyLane tests...",
@@ -76,7 +78,7 @@ def test_initialization_with_ansatz():
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2
         ),
-        mapper="bk",
+        mapper=JordanWigner(),
         device="default.qubit",
     )
     assert isinstance(vqe, VQE)
@@ -92,8 +94,8 @@ def test_default_ansatz():
 def test_run_method(vqe):
     """Test main VQE workflow."""
     results = vqe.run()
-    assert isinstance(results.optimal_energy, float)
+    assert isinstance(results.optimal_energy, np.tensor)
     assert results.optimal_energy == pytest.approx(-1.1373015, 1e-6)
     assert all(num != 0 for num in results.optimal_params)
-    assert all(isinstance(num, float) for num in results.energy)
+    assert all(isinstance(num, np.tensor) for num in results.energy)
     assert all(isinstance(num, list) for num in results.parameters)

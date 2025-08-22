@@ -1,19 +1,21 @@
 """Module defining VQE algorithm for Qiskit-Nature."""
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Any
 import numpy as np
-from qiskit_nature.second_q.mappers import QubitMapper
 from qiskit_algorithms.minimum_eigensolvers import VQE as vqe_solver
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 from qiskit.circuit import QuantumCircuit
-from qc2.algorithms.base.vqe_base import VQEBASE
-from qc2.algorithms.algorithms_results import VQEResults
-from qc2.algorithms.utils.active_space import ActiveSpace
-from qc2.algorithms.utils.mappers import FermionicToQubitMapper
-from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
+from qc2.algorithms.base.qc2_algorithm_base_class import QC2BaseAlgorithm
+from qc2.algorithms.results import VQEResults
+from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.second_quantizer import SecondQuantizer
+from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz
+from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
+from qc2.qc2_driver import QC2
+from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 
 
-class VQE(VQEBASE):
+class VQE(QC2BaseAlgorithm):
     """
     Main class for the VQE algorithm with Qiskit-Nature.
 
@@ -39,19 +41,19 @@ class VQE(VQEBASE):
 
     def __init__(
         self,
-        qc2data=None,
-        ansatz=None,
-        active_space=None,
-        mapper=None,
-        estimator=None,
-        optimizer=None,
-        init_params=None,
-        verbose=0
+        qc2data: QC2 | None = None,
+        ansatz: QuantumCircuit | None = None,
+        active_space: ActiveSpace | None = None,
+        mapper: QiskitBaseMapper | None = None,
+        estimator: Estimator | None = None,
+        optimizer: Any = None,
+        init_params: List | None = None,
+        verbose: int = 0
     ):
         """Initializes the VQE class.
 
         Args:
-            qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`.
+            qc2data (qc2Data): An instance of :class:`~qc2.qc2_driver.QC2`.
             ansatz (None, str, QuantmumCircuit): The ansatz for the VQE algorithm.
                 Defaults to :class:`qiskit.UCCSD`.
             active_space (ActiveSpace): Describes the active space for quantum
@@ -72,9 +74,9 @@ class VQE(VQEBASE):
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.qiskit import VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -94,16 +96,19 @@ class VQE(VQEBASE):
         >>> results = qc2data.algorithm.run()
         """
 
-        super().__init__(qc2data, "qiskit")
+        self.qc2data = qc2data
+        self.second_quantizer = SecondQuantizer(qc2data)
+        self.format = "qiskit"
 
         # init active space and mapper
         self.active_space = (
             ActiveSpace((2, 2), 2) if active_space is None else active_space
         )
+
         self.mapper = (
-            FermionicToQubitMapper.from_string('jw')()
+            JordanWigner()
             if mapper is None
-            else FermionicToQubitMapper.from_string(mapper)()
+            else mapper
         )
 
         # init circuit
@@ -130,7 +135,7 @@ class VQE(VQEBASE):
     def _get_default_ansatz(
         ansatz: Union[str, None],
         active_space: ActiveSpace,
-        mapper: QubitMapper,
+        mapper: QiskitBaseMapper,
     ) -> QuantumCircuit:
         """Set up the default UCC ansatz from a Hartree Fock reference state.
 
@@ -147,8 +152,7 @@ class VQE(VQEBASE):
             num_particles=active_space.num_active_electrons,
             mapper=mapper,
             ansatz_type=ansatz,
-            mol_data=None,
-            scf=None
+            mol=None,
         )
 
     @staticmethod
@@ -181,9 +185,9 @@ class VQE(VQEBASE):
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.qiskit import VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

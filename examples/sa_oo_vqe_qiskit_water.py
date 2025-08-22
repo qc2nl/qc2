@@ -3,11 +3,11 @@ from ase.build import molecule
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 
-from qc2.data import qc2Data
+from qc2.qc2_driver import QC2 as qc2Data
 from qc2.ase import PySCF
 
 from qc2.algorithms.qiskit import SA_OO_VQE
-from qc2.algorithms.utils import ActiveSpace
+from qc2.algorithms.second_q.active_space import ActiveSpace
 
 # instantiate qc2Data class
 qc2data = qc2Data(

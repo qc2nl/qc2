@@ -7,14 +7,10 @@ Notes:
 """
 
 import subprocess
-
-from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
-
-
 from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
-from qc2.data import qc2Data
+from qc2.qc2_driver import QC2 as qc2Data
 from qc2.algorithms.qiskit import VQE
-from qc2.algorithms.utils import ActiveSpace
+from qc2.algorithms.second_q.active_space import ActiveSpace
 
 
 def clean_up_ROSE_files():

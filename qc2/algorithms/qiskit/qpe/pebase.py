@@ -4,23 +4,28 @@ from scipy.linalg import expm
 from qiskit import QuantumCircuit
 from qiskit.primitives import Sampler
 from qiskit.circuit.library import UnitaryGate
-from qiskit_nature.second_q.circuit.library import HartreeFock
-from qc2.algorithms.base.base_algorithm import BaseAlgorithm
-from qc2.algorithms.utils.mappers import FermionicToQubitMapper
-from qc2.algorithms.utils.active_space import ActiveSpace
-from qiskit_nature.second_q.mappers import QubitMapper
-from qc2.algorithms.algorithms_results import QPEResults
 
-class PEBase(BaseAlgorithm):
+from qc2.algorithms.base.qc2_algorithm_base_class import QC2BaseAlgorithm
+
+from qc2.algorithms.results import QPEResults
+from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
+from qc2.qc2_driver import QC2
+from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.second_quantizer import SecondQuantizer
+from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
+from qc2.algorithms.qiskit.ansatz.hatree_fock import HartreeFock
+
+class PEBase(QC2BaseAlgorithm):
     def __init__(self, 
-                 qc2data=None, 
-                 active_space=None, 
-                 mapper=None, 
-                 sampler=None, 
-                 reference_state=None,  
-                 verbose=0):
+                 qc2data: QC2 | None = None, 
+                 active_space: ActiveSpace | None = None, 
+                 mapper: QiskitBaseMapper | None = None, 
+                 sampler: Sampler | None = None, 
+                 reference_state: QuantumCircuit | None = None,  
+                 verbose: int = 0):
         
         self.qc2data = qc2data
+        self.second_quantizer = SecondQuantizer(qc2data)
         self.format = "qiskit"
         self.verbose = verbose
         self.solver = None 
@@ -31,11 +36,10 @@ class PEBase(BaseAlgorithm):
         )
 
         self.mapper = (
-            FermionicToQubitMapper.from_string('jw')()
+            JordanWigner()
             if mapper is None
-            else FermionicToQubitMapper.from_string(mapper)()
+            else mapper
         )
-
         self.qubits = 2 * self.active_space.num_active_spatial_orbitals
         self.electrons = sum(self.active_space.num_active_electrons)
 
@@ -50,7 +54,7 @@ class PEBase(BaseAlgorithm):
 
     @staticmethod
     def _get_default_reference(
-        active_space: ActiveSpace, mapper: QubitMapper
+        active_space: ActiveSpace, mapper: QiskitBaseMapper
     ) -> QuantumCircuit:
         """Set up the default reference state circuit based on Hartree Fock.
 
@@ -67,16 +71,6 @@ class PEBase(BaseAlgorithm):
             mapper,
         )
     
-    def _init_qubit_hamiltonian(self):
-        if self.qc2data is None:
-            raise ValueError("qc2data attribute set incorrectly in QPE.")
-
-        self.e_core, self.qubit_op = self.qc2data.get_qubit_hamiltonian(
-            self.active_space.num_active_electrons,
-            self.active_space.num_active_spatial_orbitals,
-            self.mapper,
-            format=self.format,
-        )
     @staticmethod
     def _phase_to_energy(phase: float) -> float:
         """
@@ -107,9 +101,9 @@ class PEBase(BaseAlgorithm):
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.qiskit import QPE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

@@ -4,23 +4,30 @@ import pennylane as qml
 from pennylane import numpy as np
 from pennylane import QNode
 from pennylane.operation import Operator
-from qc2.algorithms.utils.active_space import ActiveSpace
-from qc2.algorithms.utils.mappers import FermionicToQubitMapper
-from qc2.algorithms.algorithms_results import QPEResults
-from qc2.algorithms.base.base_algorithm import BaseAlgorithm
+from qc2.algorithms.results import QPEResults
+from qc2.algorithms.base.qc2_algorithm_base_class import QC2BaseAlgorithm
+from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
 
-class PEBase(BaseAlgorithm):
+
+from qc2.qc2_driver import QC2
+from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.second_quantizer import SecondQuantizer
+from qc2.algorithms.pennylane.qubit_mappers.base_mapper import PennylaneBaseMapper
+
+
+class PEBase(QC2BaseAlgorithm):
     def __init__(
         self,
-        qc2data=None,
-        active_space=None,
-        mapper=None,
-        device=None,
-        reference_state=None,
-        verbose=0
+        qc2data: QC2 | None = None,
+        active_space: ActiveSpace | None = None,
+        mapper: PennylaneBaseMapper | None = None,
+        device: str | None = None,
+        reference_state: np.ndarray | None = None, 
+        verbose: int = 0
     ):
         
         self.qc2data = qc2data
+        self.second_quantizer = SecondQuantizer(qc2data)
         self.format = "pennylane"
         self.verbose = verbose
         self.circuit = None
@@ -32,10 +39,10 @@ class PEBase(BaseAlgorithm):
         )
 
         self.device = "default.qubit" if device is None else device
+
+
         self.mapper = (
-            FermionicToQubitMapper.from_string('jw')()
-            if mapper is None
-            else FermionicToQubitMapper.from_string(mapper)()
+            JordanWigner() if mapper is None else mapper
         )
 
         self.qubits = 2 * self.active_space.num_active_spatial_orbitals
@@ -59,33 +66,6 @@ class PEBase(BaseAlgorithm):
             np.ndarray: Reference state vector.
         """
         return qml.qchem.hf_state(electrons, qubits)
-
-
-    def _init_qubit_hamiltonian(self):
-        """
-        Initializes the qubit Hamiltonian for the quantum phase estimation algorithm.
-
-        This method retrieves the qubit Hamiltonian representation of the target 
-        molecule from the `qc2data` object. It requires prior initialization of 
-        `qc2data` with the molecular data.
-
-        Raises:
-            ValueError: If `qc2data` is not set correctly.
-
-        Attributes:
-            e_core (float): The core energy of the system.
-            qubit_op (Operator): The qubit operator representing the Hamiltonian.
-        """
-
-        if self.qc2data is None:
-            raise ValueError("qc2data attribute set incorrectly in QPE.")
-
-        self.e_core, self.qubit_op = self.qc2data.get_qubit_hamiltonian(
-            self.active_space.num_active_electrons,
-            self.active_space.num_active_spatial_orbitals,
-            self.mapper,
-            format=self.format,
-        )
 
     @staticmethod
     def _phase_to_energy(phase: float) -> float:
@@ -169,9 +149,9 @@ class PEBase(BaseAlgorithm):
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.pennylane import QPE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

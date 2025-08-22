@@ -1,12 +1,6 @@
 """Base Algo package."""
-from .base_algorithm import BaseAlgorithm
-from .base_algorithm_results import BaseAlgorithmResults
-from .vqe_base import VQEBASE
-from .vqe_base_results import VQEBASEResults
+from .qc2_algorithm_base_class import QC2BaseAlgorithm
 
 __all__ = [
-    "BaseAlgorithm",
-    "BaseAlgorithmResults",
-    "VQEBASE",
-    "VQEBASEResults"
+    "QC2BaseAlgorithm",
 ]

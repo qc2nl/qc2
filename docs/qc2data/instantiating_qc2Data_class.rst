@@ -10,7 +10,7 @@ We start with a very simple example:
     :emphasize-lines: 9-11
 
     from ase.build import molecule
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
 
     # set ASE Atoms object
     mol = molecule('H2')
@@ -29,14 +29,14 @@ In the code snippet above, ``schema`` and ``filename`` are used to specify the f
 These arguments will later be passed to a chosen qc2-ASE calculator, as discussed in :ref:`save_data_ase_sub`.
 Similarly to :attr:`~qc2.ase.qc2_ase_base_class.BaseQc2ASECalculator.schema_format`, the available options for the ``schema`` argument are ``qcschema`` or ``fcidump``, which determine whether the filename should have the extensions `*.hdf5` (`*.h5`) or `*.fcidump`, respectively.
 
-Here is an example of how to instantiate :class:`~qc2.data.data.qc2Data` to save data according to ``fcidump`` format:
+Here is an example of how to instantiate :class:`~qc2.qc2_driver.QC2` to save data according to ``fcidump`` format:
 
 .. code-block:: python
     :linenos:
     :emphasize-lines: 9-11
 
     from ase.build import molecule
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
 
     # instantiate ASE Atoms object
     mol = molecule('H2')

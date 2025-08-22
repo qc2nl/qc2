@@ -1,6 +1,7 @@
 """Module containing general helper functions."""
 from typing import Union, List, Optional
 import numpy as np
+from enum import Enum
 
 
 def vector_to_skew_symmetric(

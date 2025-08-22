@@ -1,10 +1,14 @@
 """Module defining oo-VQE algorithm for Qiskit-Nature."""
-from typing import List, Union
+from typing import List, Union, Any
 from qiskit.circuit import QuantumCircuit
-from qiskit_nature.second_q.mappers import QubitMapper
+from qiskit.primitives import BaseEstimator
+
 from qc2.algorithms.qiskit.vqe.sa_oo_vqe import SA_OO_VQE
-from qc2.algorithms.utils.active_space import ActiveSpace
-from qc2.ansatz.qiskit.generate_ansatz import generate_ansatz
+from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz
+
+from qc2.qc2_driver import QC2
+from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
 
 class OO_VQE(SA_OO_VQE):
     """Main class for orbital-optimized VQE with Qiskit-Nature.
@@ -33,23 +37,23 @@ class OO_VQE(SA_OO_VQE):
     """
     def __init__(
         self,
-        qc2data=None,
-        ansatz=None,
-        active_space=None,
-        mapper=None,
-        estimator=None,
-        optimizer=None,
-        init_circuit_params=None,
-        init_orbital_params=None,
-        freeze_active=False,
-        max_iterations=50,
-        conv_tol=1e-7,
-        verbose=0
+        qc2data : QC2 | None = None,
+        ansatz: QuantumCircuit | None = None,
+        active_space: ActiveSpace | None = None,
+        mapper: QiskitBaseMapper | None = None,
+        estimator: BaseEstimator | None = None,
+        optimizer: Any = None,
+        init_circuit_params:List | None = None,
+        init_orbital_params:List | None = None,
+        freeze_active: bool = False,
+        max_iterations: int = 50,
+        conv_tol: float = 1e-7,
+        verbose: int = 0
     ):
         """Initializes the oo-VQE class.
 
         Args:
-            qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`.
+            qc2data (qc2Data): An instance of :class:`~qc2.qc2_driver.QC2`.
             ansatz (UCC): The ansatz for the VQE algorithm.
                 Defaults to :class:`qiskit.UCCSD`.
             active_space (ActiveSpace): Instance of
@@ -79,9 +83,9 @@ class OO_VQE(SA_OO_VQE):
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.qiskit import OO_VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -120,7 +124,7 @@ class OO_VQE(SA_OO_VQE):
     def _get_default_ansatzes(
         ansatz: Union[str, None],
         active_space: ActiveSpace,
-        mapper: QubitMapper
+        mapper: QiskitBaseMapper
     ) -> List[QuantumCircuit]:
         """Set up the default UCC ansatz from a Hartree Fock reference state.
 
@@ -137,7 +141,5 @@ class OO_VQE(SA_OO_VQE):
             num_spatial_orbitals=active_space.num_active_spatial_orbitals,
             num_particles=active_space.num_active_electrons,
             mapper=mapper,
-            ansatz_type=ansatz,
-            mol_data=None,
-            scf=None
+            ansatz_type=ansatz
         )]

@@ -1,16 +1,19 @@
 """Module defining VQE algorithm for PennyLane."""
-from typing import Callable
+from typing import Callable, List, Any
 import pennylane as qml
 from pennylane import numpy as np
 from pennylane import QNode
 from pennylane.operation import Operator
-from qc2.algorithms.utils.active_space import ActiveSpace
-from qc2.algorithms.utils.mappers import FermionicToQubitMapper
-from qc2.algorithms.base.vqe_base import VQEBASE
-from qc2.algorithms.algorithms_results import VQEResults
-from qc2.ansatz.pennylane.generate_ansatz import generate_ansatz
+from qc2.algorithms.base.qc2_algorithm_base_class import QC2BaseAlgorithm
+from qc2.algorithms.results import VQEResults
+from qc2.algorithms.pennylane.ansatz.generate_ansatz import generate_ansatz
+from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
+from qc2.qc2_driver import QC2
+from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.second_quantizer import SecondQuantizer
+from qc2.algorithms.pennylane.qubit_mappers.base_mapper import PennylaneBaseMapper
 
-class VQE(VQEBASE):
+class VQE(QC2BaseAlgorithm):
     """
     Main class for the VQE algorithm with PennyLane.
 
@@ -23,7 +26,7 @@ class VQE(VQEBASE):
         active_space (ActiveSpace): Instance of
             :class:`~qc2.algorithm.utils.activate_space.ActiveSpace`.
             Defaults to ``ActiveSpace((2, 2), 2)``.
-        mapper (QubitMapper): Strategy for fermionic-to-qubit mapping.
+        mapper (BaseMapper): Strategy for fermionic-to-qubit mapping.
             Defaults to ``JordanWignerMapper``.
         device (qml.device): Device for estimating the expectation value.
             Defaults to ``default.qubit``.
@@ -42,29 +45,28 @@ class VQE(VQEBASE):
 
     def __init__(
         self,
-        qc2data=None,
-        ansatz=None,
-        active_space=None,
-        mapper=None,
-        device=None,
-        optimizer=None,
-        init_params=None,
-        max_iterations=50,
-        conv_tol=1e-7,
-        verbose=0
+        qc2data: QC2 | None = None,
+        ansatz: Callable | None = None,
+        active_space: ActiveSpace | None = None,
+        mapper: PennylaneBaseMapper | None = None,
+        device: str | None =None,
+        optimizer: Any = None,
+        init_params: List | None = None,
+        max_iterations: int = 50,
+        conv_tol: float = 1e-7,
+        verbose: int = 0
     ):
         """Initializes the VQE class.
 
         Args:
-            qc2data (qc2Data): An instance of :class:`~qc2.data.data.qc2Data`.
+            qc2data (qc2Data): An instance of :class:`~qc2.qc2_driver.QC2`.
             ansatz (Callable): The ansatz for the VQE algorithm.
                 Defaults to ``qml.UCCSD``.
             active_space (ActiveSpace): Instance of
                 :class:`~qc2.algorithm.utils.active_space.ActiveSpace`.
                 Defaults to ``ActiveSpace((2, 2), 2)``.
-            mapper (str): Strategy for fermionic-to-qubit mapping.
-                Common options are ``jw`` for ``JordanWignerMapper``
-                or "bk" for ``BravyiKitaevMapper``. Defaults to ``jw``.
+            mapper (BaseMapper): Strategy for fermionic-to-qubit mapping.
+                 Defaults to ``JordanWigner``.
             device (qml.device): Device for estimating the expectation value.
                 Defaults to ``default.qubit``.
             optimizer (qml.optimizer): Optimization routine for circuit
@@ -82,9 +84,9 @@ class VQE(VQEBASE):
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.pennylane import VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>
@@ -103,7 +105,9 @@ class VQE(VQEBASE):
         ... )
         >>> results = qc2data.algorithm.run()
         """
-        super().__init__(qc2data, "pennylane")
+        self.qc2data = qc2data
+        self.second_quantizer = SecondQuantizer(self.qc2data)
+        self.format = "pennylane"
 
         # init active space and mapper
         self.active_space = (
@@ -112,11 +116,11 @@ class VQE(VQEBASE):
 
         # init circuit
         self.device = "default.qubit" if device is None else device
+
         self.mapper = (
-            FermionicToQubitMapper.from_string('jw')()
-            if mapper is None
-            else FermionicToQubitMapper.from_string(mapper)()
+            JordanWigner() if mapper is None else mapper
         )
+
         self.qubits = 2 * self.active_space.num_active_spatial_orbitals
         self.electrons = sum(self.active_space.num_active_electrons)
         self.optimizer = (
@@ -224,9 +228,9 @@ class VQE(VQEBASE):
 
         >>> from ase.build import molecule
         >>> from qc2.ase import PySCF
-        >>> from qc2.data import qc2Data
+        >>> from qc2.qc2_driver import QC2 as qc2Data
         >>> from qc2.algorithms.pennylane import VQE
-        >>> from qc2.algorithms.utils import ActiveSpace
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
         >>>
         >>> mol = molecule('H2O')
         >>>

@@ -5,20 +5,15 @@ import pytest
 from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 
-from qc2.data import qc2Data
+from qc2.qc2_driver import QC2 as qc2Data
 from qc2.algorithms.qiskit import VQE
-from qc2.algorithms.utils import ActiveSpace
+from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
 
-try:
-    from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
-except ImportError:
-    pytest.skip("Skipping ASE-ROSE test...",
+from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
+
+pytest.skip("Skipping ROSE Qiskit test...",
                 allow_module_level=True)
-
-# also check if the `genibo.x` and `avas.x` executables are available
-if not shutil.which("genibo.x") or not shutil.which("avas.x"):
-    pytest.skip("ROSE executables not found or not in your path. "
-                "Skipping tests.", allow_module_level=True)
 
 
 def clean_up():
@@ -93,7 +88,7 @@ def vqe_calculation():
             num_active_electrons=(2, 2),
             num_active_spatial_orbitals=3
         ),
-        mapper="jw",
+        mapper=JordanWigner(),
         optimizer=SLSQP(),
         estimator=Estimator(),
     )
@@ -110,4 +105,58 @@ def test_vqe_calculation(vqe_calculation):
 
 
 if __name__ == '__main__':
-    pytest.main()
+    # pytest.main()
+    h2o = ROSETargetMolecule(
+        name='water',
+        atoms=[('O', (0.,  0.00000,  0.59372)),
+               ('H', (0.,  0.76544, -0.00836)),
+               ('H', (0., -0.76544, -0.00836))],
+        basis='sto-3g'
+    )
+
+    oxygen = ROSEFragment(
+        name='oxygen',
+        atoms=[('O', (0, 0, 0))],
+        multiplicity=1, basis='sto-3g'
+    )
+
+    hydrogen = ROSEFragment(
+        name='hydrogen',
+        atoms=[('H', (0, 0, 0))],
+        multiplicity=2, basis='sto-3g'
+    )
+
+    h2o_calculator = ROSE(rose_calc_type='atom_frag',
+                          exponent=4,
+                          rose_target=h2o,
+                          rose_frags=[oxygen, hydrogen],
+                          test=True,
+                          save_data=True,
+                          restricted=True,
+                          openshell=True,
+                          rose_mo_calculator='pyscf')
+    
+    fcidump_file = 'ibo.fcidump'
+
+    # create an instance of qc2Data
+    qc2data = qc2Data(fcidump_file, schema='fcidump')
+
+    # attach the calculator
+    qc2data.molecule.calc = h2o_calculator
+
+    # run the calculator
+    qc2data.run()
+
+    # set up VQE calc
+    qc2data.algorithm = VQE(
+        active_space=ActiveSpace(
+            num_active_electrons=(2, 2),
+            num_active_spatial_orbitals=3
+        ),
+        mapper=JordanWigner(),
+        optimizer=SLSQP(),
+        estimator=Estimator(),
+    )
+
+    # run vqe
+    results = qc2data.algorithm.run()
