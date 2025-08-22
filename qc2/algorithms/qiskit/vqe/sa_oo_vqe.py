@@ -18,6 +18,8 @@ from qc2.algorithms.utils.orbital_optimization import OrbitalOptimization
 from qc2.algorithms.qiskit.ansatz.state_resolution import StateResolution
 from qc2.algorithms.qiskit.ansatz.generate_ansatz import generate_ansatz
 
+from time import time
+
 class SA_OO_VQE(VQE):
     """Main class for state-averaged orbital-optimized VQE with Qiskit-Nature.
 
@@ -224,18 +226,26 @@ class SA_OO_VQE(VQE):
         self._print_iteration_information(0, energy_init, self.verbose)
         
         for n in range(self.max_iterations):
+            t0 = time()
             # optimize circuit parameters with fixed kappa
             theta, _ = self._circuit_optimization(theta, kappa)
+            print('circuit optimization: ', time()-t0)
 
             # optimize orbital parameters with fixed theta from previous run
+            t0 = time()
             kappa, _ = self._orbital_opimization(theta, kappa)
+            print('orbital optimization: ', time()-t0)
 
             # calculate final energy with all optimized parameters
+            t0 = time()
             energy = self._get_energy_from_parameters(theta, kappa)
+            print('energy calculation: ', time()-t0)
 
             # update lists with intermediate data
+            t0 = time()
             results.update(theta, kappa, energy)
-            
+            print('update: ', time()-t0)
+
             # print opt status
             self._print_iteration_information(n, energy, self.verbose)
                 
@@ -375,8 +385,14 @@ class SA_OO_VQE(VQE):
         out = [0.0] * nparam
         total_cost = 0.0
         for qc, weight in zip(self.ansatz, self.state_weights):
+            t0 = time()
             rdm1, rdm2 = self._get_rdms(qc, theta)
+            print('\t get rdms: ', time() - t0)
+
+            t0 = time()
             new_kappas, cost = self.oo_problem.orbital_optimization(rdm1, rdm2, kappa)
+            print('\t orbital opt: ', time() - t0)
+
             total_cost += weight * cost
             out = [out[i] + weight * new_kappas[i] for i in range(nparam)]
         return out, total_cost
