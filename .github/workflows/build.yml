@@ -74,22 +74,19 @@ jobs:
         run: |
           conda activate test
           conda install -c conda-forge cmake
-          conda install conda-forge::blas
-          conda install conda-forge::lapack
           if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
             conda install -c conda-forge gfortran clang clangxx
+            conda install conda-forge::blas
+            conda install conda-forge::lapack
           else
             conda install -c conda-forge gfortran gcc gxx
+            sudo apt-get install libblas-dev liblapack-dev
           fi
       - name: install HDF5 libraries
         shell: bash -l {0}
         run: |
           conda activate test
-          if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
-            conda install -c conda-forge hdf5
-          else 
-            conda install -c anaconda hdf5
-          fi
+          conda install -c conda-forge hdf5
       - name: ROSE install for tests
         shell: bash -l {0}
         run: |
