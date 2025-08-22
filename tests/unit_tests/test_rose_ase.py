@@ -14,9 +14,9 @@ from qc2.data.fcidump import FCIDump
 from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
 
 # also check if the `genibo.x` and `avas.x` executables are available
-if not shutil.which("genibo.x") or not shutil.which("avas.x"):
-    pytest.skip("ROSE executables not found or not in your path. "
-                "Skipping tests.", allow_module_level=True)
+# if not shutil.which("genibo.x") or not shutil.which("avas.x"):
+#     pytest.skip("ROSE executables not found or not in your path. "
+#                 "Skipping tests.", allow_module_level=True)
 
 
 def clean_up():

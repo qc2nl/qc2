@@ -32,8 +32,8 @@ def iqpe(qc2data):
         num_active_electrons=(1, 1),
         num_active_spatial_orbitals=2
     )
-    qpe = IQPE(qc2data=qc2data, active_space=active_space)
-    yield qpe
+    iqpe = IQPE(qc2data=qc2data, active_space=active_space)
+    yield iqpe
 
 
 @pytest.fixture
