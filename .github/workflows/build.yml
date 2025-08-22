@@ -85,7 +85,11 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate test
-          conda install -c conda-forge hdf5
+          if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
+            conda install -c conda-forge hdf5
+          else 
+            conda install -c anaconda hdf5
+          fi
       - name: ROSE install for tests
         shell: bash -l {0}
         run: |
@@ -100,7 +104,7 @@ jobs:
           cmake --build build
           cmake --install build
           echo `pwd`/bin >> $GITHUB_PATH
-          pip install  --user -e ./ase_rose
+          pip install ./ase_rose
           cd ..
       #- name: DIRAC install for tests
       #  shell: bash -l {0}
