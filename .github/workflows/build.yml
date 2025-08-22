@@ -73,7 +73,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate test
-          conda install -c anaconda cmake
+          conda install -c conda-forge cmake
           conda install conda-forge::blas
           conda install conda-forge::lapack
           if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
