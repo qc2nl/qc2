@@ -96,7 +96,7 @@ jobs:
           if [[ ${{ matrix.os }} == 'macos-latest' ]]; then
             cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBLAS_LIBRARIES=$CONDA_PREFIX/lib/libblas.dylib -DLAPACK_LIBRARIES=$CONDA_PREFIX/lib/liblapack.dylib
           else
-            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBLAS_LIBRARIES=$CONDA_PREFIX/lib/libblas.so -DLAPACK_LIBRARIES=$CONDA_PREFIX/lib/liblapack.so
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX
           fi
           cmake --build build
           cmake --install build
