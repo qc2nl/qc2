@@ -100,7 +100,7 @@ jobs:
           cmake --build build
           cmake --install build
           echo `pwd`/bin >> $GITHUB_PATH
-          pip install ./ase_rose
+          pip install  --user -e ./ase_rose
           cd ..
       #- name: DIRAC install for tests
       #  shell: bash -l {0}
