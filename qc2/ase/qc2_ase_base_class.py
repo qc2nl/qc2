@@ -8,6 +8,7 @@ from ..data.qcschema import (
     QCSchema, QCTopology, QCProperties,
     QCModel, QCProvenance, QCWavefunction
 )
+from ..data.fcidump import FCIDump
 
 class BaseQc2ASECalculator(ABC):
     """Abstract base class for all qc2 ASE calculators."""
@@ -17,7 +18,7 @@ class BaseQc2ASECalculator(ABC):
         Astract base class for all qc2 ASE calculators.
         """
         # format in which to read/write qchem data
-        self._implemented_formats = ["qcschema"]
+        self._implemented_formats = ["qcschema", "fcidump"]
         self._schema_format = None
         self.schema_format = "qcschema"
 
@@ -49,6 +50,9 @@ class BaseQc2ASECalculator(ABC):
         # check if the file has a valid format
         if (self._schema_format == "qcschema" and not h5py.is_hdf5(datafile)):
             raise ValueError(f"{datafile} is not an hdf5 file.")
+
+        if self._schema_format == "fcidump":
+            return FCIDump.from_file(datafile)
 
         with h5py.File(datafile, 'r') as file:
             return QCSchema._from_hdf5_group(file)

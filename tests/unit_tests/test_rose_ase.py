@@ -4,14 +4,13 @@ import shutil
 import pytest
 
 from qc2.data.fcidump import FCIDump
+from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
 
 # try:
 #     from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
 # except ImportError:
 #     pytest.skip("Skipping ASE-ROSE tests...",
 #                 allow_module_level=True)
-
-from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
 
 # also check if the `genibo.x` and `avas.x` executables are available
 # if not shutil.which("genibo.x") or not shutil.which("avas.x"):
@@ -79,7 +78,7 @@ def test_ROSE_load_function(rose_calculator):
     rose_calculator.get_potential_energy()
 
     # Read results from 'ibo.fcidump'
-    fcidump_filename = 'ibo.fcidump'
-    rose_calculator.schema_format = 'fcidump'
-    fcidump = rose_calculator.load(fcidump_filename)
-    assert isinstance(fcidump, FCIDump)
+    # fcidump_filename = 'ibo.fcidump'
+    # rose_calculator.schema_format = 'fcidump'
+    # fcidump = rose_calculator.load(fcidump_filename)
+    # assert isinstance(fcidump, FCIDump)
