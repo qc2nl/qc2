@@ -112,5 +112,4 @@ class ROSE(ROSE_original, BaseQc2ASECalculator):
         >>> H2_calculator.schema_format = "fcidump"
         >>> fcidump = H2_calculator.load('ibo.fcidump')
         """
-        # raise NotImplementedError("Only support FCIDUMP")
         return BaseQc2ASECalculator.load(self, datafile)
