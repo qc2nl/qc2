@@ -3,12 +3,14 @@ import glob
 import pytest
 from ase.build import molecule
 from qc2.ase import PySCF
-from qc2.data import qc2Data
-from qc2.algorithms.utils import ActiveSpace
+from qc2.qc2_driver import QC2 as qc2Data
+from qc2.algorithms.second_q.active_space import ActiveSpace
+
 
 try:
     import pennylane as qml
     from qc2.algorithms.pennylane import VQE
+    from qc2.algorithms.pennylane.qubit_mappers.jordan_wigner import JordanWigner
 except ImportError:
     pytest.skip(
         "Skipping PennyLane tests...",
@@ -53,7 +55,7 @@ def vqe_calculation():
             num_active_electrons=(1, 1),
             num_active_spatial_orbitals=2
         ),
-        mapper="jw",
+        mapper=JordanWigner(),
         optimizer=qml.GradientDescentOptimizer(stepsize=0.5)
     )
 

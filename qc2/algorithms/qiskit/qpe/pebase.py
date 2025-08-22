@@ -1,0 +1,150 @@
+"""Module defining the QPE algorithm for qiskit"""
+import numpy as np
+from scipy.linalg import expm
+from qiskit import QuantumCircuit
+from qiskit.primitives import Sampler
+from qiskit.circuit.library import UnitaryGate
+
+from qc2.algorithms.base.qc2_algorithm_base_class import QC2BaseAlgorithm
+
+from qc2.algorithms.results import QPEResults
+from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
+from qc2.qc2_driver import QC2
+from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.second_q.second_quantizer import SecondQuantizer
+from qc2.algorithms.qiskit.qubit_mappers.base_mapper import QiskitBaseMapper
+from qc2.algorithms.qiskit.ansatz.hatree_fock import HartreeFock
+
+class PEBase(QC2BaseAlgorithm):
+    def __init__(self, 
+                 qc2data: QC2 | None = None, 
+                 active_space: ActiveSpace | None = None, 
+                 mapper: QiskitBaseMapper | None = None, 
+                 sampler: Sampler | None = None, 
+                 reference_state: QuantumCircuit | None = None,  
+                 verbose: int = 0):
+        
+        self.qc2data = qc2data
+        self.second_quantizer = SecondQuantizer(qc2data)
+        self.format = "qiskit"
+        self.verbose = verbose
+        self.solver = None 
+
+        # init active space and mapper
+        self.active_space = (
+            ActiveSpace((2, 2), 2) if active_space is None else active_space
+        )
+
+        self.mapper = (
+            JordanWigner()
+            if mapper is None
+            else mapper
+        )
+        self.qubits = 2 * self.active_space.num_active_spatial_orbitals
+        self.electrons = sum(self.active_space.num_active_electrons)
+
+        self.reference_state = (
+            self._get_default_reference(self.active_space, self.mapper)
+            if reference_state is None
+            else reference_state
+        )
+
+        self.sampler = Sampler() if sampler is None else sampler
+
+
+    @staticmethod
+    def _get_default_reference(
+        active_space: ActiveSpace, mapper: QiskitBaseMapper
+    ) -> QuantumCircuit:
+        """Set up the default reference state circuit based on Hartree Fock.
+
+        Args:
+            active_space (ActiveSpace): description of the active space.
+            mapper (mapper): mapper class instance.
+
+        Returns:
+            QuantumCircuit: Hartree-Fock circuit as the reference state.
+        """
+        return HartreeFock(
+            active_space.num_active_spatial_orbitals,
+            active_space.num_active_electrons,
+            mapper,
+        )
+    
+    @staticmethod
+    def _phase_to_energy(phase: float) -> float:
+        """
+        Convert a phase from 0 to 1 to an energy from -pi to pi.
+
+        Args:
+            phase (float): The phase to convert.
+
+        Returns:
+            float: The energy corresponding to the given phase.
+        """
+        return (phase - 1) * 2*np.pi
+
+    def run(self) -> QPEResults: 
+        """
+        Executes the Quantum Phase Estimation (QPE) algorithm to estimate the energy
+        of the electronic ground state of a molecule.
+
+        Initializes the qubit Hamiltonian, constructs the unitary matrix, runs the
+        QPE algorithm, and calculates the phase and energy. The results are
+        encapsulated in a `QPEResults` object.
+
+        Returns:
+            QPEResults: An instance of the `QPEResults` class containing the optimal
+            energy, eigenvalue, and phase obtained from the QPE algorithm.
+
+        **Example**
+
+        >>> from ase.build import molecule
+        >>> from qc2.ase import PySCF
+        >>> from qc2.qc2_driver import QC2 as qc2Data
+        >>> from qc2.algorithms.qiskit import QPE
+        >>> from qc2.algorithms.second_q.active_space import ActiveSpace
+        >>>
+        >>> mol = molecule('H2O')
+        >>>
+        >>> hdf5_file = 'h2o.hdf5'
+        >>> qc2data = qc2Data(hdf5_file, mol, schema='qcschema')
+        >>> qc2data.molecule.calc = PySCF()
+        >>> qc2data.run()
+        >>> qc2data.algorithm = QPE(
+        ...     active_space=ActiveSpace(
+        ...         num_active_electrons=(2, 2),
+        ...         num_active_spatial_orbitals=4
+        ...     ),
+        ...     mapper='parity',
+        ...     num_evaluation_qubits=9
+        ... )
+        >>> results = qc2data.algorithm.run()
+
+        """
+         # create Hamiltonian
+        self._init_qubit_hamiltonian()
+
+        # create the unitary matrix from the qubit operator
+        unitary = UnitaryGate(expm(1j*self.qubit_op.to_matrix()))
+
+        # run QPE algorithm  
+        qiskit_res = self.solver.estimate(unitary, self.reference_state)
+
+        # get the energy
+        energy = self._phase_to_energy(qiskit_res.phase)
+
+        # instantiate VQEResults
+        results = QPEResults()
+        results.optimal_energy = energy + self.e_core
+        results.eigenvalue = energy
+        results.phase = qiskit_res.phase
+
+        print(f"=== QISKIT {self.__class__.__name__} RESULTS ===")
+        print("* Electronic ground state "
+              f"energy (Hartree): {results.eigenvalue}")
+        print(f"* Inactive core energy (Hartree): {self.e_core}")
+        print(">>> Total ground state "
+              f"energy (Hartree): {results.optimal_energy}\n")
+
+        return results

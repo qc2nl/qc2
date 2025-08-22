@@ -15,7 +15,7 @@ oo-VQE
     The expectation values of :math:`H` are minimized via a classical two-step process; NR stands for Newton-Raphson.
 
 The oo-VQE algorithm (refer to the figure) is implemented in two other dedicated classes:
-:class:`qc2.algorithms.qiskit.oo_vqe.oo_VQE` and :class:`qc2.algorithms.pennylane.oo_vqe.oo_VQE`.
+:class:`qc2.algorithms.qiskit.oo_vqe.OO_VQE` and :class:`qc2.algorithms.pennylane.oo_vqe.OO_VQE`.
 It is important to note that, in addition to handling circuit parameters, oo-VQE also optimizes
 the initial Hartree-Fock molecular orbital coefficients through
 additional classical Newton-Raphson steps (:math:`C'_{\rm MO} \rightarrow e^{-\boldsymbol \kappa} C_{\rm MO}`) . This is done by resorting to analytic
@@ -24,7 +24,7 @@ implemented in the :class:`~qc2.algorithms.utils.orbital_optimization.OrbitalOpt
 
 Similarly to VQE, the ``oo-VQE`` algorithm class in qc2 is primarily designed to be instantiated through the :attr:`qc2Data.algorithm`
 attribute; this is further explained in :ref:`run_algorithms_with_qc2Data`. However, it can also be instantiated
-and operated independently, as long as an instance of :class:`~qc2.data.data.qc2Data` is available.
+and operated independently, as long as an instance of :class:`~qc2.qc2_driver.QC2` is available.
 An illustrative example is shown below:
 
 .. code-block:: python
@@ -36,9 +36,9 @@ An illustrative example is shown below:
     from qiskit_algorithms.optimizers import SLSQP
     from qiskit.primitives import Estimator
 
-    from qc2.data import qc2Data
-    from qc2.algorithms.qiskit import oo_VQE
-    from qc2.algorithms.utils import ActiveSpace
+    from qc2.qc2_driver import QC2 as qc2Data
+    from qc2.algorithms.qiskit import OO_VQE
+    from qc2.algorithms.second_q.active_space import ActiveSpace
 
     # set ASE Atoms object
     mol = molecule('H2O')
@@ -52,7 +52,7 @@ An illustrative example is shown below:
     # ... run qchem ab initio HF calculation via qc2-ASE 
 
     # set up oo-VQE class
-    oo_vqe = oo_VQE(
+    oo_vqe = OO_VQE(
         qc2data=qc2data,
         active_space=ActiveSpace(
             num_active_electrons=(2, 2),

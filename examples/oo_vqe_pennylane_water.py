@@ -2,11 +2,11 @@ from ase.build import molecule
 
 import pennylane as qml
 
-from qc2.data import qc2Data
+from qc2.qc2_driver import QC2 as qc2Data
 from qc2.ase import PySCF
 
-from qc2.algorithms.pennylane import oo_VQE
-from qc2.algorithms.utils import ActiveSpace
+from qc2.algorithms.pennylane import OO_VQE
+from qc2.algorithms.second_q.active_space import ActiveSpace
 
 # instantiate qc2Data class
 qc2data = qc2Data(
@@ -20,7 +20,7 @@ qc2data.molecule.calc = PySCF()
 qc2data.run()
 
 # instantiate oo-VQE algorithm
-qc2data.algorithm = oo_VQE(
+qc2data.algorithm = OO_VQE(
     active_space=ActiveSpace(
         num_active_electrons=(2, 2),
         num_active_spatial_orbitals=3

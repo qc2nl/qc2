@@ -3,12 +3,12 @@
 Running quantum-classical algorithms via qc2Data class
 ======================================================
 
-As key component of qc2, the :class:`~qc2.data.data.qc2Data` class is designed
+As key component of qc2, the :class:`~qc2.qc2_driver.QC2` class is designed
 not only to smoothly connect with qc2-ASE calculators (see :ref:`run_ase_with_qc2Data`) but also to seamlessly
 integrate with its built-in package of native of :ref:`algorithms_section`. This is precisely the goal of qc2,
 and it is what users should expect in actual qc2 runs.
 
-This connection is facilitated through the :class:`~qc2.data.data.qc2Data`'s :attr:`~qc2.data.data.qc2Data.algorithm` attribute.
+This connection is facilitated through the :class:`~qc2.qc2_driver.QC2`'s :attr:`~qc2.qc2_driver.QC2.algorithm` attribute.
 Below, we present examples of complete hybrid quantum-classical runs using qc2.
 For more detailed guidance, users are referred to the :ref:`tutorial_section` section and ``examples`` directory.
 
@@ -25,10 +25,10 @@ Qiskit-Nature with the ``SLSQP`` optimizer, ``qiskit.Estimator`` and ``Bravyi-Ki
     from qiskit_algorithms.optimizers import SLSQP
     from qiskit.primitives import Estimator
 
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
     from qc2.ase import PySCF
     from qc2.algorithms.qiskit import VQE
-    from qc2.algorithms.utils import ActiveSpace
+    from qc2.algorithms.second_q.active_space import ActiveSpace
 
     # set ASE Atoms object
     mol = molecule('H2')
@@ -72,10 +72,10 @@ Extra options for PennyLane's ``device`` and ``QNode`` are also added.
 
     import pennylane as qml
 
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
     from qc2.ase import Psi4
-    from qc2.algorithms.pennylane import oo_VQE
-    from qc2.algorithms.utils import ActiveSpace
+    from qc2.algorithms.pennylane import OO_VQE
+    from qc2.algorithms.second_q.active_space import ActiveSpace
 
     # set ASE Atoms object
     mol = molecule('H2O')
@@ -94,7 +94,7 @@ Extra options for PennyLane's ``device`` and ``QNode`` are also added.
     qc2data.run() 
 
     # instantiate oo-VQE class
-    qc2data.algorithm = oo_VQE(
+    qc2data.algorithm = OO_VQE(
         active_space=ActiveSpace(
             num_active_electrons=(2, 2),
             num_active_spatial_orbitals=4

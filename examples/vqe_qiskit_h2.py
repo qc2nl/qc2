@@ -13,10 +13,10 @@ from qiskit_algorithms.optimizers import SLSQP
 from qiskit.primitives import Estimator
 
 from qc2.ase import DIRAC
-from qc2.data import qc2Data
+from qc2.qc2_driver import QC2 as qc2Data
 from qc2.algorithms.qiskit import VQE
-from qc2.algorithms.utils import ActiveSpace
-
+from qc2.algorithms.second_q.active_space import ActiveSpace
+from qc2.algorithms.qiskit.qubit_mappers.jordan_wigner import JordanWigner
 
 def clean_up_DIRAC_files():
     """Remove DIRAC calculation outputs."""
@@ -44,7 +44,7 @@ qc2data.algorithm = VQE(
     active_space=ActiveSpace(
         num_active_electrons=(1, 1), num_active_spatial_orbitals=2
     ),
-    mapper="bk",
+    mapper=JordanWigner(),
     optimizer=SLSQP(),
     estimator=Estimator(),
 )

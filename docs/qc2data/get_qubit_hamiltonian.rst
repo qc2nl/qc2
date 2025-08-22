@@ -8,18 +8,18 @@ Building up the molecular Hamiltonian
     If you aim to take full advantage of qc2 and utilize its suite of algorithm classes,
     you do not need to worry about all the specifics mentioned in this section.
     When instantiating :class:`~qc2.algorithms.base.vqe_base.VQEBASE` and its child classes,
-    most of the :class:`~qc2.data.data.qc2Data`` methods discussed below are executed automatically
+    most of the :class:`~qc2.qc2_driver.QC2`` methods discussed below are executed automatically
     through :meth:`~qc2.algorithms.base.vqe_base.VQEBASE._init_qubit_hamiltonian`
 
-In addition to :meth:`~qc2.data.data.qc2Data.run`, :class:`~qc2.data.data.qc2Data`
+In addition to :meth:`~qc2.qc2_driver.QC2.run`, :class:`~qc2.qc2_driver.QC2`
 provides a suite of methods capable of directly reading
 from the `QCSchema <https://molssi.org/software/qcschema-2/>`_ or FCIdump data files
-and use such info to construct the molecular qubit Hamiltonian. These are :meth:`~qc2.data.data.qc2Data.get_transformed_hamiltonian`, :meth:`~qc2.data.data.qc2Data.get_active_space_hamiltonian`,
-:meth:`~qc2.data.data.qc2Data.get_fermionic_hamiltonian` and :meth:`~qc2.data.data.qc2Data.get_qubit_hamiltonian`.
+and use such info to construct the molecular qubit Hamiltonian. These are :meth:`~qc2.qc2_driver.QC2.get_transformed_hamiltonian`, :meth:`~qc2.qc2_driver.QC2.get_active_space_hamiltonian`,
+:meth:`~qc2.qc2_driver.QC2.get_fermionic_hamiltonian` and :meth:`~qc2.qc2_driver.QC2.get_qubit_hamiltonian`.
 
-Of particular relevance is the :meth:`~qc2.data.data.qc2Data.get_qubit_hamiltonian` method.
+Of particular relevance is the :meth:`~qc2.qc2_driver.QC2.get_qubit_hamiltonian` method.
 Internally, this method takes the active-space electronic Hamiltonian in second quantization,
-which is constructed by :meth:`~qc2.data.data.qc2Data.get_fermionic_hamiltonian`,
+which is constructed by :meth:`~qc2.qc2_driver.QC2.get_fermionic_hamiltonian`,
 and applies an appropriate fermion-to-qubit mapping to it,
 such as the Jordan-Wigner or Bravyi-Kitaev transformations :cite:p:`REV_VQE:2022`.
 
@@ -31,9 +31,9 @@ from a `QCSchema <https://molssi.org/software/qcschema-2/>`_ formatted hdf5 file
     :emphasize-lines: 24-27
 
     from ase.build import molecule
-    from qiskit_nature.second_q.mappers import JordanWignerMapper
+    from qc2.qubit_mapper.qiskit import JordanWigner
     from qc2.ase import DIRAC
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
 
     # set ASE Atoms object
     mol = molecule('H2')
@@ -55,11 +55,9 @@ from a `QCSchema <https://molssi.org/software/qcschema-2/>`_ formatted hdf5 file
     e_core, qubit_op = qc2data.get_qubit_hamiltonian(
         num_electrons=(1, 1),
         num_spatial_orbitals=2,
-        mapper=JordanWignerMapper(),
+        mapper=JordanWigner(),
         format='qiskit'
     )
 
 Here, ``qubit_op`` is a Qiskit-formatted ``SparsePauliOp`` operator, which can be directly used in subsequent hybrid classical-quantum calculations
-with `Qiskit Nature <https://qiskit.org/ecosystem/nature/>`_. If the ``format`` parameter is set to ``'pennylane'``, then ``qubit_op`` is formatted
-as a Pennylane ``Operator`` and should be used accordingly. Also, it's worth noting that we have used the ``JordanWignerMapper()`` from Qiskit Nature,
-a library that currently serves as the basis for all :class:`~qc2.data.data.qc2Data` methods.
+with `Qiskit Nature <https://qiskit.org/ecosystem/nature/>`_. 

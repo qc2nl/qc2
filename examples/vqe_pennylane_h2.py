@@ -10,10 +10,10 @@ import subprocess
 from ase.build import molecule
 import pennylane as qml
 from qc2.ase import DIRAC
-from qc2.data import qc2Data
+from qc2.qc2_driver import QC2 as qc2Data
 
 from qc2.algorithms.pennylane import VQE
-from qc2.algorithms.utils import ActiveSpace
+from qc2.algorithms.second_q.active_space import ActiveSpace
 
 
 def clean_up_DIRAC_files():

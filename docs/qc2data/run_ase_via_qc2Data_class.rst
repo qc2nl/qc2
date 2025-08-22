@@ -3,8 +3,8 @@
 Running qc2-ASE calculators via qc2Data class
 =============================================
 
-One of the key features of :class:`~qc2.data.data.qc2Data` is its ability to run qc2-ASE calculators on-the-fly.
-This is achieved by invoking its :meth:`~qc2.data.data.qc2Data.run` method.
+One of the key features of :class:`~qc2.qc2_driver.QC2` is its ability to run qc2-ASE calculators on-the-fly.
+This is achieved by invoking its :meth:`~qc2.qc2_driver.QC2.run` method.
 
 An example is given below:
 
@@ -14,7 +14,7 @@ An example is given below:
 
     from ase.build import molecule
     from qc2.ase import PySCF
-    from qc2.data import qc2Data
+    from qc2.qc2_driver import QC2 as qc2Data
 
     # set ASE Atoms object
     mol = molecule('H2')
@@ -32,13 +32,13 @@ An example is given below:
     # run qc2-ASE calculator
     qc2data.run()
 
-Please note that, before invoking the :meth:`~qc2.data.data.qc2Data.run` method, it is necessary to attach a qc2-ASE calculator to ``qc2data.molecule``
+Please note that, before invoking the :meth:`~qc2.qc2_driver.QC2.run` method, it is necessary to attach a qc2-ASE calculator to ``qc2data.molecule``
 via the ASE ``calc`` attribute. As described in :ref:`run_ase`, we can attach any implemented calculator.
-:meth:`~qc2.data.data.qc2Data.run` will then execute the calculator and automatically save the relevant qchem data into ``h2.hdf5``.
+:meth:`~qc2.qc2_driver.QC2.run` will then execute the calculator and automatically save the relevant qchem data into ``h2.hdf5``.
 
 .. important::
 
-   If you intend to use qc2 in conjunction with :class:`~qc2.ase.rose.ROSE`, you should instantiate :class:`~qc2.data.data.qc2Data`
+   If you intend to use qc2 in conjunction with :class:`~qc2.ase.rose.ROSE`, you should instantiate :class:`~qc2.qc2_driver.QC2`
    with an empty ``molecule`` parameter [#f1]_.
    Indeed, differently from standard `ASE calculators <https://wiki.fysik.dtu.dk/ase/>`_,
    :class:`~qc2.ase.rose.ROSE` relies on custom dataclasses for reading molecular information and
@@ -50,7 +50,7 @@ via the ASE ``calc`` attribute. As described in :ref:`run_ase`, we can attach an
         :emphasize-lines: 11-12
 
         from qc2.ase import ROSE, ROSETargetMolecule, ROSEFragment
-        from qc2.data import qc2Data
+        from qc2.qc2_driver import QC2 as qc2Data
 
         # define ROSE target molecule and fragments
         molecule = ROSETargetMolecule(...)
@@ -76,4 +76,4 @@ via the ASE ``calc`` attribute. As described in :ref:`run_ase`, we can attach an
 
 .. rubric:: Footnotes
 
-.. [#f1] If this is done, :class:`~qc2.data.data.qc2Data` automatically sets ``molecule`` to an empty ``Atoms()`` object.
+.. [#f1] If this is done, :class:`~qc2.qc2_driver.QC2` automatically sets ``molecule`` to an empty ``Atoms()`` object.
